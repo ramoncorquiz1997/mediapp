@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mediapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-mediapp}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mediapp} -d ${POSTGRES_DB:-mediapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: ./server
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-mediapp}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-mediapp}
+      HOST: 0.0.0.0
+      PORT: 4000
+      NODE_ENV: production
+      CIE10_CSV_PATH: /usr/src/app/data/cie-10.csv
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ./server/data:/usr/src/app/data:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  db_data:
