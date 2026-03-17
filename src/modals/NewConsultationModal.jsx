@@ -242,7 +242,7 @@ export default function NewConsultationModal({
     });
 
     const text = [
-      `${clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}`,
+      `${clinicConfig?.nombre_consultorio || "Consultorio Cliniq"}`,
       `Lugar de emision: ${consentForm.lugarEmision.trim()}`,
       `Fecha y hora: ${consultationDate}`,
       `Paciente: ${consentForm.pacienteNombre.trim()}`,
@@ -316,7 +316,7 @@ export default function NewConsultationModal({
         </head>
         <body>
           <div class="page">
-            <h1>${escapeHtml(clinicConfig?.nombre_consultorio || "Consultorio Paupediente")}</h1>
+            <h1>${escapeHtml(clinicConfig?.nombre_consultorio || "Consultorio Cliniq")}</h1>
             <p class="muted">${escapeHtml(clinicConfig?.direccion || "Tijuana, Baja California")} | Tel. ${escapeHtml(
               clinicConfig?.telefono || "Sin telefono"
             )}</p>
@@ -1239,7 +1239,7 @@ export default function NewConsultationModal({
                   </div>
                 </div>
                 <p className="text-xs font-bold text-slate-500 mt-3">
-                  {clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}
+                  {clinicConfig?.nombre_consultorio || "Consultorio Cliniq"}
                 </p>
               </div>
 

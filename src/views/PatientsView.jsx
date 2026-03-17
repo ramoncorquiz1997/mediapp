@@ -99,10 +99,10 @@ function PrivacyNoticeModal({ open, onClose, currentUser, clinicConfig }) {
           <section>
             <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Responsable</p>
             <p className="font-bold text-slate-700">
-              {currentUser?.nombre || "Dra. Paulina"} - {clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}
+              {currentUser?.nombre || "Dra. Paulina"} - {clinicConfig?.nombre_consultorio || "Consultorio Cliniq"}
             </p>
             <p>
-              Contacto: {clinicConfig?.email_contacto || "doctora@Paupediente.mx"} | Tel.{" "}
+              Contacto: {clinicConfig?.email_contacto || "doctora@cliniq.lat"} | Tel.{" "}
               {clinicConfig?.telefono || "664 000 0000"}
             </p>
           </section>

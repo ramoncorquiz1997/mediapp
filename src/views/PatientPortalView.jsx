@@ -546,7 +546,7 @@ export default function PatientPortalView({ token }) {
         </section>
 
         <div className="pb-4 text-center">
-          <p className="text-xs font-bold text-slate-400">Paupediente • Portal del paciente</p>
+          <p className="text-xs font-bold text-slate-400"><Cliniq></Cliniq> • Portal del paciente</p>
         </div>
       </div>
     </div>

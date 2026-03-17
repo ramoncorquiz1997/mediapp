@@ -200,10 +200,10 @@ export default function App() {
   const [focusedConsultationId, setFocusedConsultationId] = useState(null);
   const [agendaRefreshToken, setAgendaRefreshToken] = useState(0);
   const [clinicConfig, setClinicConfig] = useState({
-    nombre_consultorio: "Consultorio Paupediente",
+    nombre_consultorio: "Consultorio Cliniq",
     direccion: "Tijuana, Baja California",
     telefono: "664 000 0000",
-    email_contacto: "doctora@Paupediente.mx",
+    email_contacto: "doctora@cliniq.lat",
     cedula_profesional: "12345678",
     especialidad: "Medicina general",
     zona_horaria: "America/Tijuana",

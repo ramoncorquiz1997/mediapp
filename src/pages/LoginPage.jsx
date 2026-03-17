@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Activity, ArrowLeft, Lock, Mail, ShieldCheck, UserRound } from "lucide-react";
 
 export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
-  const [email, setEmail] = useState("doctora@Paupediente.mx");
-  const [password, setPassword] = useState("Paupediente2026!");
+  const [email, setEmail] = useState("doctora@cliniq.lat");
+  const [password, setPassword] = useState("Cliniq2026!");
 
   const submit = async (e) => {
     e.preventDefault();
@@ -79,9 +79,9 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
             Acceso inicial:
             <br />
-            Correo: `doctora@Paupediente.mx`
+            Correo: `doctora@cliniq.lat`
             <br />
-            Contrasena: `Paupediente2026!`
+            Contrasena: `Cliniq2026!`
           </div>
 
           <button

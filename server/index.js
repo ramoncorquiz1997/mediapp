@@ -24,10 +24,10 @@ const antecedentTypes = [
   "Habitos",
 ];
 const defaultClinicInfo = {
-  nombre_consultorio: "Consultorio Paupediente",
+  nombre_consultorio: "Consultorio Cliniq",
   direccion: "Tijuana, Baja California",
   telefono: "664 000 0000",
-  email_contacto: "doctora@Paupediente.mx",
+  email_contacto: "doctora@cliniq.lat",
   cedula_profesional: "12345678",
   especialidad: "Medicina general",
   zona_horaria: "America/Tijuana",
