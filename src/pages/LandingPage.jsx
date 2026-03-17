@@ -4,7 +4,6 @@ import {
   ArrowRight,
   CalendarDays,
   ChevronDown,
-  ChevronUp,
   ClipboardList,
   FileText,
   Lock,
@@ -98,10 +97,6 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
   const [faqOpenIndex, setFaqOpenIndex] = React.useState(0);
   const [loginMenuOpen, setLoginMenuOpen] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [patientCurp, setPatientCurp] = React.useState("");
-  const [patientLookupMessage, setPatientLookupMessage] = React.useState("");
-  const [patientLookupError, setPatientLookupError] = React.useState("");
-  const [isLookingUpPatient, setIsLookingUpPatient] = React.useState(false);
   const [demoForm, setDemoForm] = React.useState({ nombre: "", email: "", telefono: "", especialidad: "" });
   const [demoMessage, setDemoMessage] = React.useState("");
   const [demoError, setDemoError] = React.useState("");
@@ -129,35 +124,6 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
   }, [initialHash]);
-
-  const handlePatientLookup = async (e) => {
-    e.preventDefault();
-    const normalizedCurp = patientCurp.trim().toUpperCase();
-    setPatientLookupMessage("");
-    setPatientLookupError("");
-
-    if (!normalizedCurp) {
-      setPatientLookupError("Ingresa tu CURP para continuar.");
-      return;
-    }
-
-    try {
-      setIsLookingUpPatient(true);
-      const response = await fetch(`/api/portal/curp/${encodeURIComponent(normalizedCurp)}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "No encontramos tu expediente. Consulta con tu medico para obtener acceso.");
-      }
-
-      setPatientLookupMessage(`Hola, ${data.paciente.nombre}. Te estamos llevando a tu expediente.`);
-      onNavigate(`/p/${data.paciente.portal_token}`);
-    } catch (error) {
-      setPatientLookupError(error.message || "No encontramos tu expediente. Consulta con tu medico para obtener acceso.");
-    } finally {
-      setIsLookingUpPatient(false);
-    }
-  };
 
   const handleDemoSubmit = async (e) => {
     e.preventDefault();
@@ -241,7 +207,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 onClick={() => setLoginMenuOpen((prev) => !prev)}
                 className="inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-teal-200 hover:bg-teal-700 transition-all"
               >
-                <span>Iniciar sesion</span>
+                <span>Acceso medico</span>
                 <ChevronDown size={16} />
               </button>
 
@@ -254,14 +220,6 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                   >
                     <Lock size={16} className="text-teal-600" />
                     <span>Soy medico</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection("patient-access")}
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black text-slate-700 hover:bg-slate-50"
-                  >
-                    <UserRound size={16} className="text-teal-600" />
-                    <span>Soy paciente</span>
                   </button>
                 </div>
               ) : null}
@@ -292,9 +250,6 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               ))}
               <button type="button" onClick={() => onNavigate("/login")} className="rounded-2xl bg-teal-600 px-4 py-3 text-left text-sm font-black text-white">
                 Soy medico
-              </button>
-              <button type="button" onClick={() => scrollToSection("patient-access")} className="rounded-2xl border border-slate-200 px-4 py-3 text-left text-sm font-black text-slate-700">
-                Soy paciente
               </button>
             </div>
           </div>
@@ -393,9 +348,9 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
 
                   <div className="rounded-[1.5rem] border border-teal-100 bg-teal-50 p-5">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-600">Portal del paciente</p>
-                    <p className="mt-3 text-2xl font-black text-slate-900">Acceso simple desde CURP o link privado.</p>
+                    <p className="mt-3 text-2xl font-black text-slate-900">Acceso privado unicamente por enlace seguro.</p>
                     <p className="mt-3 text-sm font-bold leading-7 text-slate-600">
-                      Tus pacientes consultan citas, medicamentos y cuestionarios desde su celular, sin depender de llamadas o mensajes sueltos.
+                      Tus pacientes consultan citas, medicamentos y cuestionarios desde su celular usando el enlace con token que comparte el medico.
                     </p>
                   </div>
                 </div>
@@ -413,31 +368,19 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 </div>
                 <h2 className="mt-5 text-3xl font-black tracking-tight text-slate-950">Eres paciente?</h2>
                 <p className="mt-3 max-w-xl text-base font-bold leading-8 text-slate-600">
-                  Accede a tu expediente, consulta tus citas y revisa tus medicamentos desde cualquier dispositivo.
+                  Tu expediente no se consulta con CURP ni con inicio de sesion publico. El acceso solo funciona con el enlace privado con token que te comparte tu medico.
                 </p>
               </div>
 
-              <form onSubmit={handlePatientLookup} className="rounded-[1.75rem] border border-white bg-white p-5 shadow-xl shadow-teal-100/40">
-                <label className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ingresa tu CURP</label>
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                  <input
-                    value={patientCurp}
-                    onChange={(e) => setPatientCurp(e.target.value.toUpperCase())}
-                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-black text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="Ej: GARC920101HBCRRL09"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isLookingUpPatient}
-                    className="rounded-2xl bg-teal-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-teal-200 hover:bg-teal-700 transition-all disabled:opacity-60"
-                  >
-                    {isLookingUpPatient ? "Buscando..." : "Acceder a mi expediente"}
-                  </button>
+              <div className="rounded-[1.75rem] border border-white bg-white p-5 shadow-xl shadow-teal-100/40">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Acceso al portal</p>
+                <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-lg font-black text-slate-900">Necesitas el link directo del doctor</p>
+                  <p className="mt-3 text-sm font-bold leading-7 text-slate-600">
+                    Si todavia no lo tienes, solicitalo a tu medico por WhatsApp o durante tu consulta. Ese enlace es la unica forma valida de abrir tu expediente.
+                  </p>
                 </div>
-
-                {patientLookupMessage ? <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">{patientLookupMessage}</div> : null}
-                {patientLookupError ? <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">{patientLookupError}</div> : null}
-              </form>
+              </div>
             </div>
           </div>
         </RevealSection>

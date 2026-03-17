@@ -756,38 +756,9 @@ app.get("/api/portal/:token/recetas", asyncHandler(async (req, res) => {
 }));
 
 app.get("/api/portal/curp/:curp", asyncHandler(async (req, res) => {
-  const normalizedCurp = String(req.params.curp || "").trim().toUpperCase();
-
-  if (!normalizedCurp) {
-    return res.status(400).json({
-      error: "validation_error",
-      message: "CURP requerida",
-    });
-  }
-
-  const result = await pool.query(
-    `SELECT id, nombre, curp, portal_token
-     FROM pacientes
-     WHERE UPPER(curp) = $1
-       AND dado_de_baja = FALSE
-     LIMIT 1`,
-    [normalizedCurp]
-  );
-
-  if (result.rowCount === 0) {
-    return res.status(404).json({
-      error: "not_found",
-      message: "No encontramos tu expediente. Consulta con tu medico para obtener acceso.",
-    });
-  }
-
-  res.json({
-    paciente: {
-      id: result.rows[0].id,
-      nombre: result.rows[0].nombre,
-      curp: result.rows[0].curp,
-      portal_token: result.rows[0].portal_token,
-    },
+  res.status(410).json({
+    error: "disabled_route",
+    message: "El acceso por CURP fue deshabilitado. Solicita a tu medico el enlace privado con token para abrir tu expediente.",
   });
 }));
 

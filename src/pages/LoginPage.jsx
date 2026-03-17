@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Activity, ArrowLeft, Lock, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { Activity, ArrowLeft, Lock, Mail, ShieldCheck } from "lucide-react";
 
 export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
   const [email, setEmail] = useState("doctora@cliniq.lat");
@@ -90,15 +90,6 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
             className="w-full rounded-2xl bg-teal-600 px-6 py-3 font-black text-white shadow-xl shadow-teal-200 transition-all hover:bg-teal-700 disabled:opacity-60"
           >
             {isLoading ? "Entrando..." : "Entrar al portal medico"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate("/#patient-access")}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-600 transition-colors hover:bg-slate-50"
-          >
-            <UserRound size={16} />
-            <span>Eres paciente? Accede aqui con tu CURP</span>
           </button>
         </form>
       </div>
