@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+/* Fix general para evitar overflow horizontal (la “barrota”) */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Quita el CSS default de Vite que rompe Tailwind */
+body {
+  margin: 0;
+}
+
+/* Que los controles usen la misma tipografía */
+button, input, textarea {
+  font: inherit;
+}

@@ -1,0 +1,756 @@
+import React, { useEffect, useState } from "react";
+import { LayoutDashboard, Calendar, Users, History, Settings } from "lucide-react";
+
+import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
+
+import DashboardView from "./views/DashboardView";
+import PatientsView from "./views/PatientsView";
+import ClinicalRecordView from "./views/ClinicalRecordView";
+import AgendaView from "./views/AgendaView";
+import AuditLogView from "./views/AuditLogView";
+import LoginView from "./views/LoginView";
+import SettingsView from "./views/SettingsView";
+import PatientPortalView from "./views/PatientPortalView";
+import PublicBookingView from "./views/PublicBookingView";
+import NewConsultationModal from "./modals/NewConsultationModal";
+
+import { defaultNewConsultation } from "./data/defaults";
+import { apiFetch } from "./lib/api";
+import { clearSession, getStoredSession, isTokenExpired, saveSession } from "./lib/auth";
+
+const formatConsultationForView = (consultation) => ({
+  id: consultation.id,
+  cita_id: consultation.cita_id ?? null,
+  fecha: consultation.fecha,
+  created_at: consultation.created_at,
+  updated_at: consultation.updated_at,
+  motivo: consultation.motivo || "Consulta General",
+  diagnostico: consultation.diagnostico || "Sin diagnostico registrado",
+  cie10_codigo: consultation.cie10_codigo || "",
+  cie10_descripcion: consultation.cie10_descripcion || "",
+  pronostico: consultation.pronostico || "",
+  padecimiento_actual: consultation.padecimiento_actual || "",
+  descripcion_fisica: consultation.descripcion_fisica || "",
+  plan_tratamiento: consultation.plan_tratamiento || "",
+  notas: consultation.notas || "",
+  signos: {
+    peso: consultation.signos?.peso || "N/A",
+    talla: consultation.signos?.talla || "",
+    glucosa: consultation.signos?.glucosa || "",
+    ta: consultation.signos?.ta || "N/A",
+    temp: consultation.signos?.temp || "N/A",
+    frecuenciaCardiaca: consultation.signos?.frecuenciaCardiaca || "",
+    frecuenciaRespiratoria: consultation.signos?.frecuenciaRespiratoria || "",
+  },
+  recetas: consultation.recetas || [],
+  estudios: consultation.estudios || [],
+  medico_nombre: consultation.medico_nombre || "",
+  medico_cedula: consultation.medico_cedula || "",
+});
+
+const parseNumericValue = (value, suffix = "") => {
+  const normalized = String(value || "").replace(suffix, "").trim();
+  return normalized === "N/A" ? "" : normalized;
+};
+
+const createConsultationFormFromHistory = (consultation) => {
+  const [taSistolica = "", taDiastolica = ""] = String(consultation.signos?.ta || "")
+    .replace("N/A", "")
+    .split("/");
+
+  return {
+    ...defaultNewConsultation,
+    id: consultation.id,
+    fecha: consultation.fecha,
+    peso: parseNumericValue(consultation.signos?.peso, "kg"),
+    talla: consultation.signos?.talla || "",
+    glucosa: consultation.signos?.glucosa || "",
+    taSistolica: taSistolica.trim(),
+    taDiastolica: taDiastolica.trim(),
+    frecuenciaCardiaca: consultation.signos?.frecuenciaCardiaca || "",
+    frecuenciaRespiratoria: consultation.signos?.frecuenciaRespiratoria || "",
+    temperatura: parseNumericValue(consultation.signos?.temp, "C"),
+    padecimientoActual: consultation.padecimiento_actual || "",
+    diagnostico: consultation.diagnostico || "",
+    cie10Codigo: consultation.cie10_codigo || "",
+    cie10Descripcion: consultation.cie10_descripcion || "",
+    pronostico: consultation.pronostico || "",
+    descripcionFisica: consultation.descripcion_fisica || "",
+    motivo: consultation.motivo || "",
+    planTratamiento: consultation.plan_tratamiento || "",
+    medicamentos: (consultation.recetas || []).map((item) => ({
+      id: item.id,
+      nombre: item.medicamento || "",
+      presentacion: item.presentacion || "Tableta",
+      dosis: item.dosis || "",
+      cadaCantidad: item.frecuencia_cantidad ? String(item.frecuencia_cantidad) : "",
+      cadaUnidad: item.frecuencia_unidad || "Horas",
+      duranteCantidad: item.duracion_cantidad ? String(item.duracion_cantidad) : "",
+      duranteUnidad: item.duracion_unidad || "Dias",
+    })),
+    estudios: (consultation.estudios || []).map((item) => ({
+      id: item.id,
+      nombre: item.nombre || "",
+      tipo: item.tipo || "Laboratorio",
+      estado: item.estado || "Solicitado",
+      resultado: item.resultado || "",
+    })),
+  };
+};
+
+const getNextExternalId = (patients) => {
+  const maxNumber = patients.reduce((max, patient) => {
+    const match = String(patient.external_id || "").match(/^PX-(\d+)$/i);
+    if (!match) return max;
+    return Math.max(max, Number(match[1]));
+  }, 1000);
+
+  return `PX-${String(maxNumber + 1).padStart(4, "0")}`;
+};
+
+export default function App() {
+  const patientPortalMatch =
+    typeof window !== "undefined" ? window.location.pathname.match(/^\/p\/([^/]+)\/?$/) : null;
+  const patientPortalToken = patientPortalMatch?.[1] ? decodeURIComponent(patientPortalMatch[1]) : null;
+  const publicAgendaMatch =
+    typeof window !== "undefined" ? window.location.pathname.match(/^\/agenda\/([^/]+)\/?$/) : null;
+  const publicAgendaSlug = publicAgendaMatch?.[1] ? decodeURIComponent(publicAgendaMatch[1]) : null;
+  const [authReady, setAuthReady] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+  const [authError, setAuthError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [patients, setPatients] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(true);
+  const [patientsError, setPatientsError] = useState("");
+  const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+  const [isUpdatingPatient, setIsUpdatingPatient] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [consultationHistory, setConsultationHistory] = useState([]);
+  const [consultationsLoading, setConsultationsLoading] = useState(false);
+  const [consultationsError, setConsultationsError] = useState("");
+  const [isSavingConsultation, setIsSavingConsultation] = useState(false);
+  const [newConsultation, setNewConsultation] = useState(defaultNewConsultation);
+  const [editingConsultation, setEditingConsultation] = useState(null);
+  const [consultationSourceAppointment, setConsultationSourceAppointment] = useState(null);
+  const [focusedConsultationId, setFocusedConsultationId] = useState(null);
+  const [agendaRefreshToken, setAgendaRefreshToken] = useState(0);
+  const [clinicConfig, setClinicConfig] = useState({
+    nombre_consultorio: "Consultorio Paupediente",
+    direccion: "Tijuana, Baja California",
+    telefono: "664 000 0000",
+    email_contacto: "doctora@paupediente.mx",
+    cedula_profesional: "12345678",
+    especialidad: "Medicina general",
+    zona_horaria: "America/Tijuana",
+    horario_laboral: {
+      0: { activo: false, inicio: "09:00", fin: "17:00" },
+      1: { activo: true, inicio: "09:00", fin: "17:00" },
+      2: { activo: true, inicio: "09:00", fin: "17:00" },
+      3: { activo: true, inicio: "09:00", fin: "17:00" },
+      4: { activo: true, inicio: "09:00", fin: "17:00" },
+      5: { activo: true, inicio: "09:00", fin: "17:00" },
+      6: { activo: false, inicio: "09:00", fin: "14:00" },
+    },
+    logo_data_url: "",
+  });
+  const [clinicConfigError, setClinicConfigError] = useState("");
+  const [isSavingClinicConfig, setIsSavingClinicConfig] = useState(false);
+  const nextExternalId = getNextExternalId(patients);
+
+  const logout = async () => {
+    if (getStoredSession()?.token) {
+      try {
+        await apiFetch("/api/auth/logout", { method: "POST" });
+      } catch {
+        // Ignore logout network failures and clear local session anyway.
+      }
+    }
+
+    clearSession();
+    setAuthUser(null);
+    setAuthError("");
+    setActiveTab("dashboard");
+    setPatients([]);
+    setSelectedPatient(null);
+    setConsultationHistory([]);
+    setShowConsultationModal(false);
+    setNewConsultation(defaultNewConsultation);
+    setEditingConsultation(null);
+    setConsultationSourceAppointment(null);
+    setFocusedConsultationId(null);
+  };
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, []);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      const session = getStoredSession();
+      if (!session?.token || isTokenExpired(session.token)) {
+        clearSession();
+        setAuthReady(true);
+        return;
+      }
+
+      try {
+        const response = await apiFetch("/api/auth/me");
+        if (!response.ok) {
+          throw new Error("Sesion no valida");
+        }
+
+        const data = await response.json();
+        saveSession({ token: session.token, user: data.user });
+        setAuthUser(data.user);
+      } catch {
+        clearSession();
+        setAuthUser(null);
+      } finally {
+        setAuthReady(true);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
+  const login = async ({ email, password }) => {
+    try {
+      setIsLoggingIn(true);
+      setAuthError("");
+
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo iniciar sesion (${response.status})`);
+      }
+
+      saveSession(data);
+      setAuthUser(data.user);
+      setActiveTab("dashboard");
+    } catch (error) {
+      setAuthError(error.message || "No se pudo iniciar sesion");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const loadPatients = async () => {
+    try {
+      setPatientsLoading(true);
+      setPatientsError("");
+
+      const response = await apiFetch("/api/pacientes");
+      if (!response.ok) {
+        throw new Error(`No se pudo cargar pacientes (${response.status})`);
+      }
+
+      const data = await response.json();
+      setPatients(data);
+      setSelectedPatient((prev) => {
+        if (!data.length) return null;
+        if (!prev) return data[0];
+        return data.find((item) => item.id === prev.id) || data[0];
+      });
+    } catch (error) {
+      setPatientsError(error.message || "No se pudo conectar con el servidor");
+    } finally {
+      setPatientsLoading(false);
+    }
+  };
+
+  const loadClinicConfig = async () => {
+    try {
+      setClinicConfigError("");
+      const response = await apiFetch("/api/configuracion-consultorio");
+      if (!response.ok) {
+        throw new Error(`No se pudo cargar configuracion (${response.status})`);
+      }
+
+      const data = await response.json();
+      setClinicConfig((prev) => ({ ...prev, ...data }));
+    } catch (error) {
+      setClinicConfigError(error.message || "No se pudo cargar configuracion del consultorio");
+    }
+  };
+
+  const loadConsultations = async (patientId) => {
+    if (!patientId) {
+      setConsultationHistory([]);
+      return;
+    }
+
+    try {
+      setConsultationsLoading(true);
+      setConsultationsError("");
+
+      const response = await apiFetch(`/api/consultas?paciente_id=${patientId}`);
+      if (!response.ok) {
+        throw new Error(`No se pudo cargar consultas (${response.status})`);
+      }
+
+      const data = await response.json();
+      setConsultationHistory(data.map(formatConsultationForView));
+    } catch (error) {
+      setConsultationsError(error.message || "No se pudo cargar el expediente");
+    } finally {
+      setConsultationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!authUser) return;
+    loadPatients();
+    loadClinicConfig();
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!authUser) return;
+    loadConsultations(selectedPatient?.id);
+  }, [selectedPatient, authUser]);
+
+  const openPatientRecord = (patient, options = {}) => {
+    apiFetch(`/api/pacientes/${patient.id}/open-record`, {
+      method: "POST",
+    }).catch(() => {});
+
+    setSelectedPatient(patient);
+    setFocusedConsultationId(options.consultationId ?? null);
+    setActiveTab("expediente");
+  };
+
+  const createPatient = async (payload) => {
+    try {
+      setIsCreatingPatient(true);
+      setPatientsError("");
+
+      const response = await apiFetch("/api/pacientes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...payload,
+          external_id: nextExternalId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`No se pudo crear el paciente (${response.status})`);
+      }
+
+      const created = await response.json();
+      await loadPatients();
+      setSelectedPatient(created);
+      return created;
+    } catch (error) {
+      setPatientsError(error.message || "No se pudo crear el paciente");
+      return null;
+    } finally {
+      setIsCreatingPatient(false);
+    }
+  };
+
+  const updatePatient = async (patient, payload) => {
+    try {
+      setIsUpdatingPatient(true);
+      setPatientsError("");
+
+      const response = await apiFetch(`/api/pacientes/${patient.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...payload,
+          activo: patient.activo,
+          ultima_visita: patient.ultima_visita,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`No se pudo actualizar el paciente (${response.status})`);
+      }
+
+      const updated = await response.json();
+      setPatients((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      setSelectedPatient((prev) => (prev?.id === updated.id ? updated : prev));
+      return updated;
+    } catch (error) {
+      setPatientsError(error.message || "No se pudo actualizar el paciente");
+      return null;
+    } finally {
+      setIsUpdatingPatient(false);
+    }
+  };
+
+  const deletePatient = async (patient, motivoBaja) => {
+    try {
+      setPatientsError("");
+
+      const response = await apiFetch(`/api/pacientes/${patient.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          motivo_baja: motivoBaja || "",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`No se pudo eliminar el paciente (${response.status})`);
+      }
+
+      const data = await response.json();
+      const updatedPatient = data.patient;
+
+      setPatients((prev) => prev.map((item) => (item.id === updatedPatient.id ? updatedPatient : item)));
+      setSelectedPatient((prev) => (prev?.id === updatedPatient.id ? updatedPatient : prev));
+
+      return true;
+    } catch (error) {
+      setPatientsError(error.message || "No se pudo dar de baja al paciente");
+      return false;
+    }
+  };
+
+  const reactivatePatient = async (patient) => {
+    return updatePatient(patient, {
+      nombre: patient.nombre,
+      curp: patient.curp,
+      fecha_nacimiento: patient.fecha_nacimiento,
+      sexo: patient.sexo,
+      tipo_sangre: patient.tipo_sangre,
+      telefono: patient.telefono,
+      email: patient.email,
+      direccion: patient.direccion,
+      contacto_emergencia_nombre: patient.contacto_emergencia_nombre,
+      contacto_emergencia_telefono: patient.contacto_emergencia_telefono,
+      alergias_resumen: patient.alergias_resumen,
+      dado_de_baja: false,
+      fecha_baja: null,
+      motivo_baja: null,
+      activo: true,
+    });
+  };
+
+  const saveConsultation = async (consentimientoClinico) => {
+    if (!selectedPatient) return;
+
+    try {
+      setIsSavingConsultation(true);
+      setConsultationsError("");
+
+      const payload = {
+        paciente_id: selectedPatient.id,
+        cita_id: consultationSourceAppointment?.id ?? null,
+        fecha: new Date().toISOString(),
+        motivo: newConsultation.motivo || "Consulta General",
+        padecimiento_actual: newConsultation.padecimientoActual || "",
+        descripcion_fisica: newConsultation.descripcionFisica || "",
+        diagnostico: newConsultation.diagnostico || "",
+        cie10_codigo: newConsultation.cie10Codigo || null,
+        cie10_descripcion: newConsultation.cie10Descripcion || null,
+        pronostico: newConsultation.pronostico || "",
+        plan_tratamiento: newConsultation.planTratamiento || "",
+        signos: {
+          peso: newConsultation.peso ? `${newConsultation.peso}kg` : "N/A",
+          talla: newConsultation.talla || "",
+          glucosa: newConsultation.glucosa || "",
+          ta:
+            newConsultation.taSistolica && newConsultation.taDiastolica
+              ? `${newConsultation.taSistolica}/${newConsultation.taDiastolica}`
+              : "N/A",
+          temp: newConsultation.temperatura ? `${newConsultation.temperatura} C` : "N/A",
+          frecuenciaCardiaca: newConsultation.frecuenciaCardiaca || "",
+          frecuenciaRespiratoria: newConsultation.frecuenciaRespiratoria || "",
+        },
+        medicamentos: newConsultation.medicamentos ?? [],
+        estudios: newConsultation.estudios ?? [],
+        consentimiento_clinico: consentimientoClinico,
+      };
+
+      const isEditing = Boolean(editingConsultation?.id);
+      const response = await apiFetch(
+        isEditing ? `/api/consultas/${editingConsultation.id}` : "/api/consultas",
+        {
+          method: isEditing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `${isEditing ? "No se pudo actualizar la consulta" : "No se pudo guardar la consulta"} (${response.status})`
+        );
+      }
+
+      await response.json();
+      setShowConsultationModal(false);
+      setEditingConsultation(null);
+      if (consultationSourceAppointment?.id) {
+        setAgendaRefreshToken((prev) => prev + 1);
+      }
+      setConsultationSourceAppointment(null);
+      setNewConsultation(defaultNewConsultation);
+      await loadConsultations(selectedPatient.id);
+      await loadPatients();
+    } catch (error) {
+      setConsultationsError(error.message || "No se pudo guardar la consulta");
+    } finally {
+      setIsSavingConsultation(false);
+    }
+  };
+
+  const startNewConsultation = () => {
+    setEditingConsultation(null);
+    setConsultationSourceAppointment(null);
+    setNewConsultation(defaultNewConsultation);
+    setShowConsultationModal(true);
+  };
+
+  const startEditingConsultation = (consultation) => {
+    setEditingConsultation(consultation);
+    setConsultationSourceAppointment(null);
+    setNewConsultation(createConsultationFormFromHistory(consultation));
+    setShowConsultationModal(true);
+  };
+
+  const repeatConsultationPrescription = (consultation) => {
+    setEditingConsultation(null);
+    setConsultationSourceAppointment(null);
+    setNewConsultation({
+      ...defaultNewConsultation,
+      motivo: consultation.motivo || "",
+      medicamentos: (consultation.recetas || []).map((item, index) => ({
+        id: Date.now() + index,
+        nombre: item.medicamento || "",
+        presentacion: item.presentacion || "Tableta",
+        dosis: item.dosis || "",
+        cadaCantidad: item.frecuencia_cantidad ? String(item.frecuencia_cantidad) : "",
+        cadaUnidad: item.frecuencia_unidad || "Horas",
+        duranteCantidad: item.duracion_cantidad ? String(item.duracion_cantidad) : "",
+        duranteUnidad: item.duracion_unidad || "Dias",
+      })),
+    });
+    setShowConsultationModal(true);
+  };
+
+  const startConsultationFromAppointment = (appointment, patient) => {
+    if (!patient) {
+      setPatientsError("La cita no esta ligada a un paciente existente.");
+      return;
+    }
+
+    const questionnaireSummary = [
+      appointment.cuestionario_sintomas_actuales
+        ? `Sintomas actuales: ${appointment.cuestionario_sintomas_actuales}`
+        : "",
+      appointment.cuestionario_medicamentos_actuales
+        ? `Medicamentos actuales: ${appointment.cuestionario_medicamentos_actuales}`
+        : "",
+      appointment.cuestionario_alergias_conocidas
+        ? `Alergias conocidas: ${appointment.cuestionario_alergias_conocidas}`
+        : "",
+      appointment.cuestionario_cambios_desde_ultima_visita
+        ? `Cambios desde la ultima visita: ${appointment.cuestionario_cambios_desde_ultima_visita}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    setSelectedPatient(patient);
+    setEditingConsultation(null);
+    setConsultationSourceAppointment(appointment);
+    setFocusedConsultationId(null);
+    setNewConsultation({
+      ...defaultNewConsultation,
+      motivo: appointment.cuestionario_motivo_consulta || appointment.motivo || "",
+      padecimientoActual: questionnaireSummary,
+    });
+    setShowConsultationModal(true);
+  };
+
+  const sidebarItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "agenda", label: "Agenda Semanal", icon: Calendar },
+    { id: "pacientes", label: "Pacientes", icon: Users },
+    ...(["admin", "medico"].includes(authUser?.rol)
+      ? [
+          { id: "bitacora", label: "Bitacora", icon: History },
+          { id: "configuracion", label: "Configuracion", icon: Settings },
+        ]
+      : []),
+  ];
+
+  const saveClinicConfiguration = async () => {
+    try {
+      setIsSavingClinicConfig(true);
+      setClinicConfigError("");
+
+      const response = await apiFetch("/api/configuracion-consultorio", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(clinicConfig),
+      });
+
+      if (!response.ok) {
+        throw new Error(`No se pudo guardar configuracion (${response.status})`);
+      }
+
+      const data = await response.json();
+      setClinicConfig((prev) => ({ ...prev, ...data }));
+    } catch (error) {
+      setClinicConfigError(error.message || "No se pudo guardar configuracion");
+    } finally {
+      setIsSavingClinicConfig(false);
+    }
+  };
+
+  if (!authReady) {
+    if (patientPortalToken) {
+      return <PatientPortalView token={patientPortalToken} />;
+    }
+
+    if (publicAgendaSlug) {
+      return <PublicBookingView slug={publicAgendaSlug} />;
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-sm font-black text-slate-500">Preparando sesion...</div>
+      </div>
+    );
+  }
+
+  if (patientPortalToken) {
+    return <PatientPortalView token={patientPortalToken} />;
+  }
+
+  if (publicAgendaSlug) {
+    return <PublicBookingView slug={publicAgendaSlug} />;
+  }
+
+  if (!authUser) {
+    return <LoginView onLogin={login} isLoading={isLoggingIn} error={authError} />;
+  }
+
+  return (
+    <div className="flex h-screen bg-slate-100 text-slate-900 font-sans overflow-hidden">
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        items={sidebarItems}
+        user={authUser}
+        onLogout={logout}
+      />
+
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)]">
+        <Topbar title={activeTab} />
+
+        {activeTab === "dashboard" && <DashboardView currentUser={authUser} />}
+
+        {activeTab === "pacientes" && (
+          <PatientsView
+            patients={patients}
+            isLoading={patientsLoading}
+            error={patientsError}
+            currentUser={authUser}
+            clinicConfig={clinicConfig}
+            onCreatePatient={createPatient}
+            onUpdatePatient={updatePatient}
+            isCreatingPatient={isCreatingPatient}
+            isUpdatingPatient={isUpdatingPatient}
+            nextExternalId={nextExternalId}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onOpenRecord={openPatientRecord}
+            selectedPatientId={selectedPatient?.id}
+          />
+        )}
+
+        {activeTab === "expediente" && (
+          <ClinicalRecordView
+            patient={selectedPatient}
+            consultationHistory={consultationHistory}
+            isLoading={consultationsLoading}
+            error={consultationsError}
+            clinicConfig={clinicConfig}
+            focusedConsultationId={focusedConsultationId}
+            onConsultationFocusHandled={() => setFocusedConsultationId(null)}
+            onNewConsultation={startNewConsultation}
+            onEditConsultation={startEditingConsultation}
+            onRepeatPrescription={repeatConsultationPrescription}
+            onRefreshConsultations={() => loadConsultations(selectedPatient?.id)}
+            onDeletePatient={deletePatient}
+            onReactivatePatient={reactivatePatient}
+          />
+        )}
+
+        {activeTab === "agenda" && (
+          <AgendaView
+            patients={patients}
+            refreshToken={agendaRefreshToken}
+            onOpenRecord={openPatientRecord}
+            onStartConsultation={startConsultationFromAppointment}
+          />
+        )}
+
+        {activeTab === "bitacora" && ["admin", "medico"].includes(authUser?.rol) ? (
+          <AuditLogView />
+        ) : null}
+
+        {activeTab === "configuracion" && ["admin", "medico"].includes(authUser?.rol) ? (
+          <SettingsView
+            clinicConfig={clinicConfig}
+            setClinicConfig={setClinicConfig}
+            onSave={saveClinicConfiguration}
+            isSaving={isSavingClinicConfig}
+            error={clinicConfigError}
+          />
+        ) : null}
+      </main>
+
+      <NewConsultationModal
+        open={showConsultationModal}
+        onClose={() => {
+          setShowConsultationModal(false);
+          setEditingConsultation(null);
+          setConsultationSourceAppointment(null);
+          setNewConsultation(defaultNewConsultation);
+        }}
+        consultation={newConsultation}
+        setConsultation={setNewConsultation}
+        onSave={saveConsultation}
+        patient={selectedPatient}
+        currentUser={authUser}
+        clinicConfig={clinicConfig}
+        mode={editingConsultation ? "edit" : "create"}
+        isSaving={isSavingConsultation}
+      />
+    </div>
+  );
+}
