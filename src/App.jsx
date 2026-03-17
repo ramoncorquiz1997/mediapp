@@ -9,15 +9,32 @@ import PatientsView from "./views/PatientsView";
 import ClinicalRecordView from "./views/ClinicalRecordView";
 import AgendaView from "./views/AgendaView";
 import AuditLogView from "./views/AuditLogView";
-import LoginView from "./views/LoginView";
 import SettingsView from "./views/SettingsView";
 import PatientPortalView from "./views/PatientPortalView";
 import PublicBookingView from "./views/PublicBookingView";
 import NewConsultationModal from "./modals/NewConsultationModal";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
 
 import { defaultNewConsultation } from "./data/defaults";
 import { apiFetch } from "./lib/api";
 import { clearSession, getStoredSession, isTokenExpired, saveSession } from "./lib/auth";
+
+const buildLegacyExplorationText = (consultation) => {
+  if (consultation.descripcion_fisica) return consultation.descripcion_fisica;
+
+  const sections = [
+    ["Habitus exterior", consultation.habitus_exterior],
+    ["Cabeza", consultation.exploracion_cabeza],
+    ["Cuello", consultation.exploracion_cuello],
+    ["Torax", consultation.exploracion_torax],
+    ["Abdomen", consultation.exploracion_abdomen],
+    ["Extremidades", consultation.exploracion_extremidades],
+    ["Genitales", consultation.exploracion_genitales],
+  ].filter(([, value]) => String(value || "").trim());
+
+  return sections.map(([label, value]) => `${label}: ${value}`).join(" | ");
+};
 
 const formatConsultationForView = (consultation) => ({
   id: consultation.id,
@@ -27,13 +44,26 @@ const formatConsultationForView = (consultation) => ({
   updated_at: consultation.updated_at,
   motivo: consultation.motivo || "Consulta General",
   diagnostico: consultation.diagnostico || "Sin diagnostico registrado",
+  paciente_nombre_snapshot: consultation.paciente_nombre_snapshot || "",
+  paciente_edad_snapshot: consultation.paciente_edad_snapshot ?? null,
+  paciente_sexo_snapshot: consultation.paciente_sexo_snapshot || "",
   cie10_codigo: consultation.cie10_codigo || "",
   cie10_descripcion: consultation.cie10_descripcion || "",
   pronostico: consultation.pronostico || "",
   padecimiento_actual: consultation.padecimiento_actual || "",
-  descripcion_fisica: consultation.descripcion_fisica || "",
+  interrogatorio_aparatos_sistemas: consultation.interrogatorio_aparatos_sistemas || "",
+  descripcion_fisica: buildLegacyExplorationText(consultation),
+  habitus_exterior: consultation.habitus_exterior || consultation.descripcion_fisica || "",
+  exploracion_cabeza: consultation.exploracion_cabeza || "",
+  exploracion_cuello: consultation.exploracion_cuello || "",
+  exploracion_torax: consultation.exploracion_torax || "",
+  exploracion_abdomen: consultation.exploracion_abdomen || "",
+  exploracion_extremidades: consultation.exploracion_extremidades || "",
+  exploracion_genitales: consultation.exploracion_genitales || "",
   plan_tratamiento: consultation.plan_tratamiento || "",
   notas: consultation.notas || "",
+  firma_hash: consultation.firma_hash || "",
+  firma_timestamp: consultation.firma_timestamp || "",
   signos: {
     peso: consultation.signos?.peso || "N/A",
     talla: consultation.signos?.talla || "",
@@ -63,6 +93,9 @@ const createConsultationFormFromHistory = (consultation) => {
     ...defaultNewConsultation,
     id: consultation.id,
     fecha: consultation.fecha,
+    pacienteNombreSnapshot: consultation.paciente_nombre_snapshot || "",
+    pacienteEdadSnapshot: consultation.paciente_edad_snapshot ?? null,
+    pacienteSexoSnapshot: consultation.paciente_sexo_snapshot || "",
     peso: parseNumericValue(consultation.signos?.peso, "kg"),
     talla: consultation.signos?.talla || "",
     glucosa: consultation.signos?.glucosa || "",
@@ -72,18 +105,27 @@ const createConsultationFormFromHistory = (consultation) => {
     frecuenciaRespiratoria: consultation.signos?.frecuenciaRespiratoria || "",
     temperatura: parseNumericValue(consultation.signos?.temp, "C"),
     padecimientoActual: consultation.padecimiento_actual || "",
+    interrogatorioAparatosSistemas: consultation.interrogatorio_aparatos_sistemas || "",
     diagnostico: consultation.diagnostico || "",
-    cie10Codigo: consultation.cie10_codigo || "",
-    cie10Descripcion: consultation.cie10_descripcion || "",
-    pronostico: consultation.pronostico || "",
-    descripcionFisica: consultation.descripcion_fisica || "",
-    motivo: consultation.motivo || "",
+      cie10Codigo: consultation.cie10_codigo || "",
+      cie10Descripcion: consultation.cie10_descripcion || "",
+      pronostico: consultation.pronostico || "",
+    descripcionFisica: buildLegacyExplorationText(consultation),
+      habitusExterior: consultation.habitus_exterior || consultation.descripcion_fisica || "",
+      exploracionCabeza: consultation.exploracion_cabeza || "",
+      exploracionCuello: consultation.exploracion_cuello || "",
+      exploracionTorax: consultation.exploracion_torax || "",
+      exploracionAbdomen: consultation.exploracion_abdomen || "",
+      exploracionExtremidades: consultation.exploracion_extremidades || "",
+      exploracionGenitales: consultation.exploracion_genitales || "",
+      motivo: consultation.motivo || "",
     planTratamiento: consultation.plan_tratamiento || "",
     medicamentos: (consultation.recetas || []).map((item) => ({
       id: item.id,
       nombre: item.medicamento || "",
       presentacion: item.presentacion || "Tableta",
       dosis: item.dosis || "",
+      viaAdministracion: item.via_administracion || "Oral",
       cadaCantidad: item.frecuencia_cantidad ? String(item.frecuencia_cantidad) : "",
       cadaUnidad: item.frecuencia_unidad || "Horas",
       duranteCantidad: item.duracion_cantidad ? String(item.duracion_cantidad) : "",
@@ -95,6 +137,13 @@ const createConsultationFormFromHistory = (consultation) => {
       tipo: item.tipo || "Laboratorio",
       estado: item.estado || "Solicitado",
       resultado: item.resultado || "",
+      problemaClinico: item.problema_clinico || "",
+      fechaEstudio: item.fecha_estudio
+        ? new Date(item.fecha_estudio).toISOString().slice(0, 16)
+        : "",
+      interpretacion: item.interpretacion || "",
+      medicoSolicitaNombre: item.medico_solicita_nombre || "",
+      medicoSolicitaCedula: item.medico_solicita_cedula || "",
     })),
   };
 };
@@ -109,12 +158,23 @@ const getNextExternalId = (patients) => {
   return `PX-${String(maxNumber + 1).padStart(4, "0")}`;
 };
 
+const getBrowserLocation = () => {
+  if (typeof window === "undefined") {
+    return { pathname: "/", hash: "" };
+  }
+
+  return {
+    pathname: window.location.pathname || "/",
+    hash: window.location.hash || "",
+  };
+};
+
 export default function App() {
-  const patientPortalMatch =
-    typeof window !== "undefined" ? window.location.pathname.match(/^\/p\/([^/]+)\/?$/) : null;
+  const [routeLocation, setRouteLocation] = useState(getBrowserLocation);
+  const { pathname, hash } = routeLocation;
+  const patientPortalMatch = pathname.match(/^\/p\/([^/]+)\/?$/);
   const patientPortalToken = patientPortalMatch?.[1] ? decodeURIComponent(patientPortalMatch[1]) : null;
-  const publicAgendaMatch =
-    typeof window !== "undefined" ? window.location.pathname.match(/^\/agenda\/([^/]+)\/?$/) : null;
+  const publicAgendaMatch = pathname.match(/^\/agenda\/([^/]+)\/?$/);
   const publicAgendaSlug = publicAgendaMatch?.[1] ? decodeURIComponent(publicAgendaMatch[1]) : null;
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(null);
@@ -143,7 +203,7 @@ export default function App() {
     nombre_consultorio: "Consultorio Paupediente",
     direccion: "Tijuana, Baja California",
     telefono: "664 000 0000",
-    email_contacto: "doctora@paupediente.mx",
+    email_contacto: "doctora@Paupediente.mx",
     cedula_profesional: "12345678",
     especialidad: "Medicina general",
     zona_horaria: "America/Tijuana",
@@ -161,6 +221,14 @@ export default function App() {
   const [clinicConfigError, setClinicConfigError] = useState("");
   const [isSavingClinicConfig, setIsSavingClinicConfig] = useState(false);
   const nextExternalId = getNextExternalId(patients);
+
+  const navigate = (target, options = {}) => {
+    if (typeof window === "undefined") return;
+    const nextUrl = target || "/";
+    const method = options.replace ? "replaceState" : "pushState";
+    window.history[method]({}, "", nextUrl);
+    setRouteLocation(getBrowserLocation());
+  };
 
   const logout = async () => {
     if (getStoredSession()?.token) {
@@ -183,7 +251,20 @@ export default function App() {
     setEditingConsultation(null);
     setConsultationSourceAppointment(null);
     setFocusedConsultationId(null);
+    navigate("/login", { replace: true });
   };
+
+  useEffect(() => {
+    const syncLocation = () => setRouteLocation(getBrowserLocation());
+
+    window.addEventListener("popstate", syncLocation);
+    window.addEventListener("hashchange", syncLocation);
+
+    return () => {
+      window.removeEventListener("popstate", syncLocation);
+      window.removeEventListener("hashchange", syncLocation);
+    };
+  }, []);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -245,6 +326,7 @@ export default function App() {
       saveSession(data);
       setAuthUser(data.user);
       setActiveTab("dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       setAuthError(error.message || "No se pudo iniciar sesion");
     } finally {
@@ -325,6 +407,19 @@ export default function App() {
     if (!authUser) return;
     loadConsultations(selectedPatient?.id);
   }, [selectedPatient, authUser]);
+
+  useEffect(() => {
+    if (!authReady || patientPortalToken || publicAgendaSlug) return;
+
+    if (authUser && (pathname === "/" || pathname === "/login")) {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (!authUser && pathname !== "/" && pathname !== "/login") {
+      navigate("/login", { replace: true });
+    }
+  }, [authReady, authUser, pathname, patientPortalToken, publicAgendaSlug]);
 
   const openPatientRecord = (patient, options = {}) => {
     apiFetch(`/api/pacientes/${patient.id}/open-record`, {
@@ -465,7 +560,15 @@ export default function App() {
         fecha: new Date().toISOString(),
         motivo: newConsultation.motivo || "Consulta General",
         padecimiento_actual: newConsultation.padecimientoActual || "",
-        descripcion_fisica: newConsultation.descripcionFisica || "",
+        interrogatorio_aparatos_sistemas: newConsultation.interrogatorioAparatosSistemas || "",
+        descripcion_fisica: newConsultation.habitusExterior || newConsultation.descripcionFisica || "",
+        habitus_exterior: newConsultation.habitusExterior || newConsultation.descripcionFisica || "",
+        exploracion_cabeza: newConsultation.exploracionCabeza || "",
+        exploracion_cuello: newConsultation.exploracionCuello || "",
+        exploracion_torax: newConsultation.exploracionTorax || "",
+        exploracion_abdomen: newConsultation.exploracionAbdomen || "",
+        exploracion_extremidades: newConsultation.exploracionExtremidades || "",
+        exploracion_genitales: newConsultation.exploracionGenitales || "",
         diagnostico: newConsultation.diagnostico || "",
         cie10_codigo: newConsultation.cie10Codigo || null,
         cie10_descripcion: newConsultation.cie10Descripcion || null,
@@ -543,14 +646,15 @@ export default function App() {
     setNewConsultation({
       ...defaultNewConsultation,
       motivo: consultation.motivo || "",
-      medicamentos: (consultation.recetas || []).map((item, index) => ({
-        id: Date.now() + index,
-        nombre: item.medicamento || "",
-        presentacion: item.presentacion || "Tableta",
-        dosis: item.dosis || "",
-        cadaCantidad: item.frecuencia_cantidad ? String(item.frecuencia_cantidad) : "",
-        cadaUnidad: item.frecuencia_unidad || "Horas",
-        duranteCantidad: item.duracion_cantidad ? String(item.duracion_cantidad) : "",
+    medicamentos: (consultation.recetas || []).map((item, index) => ({
+      id: Date.now() + index,
+      nombre: item.medicamento || "",
+      presentacion: item.presentacion || "Tableta",
+      dosis: item.dosis || "",
+      viaAdministracion: item.via_administracion || "Oral",
+      cadaCantidad: item.frecuencia_cantidad ? String(item.frecuencia_cantidad) : "",
+      cadaUnidad: item.frecuencia_unidad || "Horas",
+      duranteCantidad: item.duracion_cantidad ? String(item.duracion_cantidad) : "",
         duranteUnidad: item.duracion_unidad || "Dias",
       })),
     });
@@ -655,7 +759,11 @@ export default function App() {
   }
 
   if (!authUser) {
-    return <LoginView onLogin={login} isLoading={isLoggingIn} error={authError} />;
+    if (pathname === "/") {
+      return <LandingPage onNavigate={navigate} initialHash={hash} />;
+    }
+
+    return <LoginPage onLogin={login} isLoading={isLoggingIn} error={authError} onNavigate={navigate} />;
   }
 
   return (

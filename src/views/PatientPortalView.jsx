@@ -439,8 +439,8 @@ export default function PatientPortalView({ token }) {
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-600">
                               <span>Peso: {consultation.signos?.peso || "N/D"}</span>
-                              <span>TA: {consultation.signos?.ta || "N/D"}</span>
-                              <span>Temp: {consultation.signos?.temp || "N/D"}</span>
+                              <span>Tension arterial (TA): {consultation.signos?.ta || "N/D"}</span>
+                              <span>Temperatura (Temp): {consultation.signos?.temp || "N/D"}</span>
                               <span>Glucosa: {consultation.signos?.glucosa || "N/D"}</span>
                             </div>
                           </div>
@@ -471,6 +471,7 @@ export default function PatientPortalView({ token }) {
                                   </p>
                                   <div className="mt-2 grid grid-cols-1 gap-2 text-xs font-bold text-slate-500 sm:grid-cols-2">
                                     <span>Dosis: {item.dosis || "Sin dosis"}</span>
+                                    <span>Via: {item.via_administracion || "Sin via especificada"}</span>
                                     <span>
                                       Frecuencia:{" "}
                                       {item.frecuencia_cantidad

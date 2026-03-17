@@ -102,7 +102,7 @@ function PrivacyNoticeModal({ open, onClose, currentUser, clinicConfig }) {
               {currentUser?.nombre || "Dra. Paulina"} - {clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}
             </p>
             <p>
-              Contacto: {clinicConfig?.email_contacto || "doctora@paupediente.mx"} | Tel.{" "}
+              Contacto: {clinicConfig?.email_contacto || "doctora@Paupediente.mx"} | Tel.{" "}
               {clinicConfig?.telefono || "664 000 0000"}
             </p>
           </section>

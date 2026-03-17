@@ -1,4 +1,4 @@
-const STORAGE_KEY = "paupediente_session";
+const STORAGE_KEY = "Paupediente_session";
 
 export const getStoredSession = () => {
   try {

@@ -30,7 +30,7 @@ const clinicInfo = {
   nombre_consultorio: "Consultorio Paupediente",
   direccion: "Tijuana, Baja California",
   telefono: "664 000 0000",
-  email_contacto: "doctora@paupediente.mx",
+  email_contacto: "doctora@Paupediente.mx",
   cedula_profesional: "12345678",
 };
 
@@ -45,6 +45,20 @@ const antecedentCategories = [
 
 const getVisibleAntecedentCategories = (sexo) =>
   antecedentCategories.filter((category) => category !== "Gineco-obstetricos" || sexo === "Femenino");
+
+const parseHabitsAntecedent = (descripcion) => {
+  try {
+    const parsed = JSON.parse(String(descripcion || "{}"));
+    const parts = [
+      `Tabaco: ${parsed.tabacoEstado || "Nunca"}${parsed.tabacoCantidadDiaria ? `, ${parsed.tabacoCantidadDiaria}` : ""}${parsed.tabacoAnios ? `, ${parsed.tabacoAnios} anios` : ""}`,
+      `Alcohol: ${parsed.alcoholEstado || "Nunca"}${parsed.alcoholTipo ? `, ${parsed.alcoholTipo}` : ""}${parsed.alcoholCantidad ? `, ${parsed.alcoholCantidad}` : ""}`,
+      `Otras sustancias: ${parsed.otrasSustancias || "Sin registro"}`,
+    ];
+    return parts.join("\n");
+  } catch {
+    return String(descripcion || "");
+  }
+};
 
 const formatLastVisit = (value) => {
   if (!value) return "Sin registro";
@@ -94,6 +108,24 @@ const normalizeWhatsAppPhone = (value) => {
   if (digits.length === 10) return `52${digits}`;
   if (digits.length === 12 && digits.startsWith("52")) return digits;
   return digits;
+};
+
+const buildExplorationSections = (entry) => {
+  const sections = [
+    {
+      key: "habitus_exterior",
+      label: "Habitus exterior",
+      value: entry.habitus_exterior || "",
+    },
+    { key: "exploracion_cabeza", label: "Cabeza", value: entry.exploracion_cabeza || "" },
+    { key: "exploracion_cuello", label: "Cuello", value: entry.exploracion_cuello || "" },
+    { key: "exploracion_torax", label: "Torax", value: entry.exploracion_torax || "" },
+    { key: "exploracion_abdomen", label: "Abdomen", value: entry.exploracion_abdomen || "" },
+    { key: "exploracion_extremidades", label: "Extremidades", value: entry.exploracion_extremidades || "" },
+    { key: "exploracion_genitales", label: "Genitales", value: entry.exploracion_genitales || "" },
+  ];
+
+  return sections.filter((section) => String(section.value || "").trim());
 };
 
 function DeletePatientModal({ open, patient, onClose, onConfirm }) {
@@ -169,11 +201,13 @@ export default function ClinicalRecordView({
   const [antecedentesError, setAntecedentesError] = useState("");
   const [antecedenteForm, setAntecedenteForm] = useState({ tipo: "Heredofamiliares", descripcion: "" });
   const [isSavingAntecedente, setIsSavingAntecedente] = useState(false);
+  const [habitsText, setHabitsText] = useState("");
   const [editingAntecedenteId, setEditingAntecedenteId] = useState(null);
   const [editingAntecedenteForm, setEditingAntecedenteForm] = useState({
     tipo: "Heredofamiliares",
     descripcion: "",
   });
+  const [isAntecedentsCollapsed, setIsAntecedentsCollapsed] = useState(false);
   const [historyFilters, setHistoryFilters] = useState({ from: "", to: "", diagnosis: "", type: "Todos" });
   const [expandedConsultationId, setExpandedConsultationId] = useState(null);
   const [studyDrafts, setStudyDrafts] = useState({});
@@ -194,6 +228,11 @@ export default function ClinicalRecordView({
       visibleCategories.includes(prev.tipo) ? prev : { ...prev, tipo: visibleCategories[0] || "Heredofamiliares" }
     );
   }, [patient?.sexo]);
+
+  useEffect(() => {
+    const habitsAntecedente = antecedentes.find((item) => item.tipo === "Habitos");
+    setHabitsText(habitsAntecedente ? parseHabitsAntecedent(habitsAntecedente.descripcion) : "");
+  }, [antecedentes]);
 
   useEffect(() => {
     const loadAntecedentes = async () => {
@@ -251,6 +290,7 @@ export default function ClinicalRecordView({
 
   const resolvedAge = patient.edad ?? calculateAge(patient.fecha_nacimiento);
   const visibleAntecedentCategories = getVisibleAntecedentCategories(patient.sexo);
+  const habitsAntecedente = antecedentes.find((item) => item.tipo === "Habitos") || null;
   const antecedentesByCategory = visibleAntecedentCategories.reduce((acc, category) => {
     acc[category] = antecedentes.filter((item) => item.tipo === category);
     return acc;
@@ -364,6 +404,45 @@ export default function ClinicalRecordView({
     }
   };
 
+  const saveHabitsAntecedente = async () => {
+    try {
+      setIsSavingAntecedente(true);
+      setAntecedentesError("");
+
+        const payload = {
+          tipo: "Habitos",
+          descripcion: habitsText.trim(),
+        };
+
+      const response = await apiFetch(
+        habitsAntecedente ? `/api/antecedentes/${habitsAntecedente.id}` : `/api/pacientes/${patient.id}/antecedentes`,
+        {
+          method: habitsAntecedente ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `${habitsAntecedente ? "No se pudo actualizar" : "No se pudo guardar"} habitos (${response.status})`
+        );
+      }
+
+      const saved = await response.json();
+      setAntecedentes((prev) => {
+        if (habitsAntecedente) {
+          return prev.map((item) => (item.id === saved.id ? saved : item));
+        }
+        return [saved, ...prev];
+      });
+    } catch (saveError) {
+      setAntecedentesError(saveError.message || "No se pudieron guardar los habitos");
+    } finally {
+      setIsSavingAntecedente(false);
+    }
+  };
+
   const exportPdf = async () => {
     try {
       setIsExportingPdf(true);
@@ -394,6 +473,11 @@ export default function ClinicalRecordView({
     studyDrafts[study.id] || {
       estado: study.estado || "Solicitado",
       resultado: study.resultado || "",
+      interpretacion: study.interpretacion || "",
+      fecha_estudio: study.fecha_estudio
+        ? new Date(study.fecha_estudio).toISOString().slice(0, 16)
+        : "",
+      problema_clinico: study.problema_clinico || "",
     };
 
   const updateStudyDraft = (studyId, changes) => {
@@ -421,6 +505,9 @@ export default function ClinicalRecordView({
         body: JSON.stringify({
           estado: draft.estado,
           resultado: draft.resultado || "",
+          interpretacion: draft.interpretacion || "",
+          fecha_estudio: draft.fecha_estudio || "",
+          problema_clinico: draft.problema_clinico || "",
         }),
       });
 
@@ -450,6 +537,7 @@ export default function ClinicalRecordView({
           <tr>
             <td>${item.medicamento || ""}</td>
             <td>${item.dosis || "Sin dosis"}</td>
+            <td>${item.via_administracion || "Sin via especificada"}</td>
             <td>${
               item.frecuencia_cantidad
                 ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}`
@@ -517,8 +605,8 @@ export default function ClinicalRecordView({
           <div class="section">
             <div class="section-title">Medicamentos</div>
             <table>
-              <thead><tr><th>Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Duracion</th></tr></thead>
-              <tbody>${medications || '<tr><td colspan="4">Sin medicamentos registrados</td></tr>'}</tbody>
+              <thead><tr><th>Medicamento</th><th>Dosis</th><th>Via</th><th>Frecuencia</th><th>Duracion</th></tr></thead>
+              <tbody>${medications || '<tr><td colspan="5">Sin medicamentos registrados</td></tr>'}</tbody>
             </table>
           </div>
           <div class="signature"><div class="signature-line">Firma del medico</div></div>
@@ -744,10 +832,21 @@ export default function ClinicalRecordView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-              <h4 className="font-black text-slate-800 text-lg flex items-center mb-5">
-                <ShieldAlert size={20} className="mr-2 text-teal-600" /> Antecedentes medicos
-              </h4>
+              <button
+                type="button"
+                onClick={() => setIsAntecedentsCollapsed((prev) => !prev)}
+                className="w-full flex items-center justify-between gap-3 text-left mb-5"
+              >
+                <h4 className="font-black text-slate-800 text-lg flex items-center">
+                  <ShieldAlert size={20} className="mr-2 text-teal-600" /> Antecedentes medicos
+                </h4>
+                <div className="p-2 rounded-2xl bg-slate-50 text-teal-700">
+                  {isAntecedentsCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                </div>
+              </button>
 
+              {!isAntecedentsCollapsed ? (
+              <>
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-4 space-y-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-500">Tipo</label>
@@ -795,115 +894,157 @@ export default function ClinicalRecordView({
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-500">
                     Cargando antecedentes...
                   </div>
-                ) : antecedentes.length === 0 ? (
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-500">
-                    Aun no hay antecedentes registrados.
-                  </div>
-                ) : (
-                  visibleAntecedentCategories.map((category) => (
-                    <div key={category} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                      <p className="text-xs font-black uppercase text-teal-600">{category}</p>
-                      <div className="mt-3 space-y-3">
-                        {antecedentesByCategory[category]?.length ? (
-                          antecedentesByCategory[category].map((antecedente) => (
-                            <div
-                              key={antecedente.id}
-                              className="rounded-2xl bg-white border border-slate-100 p-4"
-                            >
-                              {editingAntecedenteId === antecedente.id ? (
-                                <div className="space-y-3">
-                                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                    <div className="md:col-span-4">
-                                      <select
-                                        value={editingAntecedenteForm.tipo}
-                                        onChange={(e) =>
-                                          setEditingAntecedenteForm((prev) => ({
-                                            ...prev,
-                                            tipo: e.target.value,
-                                          }))
-                                        }
-                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-                                      >
-                                        {visibleAntecedentCategories.map((option) => (
-                                          <option key={option} value={option}>
-                                            {option}
-                                          </option>
-                                        ))}
-                                      </select>
+                  ) : (
+                    <>
+                      {antecedentes.filter((item) => item.tipo !== "Habitos").length === 0 && !habitsAntecedente ? (
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-500">
+                          Aun no hay antecedentes registrados. Puedes empezar capturando antecedentes clinicos o habitos.
+                        </div>
+                      ) : null}
+                      {visibleAntecedentCategories.map((category) => (
+                        <div key={category} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                          <p className="text-xs font-black uppercase text-teal-600">{category}</p>
+                          <div className="mt-3 space-y-3">
+                            {antecedentesByCategory[category]?.length ? (
+                              antecedentesByCategory[category].map((antecedente) => (
+                                <div
+                                  key={antecedente.id}
+                                  className="rounded-2xl bg-white border border-slate-100 p-4"
+                                >
+                                  {editingAntecedenteId === antecedente.id ? (
+                                    <div className="space-y-3">
+                                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                        <div className="md:col-span-4">
+                                          <select
+                                            value={editingAntecedenteForm.tipo}
+                                            onChange={(e) =>
+                                              setEditingAntecedenteForm((prev) => ({
+                                                ...prev,
+                                                tipo: e.target.value,
+                                              }))
+                                            }
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                                          >
+                                            {visibleAntecedentCategories.map((option) => (
+                                              <option key={option} value={option}>
+                                                {option}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                        <div className="md:col-span-8">
+                                          <input
+                                            value={editingAntecedenteForm.descripcion}
+                                            onChange={(e) =>
+                                              setEditingAntecedenteForm((prev) => ({
+                                                ...prev,
+                                                descripcion: e.target.value,
+                                              }))
+                                            }
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingAntecedenteId(null)}
+                                          className="px-4 py-2 rounded-2xl bg-slate-100 text-slate-600 font-black text-sm hover:bg-slate-200 transition-colors"
+                                        >
+                                          Cancelar
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={saveAntecedenteChanges}
+                                          disabled={isSavingAntecedente}
+                                          className="px-4 py-2 rounded-2xl bg-teal-600 text-white font-black text-sm hover:bg-teal-700 transition-colors disabled:opacity-60"
+                                        >
+                                          {isSavingAntecedente ? "Guardando..." : "Guardar"}
+                                        </button>
+                                      </div>
                                     </div>
-                                    <div className="md:col-span-8">
-                                      <input
-                                        value={editingAntecedenteForm.descripcion}
-                                        onChange={(e) =>
-                                          setEditingAntecedenteForm((prev) => ({
-                                            ...prev,
-                                            descripcion: e.target.value,
-                                          }))
-                                        }
-                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-                                      />
+                                  ) : (
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div>
+                                        <p className="text-sm font-bold text-slate-700">{antecedente.descripcion}</p>
+                                        {antecedente.updated_at && antecedente.updated_at !== antecedente.created_at ? (
+                                          <p className="text-[11px] font-black text-amber-600 mt-2">
+                                            Editado el {formatDateTime(antecedente.updated_at)}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => startEditingAntecedente(antecedente)}
+                                          className="p-2 rounded-xl text-slate-400 hover:text-teal-600 hover:bg-slate-50 transition-all"
+                                          title="Editar antecedente"
+                                        >
+                                          <Pencil size={16} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => deleteAntecedente(antecedente.id)}
+                                          className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-slate-50 transition-all"
+                                          title="Eliminar antecedente"
+                                        >
+                                          <Trash2 size={16} />
+                                        </button>
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingAntecedenteId(null)}
-                                      className="px-4 py-2 rounded-2xl bg-slate-100 text-slate-600 font-black text-sm hover:bg-slate-200 transition-colors"
-                                    >
-                                      Cancelar
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={saveAntecedenteChanges}
-                                      disabled={isSavingAntecedente}
-                                      className="px-4 py-2 rounded-2xl bg-teal-600 text-white font-black text-sm hover:bg-teal-700 transition-colors disabled:opacity-60"
-                                    >
-                                      {isSavingAntecedente ? "Guardando..." : "Guardar"}
-                                    </button>
-                                  </div>
+                                  )}
                                 </div>
-                              ) : (
-                                <div className="flex items-start justify-between gap-4">
-                                  <div>
-                                    <p className="text-sm font-bold text-slate-700">{antecedente.descripcion}</p>
-                                    {antecedente.updated_at && antecedente.updated_at !== antecedente.created_at ? (
-                                      <p className="text-[11px] font-black text-amber-600 mt-2">
-                                        Editado el {formatDateTime(antecedente.updated_at)}
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => startEditingAntecedente(antecedente)}
-                                      className="p-2 rounded-xl text-slate-400 hover:text-teal-600 hover:bg-slate-50 transition-all"
-                                      title="Editar antecedente"
-                                    >
-                                      <Pencil size={16} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => deleteAntecedente(antecedente.id)}
-                                      className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-slate-50 transition-all"
-                                      title="Eliminar antecedente"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 text-sm font-bold text-slate-400">
-                            Sin registro en esta categoria.
+                              ))
+                            ) : (
+                              <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 text-sm font-bold text-slate-400">
+                                Sin registro en esta categoria.
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                      ))}
+
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div>
+                          <p className="text-xs font-black uppercase text-teal-600">Habitos</p>
+                          <p className="text-xs font-bold text-slate-500 mt-1">
+                            Texto libre para tabaco, alcohol y otras sustancias.
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={saveHabitsAntecedente}
+                            disabled={isSavingAntecedente}
+                            className="px-4 py-2 rounded-2xl bg-teal-600 text-white font-black text-sm hover:bg-teal-700 disabled:opacity-60"
+                          >
+                            {isSavingAntecedente ? "Guardando..." : habitsAntecedente ? "Actualizar" : "Guardar"}
+                          </button>
+                        </div>
+
+                        <div className="mt-4 space-y-1.5">
+                          <label className="text-[10px] font-black uppercase text-slate-500">Descripcion</label>
+                          <textarea
+                            value={habitsText}
+                            onChange={(e) => setHabitsText(e.target.value)}
+                            className="w-full p-3 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700 min-h-28 resize-none"
+                            placeholder="Ej: Tabaco: niega. Alcohol: ocasional, 2 cervezas por fin de semana. Otras sustancias: niega."
+                          />
+                        </div>
+
+                        <div className="mt-4 rounded-2xl bg-white border border-slate-100 p-4">
+                          <p className="text-[10px] font-black uppercase text-slate-400">Vista previa</p>
+                          <p className="text-sm font-bold text-slate-700 mt-2 whitespace-pre-wrap">
+                            {habitsText || "Sin registro"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    </>
+                  )}
+                </div>
+                </>
+              ) : null}
             </div>
 
             <div className="space-y-4">
@@ -950,6 +1091,10 @@ export default function ClinicalRecordView({
                 filteredConsultationHistory.map((entry) => {
                   const isExpanded = expandedConsultationId === entry.id;
                   const diagnosisText = entry.cie10_codigo ? `${entry.cie10_codigo} - ${entry.cie10_descripcion || entry.diagnostico}` : entry.diagnostico || "Sin diagnostico";
+                  const explorationSections = buildExplorationSections(entry);
+                  const snapshotName = entry.paciente_nombre_snapshot || patient.nombre || "Sin nombre";
+                  const snapshotAge = entry.paciente_edad_snapshot ?? patient.edad ?? calculateAge(patient.fecha_nacimiento) ?? "Sin edad";
+                  const snapshotSex = entry.paciente_sexo_snapshot || patient.sexo || "Sin sexo";
                   return (
                     <div key={entry.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:border-teal-200 transition-all">
                       <button type="button" onClick={() => setExpandedConsultationId((prev) => (prev === entry.id ? null : entry.id))} className="w-full text-left">
@@ -964,7 +1109,7 @@ export default function ClinicalRecordView({
                             {entry.updated_at && entry.created_at && entry.updated_at !== entry.created_at ? <p className="text-[11px] font-black text-amber-600">Editado el {formatDateTime(entry.updated_at)}</p> : null}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="hidden md:inline-flex px-3 py-2 rounded-2xl bg-slate-50 text-slate-500 text-xs font-black">TA: {entry.signos?.ta || "N/A"}</span>
+                            <span className="hidden md:inline-flex px-3 py-2 rounded-2xl bg-slate-50 text-slate-500 text-xs font-black">Tension arterial (TA): {entry.signos?.ta || "N/A"}</span>
                             <span className="hidden md:inline-flex px-3 py-2 rounded-2xl bg-slate-50 text-slate-500 text-xs font-black">Peso: {entry.signos?.peso || "N/A"}</span>
                             <div className="p-2 rounded-2xl bg-slate-50 text-teal-700">{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
                           </div>
@@ -981,13 +1126,39 @@ export default function ClinicalRecordView({
                           </div>
 
                           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                            <ConsultationSection title="Signos vitales"><div className="space-y-2 text-sm font-bold text-slate-700"><p>TA: {entry.signos?.ta || "N/A"}</p><p>Peso: {entry.signos?.peso || "N/A"}</p><p>Temperatura: {entry.signos?.temp || "N/A"}</p><p>Talla: {entry.signos?.talla || "N/A"}</p><p>Glucosa: {entry.signos?.glucosa || "N/A"}</p><p>FC: {entry.signos?.frecuenciaCardiaca || "N/A"}</p><p>FR: {entry.signos?.frecuenciaRespiratoria || "N/A"}</p></div></ConsultationSection>
-                            <ConsultationSection title="Exploracion fisica"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.descripcion_fisica || "Sin exploracion registrada"}</p></ConsultationSection>
+                            <ConsultationSection title="Contexto del paciente">
+                              <div className="space-y-2 text-sm font-bold text-slate-700">
+                                <p>Nombre: {snapshotName}</p>
+                                <p>Edad: {snapshotAge}</p>
+                                <p>Sexo: {snapshotSex}</p>
+                              </div>
+                            </ConsultationSection>
+                            <ConsultationSection title="Signos vitales"><div className="space-y-2 text-sm font-bold text-slate-700"><p>Tension arterial (TA): {entry.signos?.ta || "N/A"}</p><p>Peso: {entry.signos?.peso || "N/A"}</p><p>Temperatura (Temp): {entry.signos?.temp || "N/A"}</p><p>Talla: {entry.signos?.talla || "N/A"}</p><p>Glucosa: {entry.signos?.glucosa || "N/A"}</p><p>Frecuencia cardiaca (FC): {entry.signos?.frecuenciaCardiaca || "N/A"}</p><p>Frecuencia respiratoria (FR): {entry.signos?.frecuenciaRespiratoria || "N/A"}</p></div></ConsultationSection>
+                            <ConsultationSection title="Exploracion fisica">
+                              {entry.descripcion_fisica ? (
+                                <p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.descripcion_fisica}</p>
+                              ) : explorationSections.length ? (
+                                <div className="space-y-3">
+                                  {explorationSections.map((section) => (
+                                    <div key={section.key}>
+                                      <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{section.label}</p>
+                                      <p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{section.value}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">Sin exploracion registrada</p>
+                              )}
+                            </ConsultationSection>
                             <ConsultationSection title="Diagnostico CIE-10"><p className="text-sm text-slate-700 font-bold">{diagnosisText}</p></ConsultationSection>
                           </div>
 
                           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                             <ConsultationSection title="Padecimiento actual"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.padecimiento_actual || "Sin padecimiento actual registrado"}</p></ConsultationSection>
+                            <ConsultationSection title="Interrogatorio por aparatos y sistemas"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.interrogatorio_aparatos_sistemas || "Sin interrogatorio registrado"}</p></ConsultationSection>
+                          </div>
+
+                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                             <ConsultationSection title="Pronostico"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.pronostico || "Sin pronostico registrado"}</p></ConsultationSection>
                           </div>
 
@@ -998,7 +1169,7 @@ export default function ClinicalRecordView({
                           <ConsultationSection title="Receta">
                             {(entry.recetas ?? []).length ? entry.recetas.map((item) => (
                               <div key={item.id} className="rounded-2xl bg-white border border-slate-100 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-                                <div><p className="text-sm font-black text-slate-800">{item.medicamento} {item.dosis || ""}</p><p className="text-xs font-bold text-slate-500 mt-1">{item.frecuencia_cantidad ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}` : "Sin pauta"}</p></div>
+                                <div><p className="text-sm font-black text-slate-800">{item.medicamento} {item.dosis || ""}</p><p className="text-xs font-bold text-slate-500 mt-1">Via: {item.via_administracion || "Sin via especificada"} | {item.frecuencia_cantidad ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}` : "Sin pauta"}</p></div>
                                 <span className="text-xs font-black px-3 py-2 rounded-2xl bg-teal-50 text-teal-700">{item.duracion_cantidad ? `${item.duracion_cantidad} ${String(item.duracion_unidad || "").toLowerCase()}` : "Duracion sin definir"}</span>
                               </div>
                             )) : <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 text-sm font-bold text-slate-500">Sin medicamentos registrados.</div>}
@@ -1011,6 +1182,21 @@ export default function ClinicalRecordView({
                                   <div>
                                     <p className="text-sm font-black text-slate-800">{study.nombre}</p>
                                     <p className="text-xs font-bold text-slate-500 mt-1">{study.tipo || "Sin tipo"}</p>
+                                    {study.problema_clinico ? (
+                                      <p className="text-xs font-bold text-slate-500 mt-1">
+                                        Problema clinico: {study.problema_clinico}
+                                      </p>
+                                    ) : null}
+                                    {study.fecha_estudio ? (
+                                      <p className="text-xs font-bold text-slate-500 mt-1">
+                                        Fecha del estudio: {formatDateTime(study.fecha_estudio)}
+                                      </p>
+                                    ) : null}
+                                    {(study.medico_solicita_nombre || study.medico_solicita_cedula) ? (
+                                      <p className="text-xs font-bold text-slate-500 mt-1">
+                                        Solicita: {study.medico_solicita_nombre || "Sin medico"} | Cedula: {study.medico_solicita_cedula || "Sin registro"}
+                                      </p>
+                                    ) : null}
                                   </div>
                                   <span className={`text-xs font-black px-3 py-2 rounded-2xl ${
                                     study.estado === "Revisado por el medico"
@@ -1047,9 +1233,44 @@ export default function ClinicalRecordView({
                                   </div>
                                 </div>
 
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                                  <div className="md:col-span-6 space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase text-slate-400">Problema clinico</label>
+                                    <input
+                                      value={getStudyDraft(study).problema_clinico}
+                                      onChange={(e) => updateStudyDraft(study.id, { problema_clinico: e.target.value })}
+                                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                                      placeholder="Motivo por el que se solicito el estudio"
+                                    />
+                                  </div>
+                                  <div className="md:col-span-6 space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase text-slate-400">Fecha del estudio</label>
+                                    <input
+                                      type="datetime-local"
+                                      value={getStudyDraft(study).fecha_estudio}
+                                      onChange={(e) => updateStudyDraft(study.id, { fecha_estudio: e.target.value })}
+                                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] font-black uppercase text-slate-400">Interpretacion del medico</label>
+                                  <textarea
+                                    value={getStudyDraft(study).interpretacion}
+                                    onChange={(e) => updateStudyDraft(study.id, { interpretacion: e.target.value })}
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700 min-h-24 resize-none"
+                                    placeholder="Interpretacion clinica del estudio..."
+                                  />
+                                </div>
+
                                 <div className="flex items-center justify-between gap-3">
                                   <p className="text-xs font-bold text-slate-500">
-                                    {study.resultado ? `Ultimo resultado: ${study.resultado}` : "Sin resultado registrado"}
+                                    {study.resultado
+                                      ? `Ultimo resultado: ${study.resultado}`
+                                      : study.interpretacion
+                                      ? `Interpretacion: ${study.interpretacion}`
+                                      : "Sin resultado registrado"}
                                   </p>
                                   <button
                                     type="button"
@@ -1066,6 +1287,18 @@ export default function ClinicalRecordView({
                           </ConsultationSection>
 
                           {entry.notas ? <ConsultationSection title="Notas"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.notas}</p></ConsultationSection> : null}
+
+                          <div className="rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3">
+                            <p className="text-sm font-black text-teal-800">
+                              Firmado digitalmente por Dr. {entry.medico_nombre || "Sin medico"}, Cedula {entry.medico_cedula || "Sin registro"} el{" "}
+                              {formatDateTime(entry.firma_timestamp || entry.updated_at || entry.fecha)}
+                            </p>
+                            {entry.firma_hash ? (
+                              <p className="mt-1 break-all text-[11px] font-bold text-teal-700/80">
+                                SHA-256: {entry.firma_hash}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       ) : null}
                     </div>
@@ -1083,7 +1316,7 @@ export default function ClinicalRecordView({
                   <div key={item.id} className="p-3 bg-teal-50 rounded-2xl flex justify-between items-center">
                     <div>
                       <p className="text-sm font-bold text-slate-800">{item.medicamento} {item.dosis || ""}</p>
-                      <p className="text-xs text-slate-500">{item.frecuencia_cantidad ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}` : "Sin pauta"}</p>
+                      <p className="text-xs text-slate-500">Via: {item.via_administracion || "Sin via especificada"} | {item.frecuencia_cantidad ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}` : "Sin pauta"}</p>
                     </div>
                     <div className="w-2 h-2 bg-green-500 rounded-full" />
                   </div>

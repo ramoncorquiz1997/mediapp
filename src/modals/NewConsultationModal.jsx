@@ -29,18 +29,50 @@ export default function NewConsultationModal({
   mode = "create",
   isSaving,
 }) {
+  const administrationRoutes = [
+    "Oral",
+    "Sublingual",
+    "Topica",
+    "Intramuscular",
+    "Intravenosa",
+    "Subcutanea",
+    "Inhalatoria",
+    "Oftalmica",
+    "Otica",
+    "Nasal",
+    "Rectal",
+    "Vaginal",
+  ];
   const imcInfo = useImcInfo(consultation.peso, consultation.talla);
   const [cie10Options, setCie10Options] = React.useState([]);
   const [cie10Loading, setCie10Loading] = React.useState(false);
   const [cie10Open, setCie10Open] = React.useState(false);
+  const [skipNextCie10Lookup, setSkipNextCie10Lookup] = React.useState(false);
   const [consentOpen, setConsentOpen] = React.useState(false);
-  const [consentAccepted, setConsentAccepted] = React.useState(false);
-  const [medicalActDescription, setMedicalActDescription] = React.useState("");
+  const [consentForm, setConsentForm] = React.useState({
+    lugarEmision: "",
+    actoMedico: "",
+    riesgosGenerales:
+      "Molestias temporales, persistencia o progresion de sintomas, necesidad de estudios complementarios, ajustes terapeuticos, reacciones no esperadas al tratamiento y necesidad de revaloracion medica.",
+    beneficiosEsperados: "",
+    autorizacionContingencias: false,
+    pacienteNombre: "",
+    pacienteFirma: "",
+    testigoUnoNombre: "",
+    testigoUnoFirma: "",
+    testigoDosNombre: "",
+    testigoDosFirma: "",
+    medicoNombre: "",
+    medicoCedula: "",
+    medicoFirma: "",
+    aceptado: false,
+  });
 
   const [medForm, setMedForm] = React.useState({
     nombre: "",
     presentacion: "Tableta",
     dosis: "",
+    viaAdministracion: "Oral",
     cadaCantidad: "",
     cadaUnidad: "Horas",
     duranteCantidad: "",
@@ -49,6 +81,11 @@ export default function NewConsultationModal({
   const [studyForm, setStudyForm] = React.useState({
     nombre: "",
     tipo: "Laboratorio",
+    problemaClinico: "",
+    fechaEstudio: "",
+    interpretacion: "",
+    medicoSolicitaNombre: "",
+    medicoSolicitaCedula: "",
   });
 
   React.useEffect(() => {
@@ -57,6 +94,7 @@ export default function NewConsultationModal({
         nombre: "",
         presentacion: "Tableta",
         dosis: "",
+        viaAdministracion: "Oral",
         cadaCantidad: "",
         cadaUnidad: "Horas",
         duranteCantidad: "",
@@ -65,25 +103,70 @@ export default function NewConsultationModal({
       setStudyForm({
         nombre: "",
         tipo: "Laboratorio",
+        problemaClinico: "",
+        fechaEstudio: "",
+        interpretacion: "",
+        medicoSolicitaNombre: "",
+        medicoSolicitaCedula: "",
       });
       setCie10Options([]);
       setCie10Open(false);
+      setSkipNextCie10Lookup(false);
       setConsentOpen(false);
-      setConsentAccepted(false);
-      setMedicalActDescription("");
+      setConsentForm({
+        lugarEmision: "",
+        actoMedico: "",
+        riesgosGenerales:
+          "Molestias temporales, persistencia o progresion de sintomas, necesidad de estudios complementarios, ajustes terapeuticos, reacciones no esperadas al tratamiento y necesidad de revaloracion medica.",
+        beneficiosEsperados: "",
+        autorizacionContingencias: false,
+        pacienteNombre: "",
+        pacienteFirma: "",
+        testigoUnoNombre: "",
+        testigoUnoFirma: "",
+        testigoDosNombre: "",
+        testigoDosFirma: "",
+        medicoNombre: "",
+        medicoCedula: "",
+        medicoFirma: "",
+        aceptado: false,
+      });
     }
   }, [open]);
 
   React.useEffect(() => {
     if (!open) return;
-    setMedicalActDescription((prev) =>
-      prev ||
-      `Consulta medica general con valoracion clinica, integracion diagnostica y definicion de plan terapeutico para ${patient?.nombre || "la paciente"}.`
-    );
-  }, [open, patient?.nombre]);
+    setConsentForm((prev) => ({
+      ...prev,
+      lugarEmision: prev.lugarEmision || clinicConfig?.direccion || "Tijuana, Baja California",
+      actoMedico:
+        prev.actoMedico ||
+        `Consulta medica general con valoracion clinica, integracion diagnostica y definicion de plan terapeutico para ${patient?.nombre || "la paciente"}.`,
+      pacienteNombre: prev.pacienteNombre || patient?.nombre || "",
+      medicoNombre: prev.medicoNombre || currentUser?.nombre || "",
+      medicoCedula:
+        prev.medicoCedula || currentUser?.cedula_profesional || clinicConfig?.cedula_profesional || "",
+      medicoFirma: prev.medicoFirma || currentUser?.nombre || "",
+    }));
+  }, [clinicConfig?.cedula_profesional, clinicConfig?.direccion, currentUser?.cedula_profesional, currentUser?.nombre, open, patient?.nombre]);
 
   React.useEffect(() => {
     if (!open) return undefined;
+
+    if (
+      consultation.cie10Codigo &&
+      String(consultation.cie10Descripcion || consultation.diagnostico || "").trim() ===
+        String(consultation.diagnostico || "").trim()
+    ) {
+      setCie10Options([]);
+      setCie10Open(false);
+      return undefined;
+    }
+
+    if (skipNextCie10Lookup) {
+      setSkipNextCie10Lookup(false);
+      return undefined;
+    }
 
     const query = String(consultation.diagnostico || "").trim();
     if (query.length < 2) {
@@ -111,12 +194,15 @@ export default function NewConsultationModal({
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [consultation.diagnostico, open]);
+  }, [consultation.diagnostico, open, skipNextCie10Lookup]);
 
   if (!open) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === "diagnostico") {
+      setSkipNextCie10Lookup(false);
+    }
     setConsultation((prev) => ({
       ...prev,
       [name]: value,
@@ -130,6 +216,7 @@ export default function NewConsultationModal({
   };
 
   const selectCie10 = (item) => {
+    setSkipNextCie10Lookup(true);
     setConsultation((prev) => ({
       ...prev,
       diagnostico: item.descripcion,
@@ -140,31 +227,146 @@ export default function NewConsultationModal({
     setCie10Open(false);
   };
 
-  const buildClinicalConsentText = () => {
+  const updateConsentForm = (event) => {
+    const { name, value, type, checked } = event.target;
+    setConsentForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const buildClinicalConsentPayload = () => {
     const consultationDate = new Date().toLocaleString("es-MX", {
       dateStyle: "long",
       timeStyle: "short",
     });
 
-    return [
-      `Paciente: ${patient?.nombre || "Sin paciente"}`,
+    const text = [
+      `${clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}`,
+      `Lugar de emision: ${consentForm.lugarEmision.trim()}`,
       `Fecha y hora: ${consultationDate}`,
-      `Consultorio: ${clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}`,
-      `Acto medico: ${medicalActDescription.trim()}`,
-      "Riesgos generales: molestias temporales, duda diagnostica inicial, necesidad de estudios complementarios, cambios de tratamiento y revaloracion medica conforme evolucion clinica.",
-      `Medico tratante: ${currentUser?.nombre || "Sin medico"} - Cedula ${currentUser?.cedula_profesional || clinicConfig?.cedula_profesional || "Sin registro"}`,
-      "La paciente manifiesta haber recibido informacion suficiente y acepta la atencion clinica registrada en esta consulta.",
+      `Paciente: ${consentForm.pacienteNombre.trim()}`,
+      "Titulo del documento: Consentimiento informado clinico",
+      `Acto autorizado: ${consentForm.actoMedico.trim()}`,
+      `Riesgos generales: ${consentForm.riesgosGenerales.trim()}`,
+      `Beneficios esperados: ${consentForm.beneficiosEsperados.trim()}`,
+      `Autorizacion para contingencias: ${consentForm.autorizacionContingencias ? "Si" : "No"}`,
+      `Paciente firma de conformidad: ${consentForm.pacienteFirma.trim()}`,
+      `Medico que recaba: ${consentForm.medicoNombre.trim()} / Cedula: ${consentForm.medicoCedula.trim()} / Firma: ${consentForm.medicoFirma.trim()}`,
     ].join("\n");
+
+    return {
+      texto: text,
+      lugar_emision: consentForm.lugarEmision.trim(),
+      acto_medico: consentForm.actoMedico.trim(),
+      riesgos_generales: consentForm.riesgosGenerales.trim(),
+      beneficios_esperados: consentForm.beneficiosEsperados.trim(),
+      autorizacion_contingencias: consentForm.autorizacionContingencias,
+      paciente_nombre: consentForm.pacienteNombre.trim(),
+      paciente_firma: consentForm.pacienteFirma.trim(),
+      testigo_uno_nombre: "",
+      testigo_uno_firma: "",
+      testigo_dos_nombre: "",
+      testigo_dos_firma: "",
+      medico_nombre: consentForm.medicoNombre.trim(),
+      medico_cedula: consentForm.medicoCedula.trim(),
+      medico_firma: consentForm.medicoFirma.trim(),
+      fecha: new Date().toISOString(),
+      aceptado: true,
+    };
+  };
+
+  const openPrintableConsent = () => {
+    const payload = buildClinicalConsentPayload();
+    const win = window.open("", "_blank", "noopener,noreferrer,width=900,height=1100");
+    if (!win) return;
+
+    const escapeHtml = (value) =>
+      String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+
+    const consultationDateText = new Date(payload.fecha).toLocaleString("es-MX", {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
+
+    win.document.write(`<!doctype html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Consentimiento informado clinico</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #0f172a; margin: 0; background: #f8fafc; }
+            .page { max-width: 860px; margin: 0 auto; background: #fff; padding: 40px; }
+            h1 { margin: 0 0 8px; font-size: 26px; }
+            h2 { margin: 24px 0 8px; font-size: 14px; text-transform: uppercase; color: #0f766e; letter-spacing: .08em; }
+            p, li { font-size: 14px; line-height: 1.6; }
+            .card { border: 1px solid #dbe4ea; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+            .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+            .line { margin-top: 42px; padding-top: 8px; border-top: 1px solid #64748b; font-size: 13px; }
+            .muted { color: #475569; }
+            @media print {
+              body { background: #fff; }
+              .page { padding: 20px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+            <h1>${escapeHtml(clinicConfig?.nombre_consultorio || "Consultorio Paupediente")}</h1>
+            <p class="muted">${escapeHtml(clinicConfig?.direccion || "Tijuana, Baja California")} | Tel. ${escapeHtml(
+              clinicConfig?.telefono || "Sin telefono"
+            )}</p>
+            <p class="muted">Cedula profesional: ${escapeHtml(payload.medico_cedula || "Sin registro")}</p>
+
+            <div class="card">
+              <h2>Consentimiento informado clinico</h2>
+              <div class="grid">
+                <p><strong>Lugar de emision:</strong><br />${escapeHtml(payload.lugar_emision)}</p>
+                <p><strong>Fecha y hora:</strong><br />${escapeHtml(consultationDateText)}</p>
+                <p><strong>Paciente:</strong><br />${escapeHtml(payload.paciente_nombre)}</p>
+                <p><strong>Medico:</strong><br />${escapeHtml(payload.medico_nombre)}</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <h2>Acto autorizado</h2>
+              <p>${escapeHtml(payload.acto_medico)}</p>
+            </div>
+
+            <div class="card">
+              <h2>Riesgos y beneficios</h2>
+              <p><strong>Riesgos generales:</strong> ${escapeHtml(payload.riesgos_generales)}</p>
+              <p><strong>Beneficios esperados:</strong> ${escapeHtml(payload.beneficios_esperados)}</p>
+              <p><strong>Autorizacion para contingencias:</strong> ${
+                payload.autorizacion_contingencias ? "Si, autorizada." : "No autorizada."
+              }</p>
+            </div>
+
+            <div class="card">
+              <p>
+                El paciente declara haber recibido explicacion suficiente sobre el acto autorizado, sus riesgos y beneficios,
+                y firma de conformidad para atencion medica.
+              </p>
+              <div class="grid">
+                <div class="line">${escapeHtml(payload.paciente_firma)}<br />Firma del paciente</div>
+                <div class="line">${escapeHtml(payload.medico_firma)}<br />Firma del medico que recaba</div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>`);
+    win.document.close();
+    win.focus();
+    win.print();
   };
 
   const confirmClinicalConsent = async () => {
-    await onSave({
-      texto: buildClinicalConsentText(),
-      fecha: new Date().toISOString(),
-      aceptado: true,
-    });
+    await onSave(buildClinicalConsentPayload());
     setConsentOpen(false);
-    setConsentAccepted(false);
   };
 
   const consultationDateLabel = new Date().toLocaleString("es-MX", {
@@ -186,6 +388,7 @@ export default function NewConsultationModal({
       nombre: medForm.nombre.trim(),
       presentacion: medForm.presentacion,
       dosis: medForm.dosis.trim(),
+      viaAdministracion: medForm.viaAdministracion,
       cadaCantidad: medForm.cadaCantidad,
       cadaUnidad: medForm.cadaUnidad,
       duranteCantidad: medForm.duranteCantidad,
@@ -201,6 +404,7 @@ export default function NewConsultationModal({
       nombre: "",
       presentacion: "Tableta",
       dosis: "",
+      viaAdministracion: "Oral",
       cadaCantidad: "",
       cadaUnidad: "Horas",
       duranteCantidad: "",
@@ -228,6 +432,16 @@ export default function NewConsultationModal({
       nombre: studyForm.nombre.trim(),
       tipo: studyForm.tipo,
       estado: "Solicitado",
+      problemaClinico: studyForm.problemaClinico.trim(),
+      fechaEstudio: studyForm.fechaEstudio || "",
+      interpretacion: studyForm.interpretacion.trim(),
+      medicoSolicitaNombre:
+        studyForm.medicoSolicitaNombre.trim() || currentUser?.nombre || "",
+      medicoSolicitaCedula:
+        studyForm.medicoSolicitaCedula.trim() ||
+        currentUser?.cedula_profesional ||
+        clinicConfig?.cedula_profesional ||
+        "",
     };
 
     setConsultation((prev) => ({
@@ -238,6 +452,11 @@ export default function NewConsultationModal({
     setStudyForm({
       nombre: "",
       tipo: "Laboratorio",
+      problemaClinico: "",
+      fechaEstudio: "",
+      interpretacion: "",
+      medicoSolicitaNombre: "",
+      medicoSolicitaCedula: "",
     });
   };
 
@@ -324,7 +543,7 @@ export default function NewConsultationModal({
 
                   <div className="bg-white/5 rounded-2xl p-4 border border-emerald-600/30 flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-black text-emerald-300/80 uppercase mb-1">IMC / Estado</p>
+                      <p className="text-[10px] font-black text-emerald-300/80 uppercase mb-1">Indice de masa corporal (IMC) / Estado</p>
                       <p className={`text-lg font-black ${imcInfo.color}`}>{imcInfo.categoria}</p>
                     </div>
                     <div className="text-right">
@@ -359,7 +578,7 @@ export default function NewConsultationModal({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-emerald-300/80 uppercase flex items-center">
-                        <Heart size={10} className="mr-1" /> FC (lpm)
+                        <Heart size={10} className="mr-1" /> Frecuencia cardiaca (FC) (lpm)
                       </label>
                       <input
                         name="frecuenciaCardiaca"
@@ -371,7 +590,7 @@ export default function NewConsultationModal({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-emerald-300/80 uppercase flex items-center">
-                        <Wind size={10} className="mr-1" /> FR (rpm)
+                        <Wind size={10} className="mr-1" /> Frecuencia respiratoria (FR) (rpm)
                       </label>
                       <input
                         name="frecuenciaRespiratoria"
@@ -385,7 +604,7 @@ export default function NewConsultationModal({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-emerald-300/80 uppercase">Temp (C)</label>
+                      <label className="text-[10px] font-black text-emerald-300/80 uppercase">Temperatura (Temp) (C)</label>
                       <input
                         name="temperatura"
                         value={consultation.temperatura}
@@ -415,11 +634,14 @@ export default function NewConsultationModal({
                 </label>
                 <textarea
                   name="descripcionFisica"
-                  value={consultation.descripcionFisica}
+                  value={consultation.descripcionFisica ?? consultation.habitusExterior ?? ""}
                   onChange={handleChange}
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl h-40 resize-none outline-none focus:ring-2 focus:ring-teal-500 transition-all text-sm leading-relaxed"
-                  placeholder="Describa hallazgos fisicos relevantes..."
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl min-h-40 resize-none outline-none focus:ring-2 focus:ring-teal-500 transition-all text-sm leading-relaxed"
+                  placeholder="Habitus exterior: ... | Cabeza: ... | Cuello: ... | Torax: ... | Abdomen: ... | Extremidades: ... | Genitales: ..."
                 />
+                <p className="text-xs font-bold text-slate-500">
+                  Usa lenguaje clinico libre. El placeholder solo sirve como guia para recordar los segmentos recomendados por la norma.
+                </p>
               </div>
             </div>
 
@@ -451,6 +673,23 @@ export default function NewConsultationModal({
                   rows={2}
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 transition-all leading-relaxed resize-none overflow-hidden"
                   placeholder="Describa el curso de la enfermedad actual, sintomas, cronologia..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 flex items-center uppercase tracking-tighter">
+                  <ClipboardList size={16} className="mr-2 text-teal-600" /> Interrogatorio por aparatos y sistemas
+                </label>
+                <textarea
+                  name="interrogatorioAparatosSistemas"
+                  value={consultation.interrogatorioAparatosSistemas ?? ""}
+                  onChange={(e) => {
+                    handleChange(e);
+                    autoResize(e);
+                  }}
+                  rows={2}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 transition-all leading-relaxed resize-none overflow-hidden"
+                  placeholder="Cardiovascular, respiratorio, digestivo, genitourinario, musculoesqueletico, neurologico, endocrino, dermatologico..."
                 />
               </div>
 
@@ -611,6 +850,20 @@ export default function NewConsultationModal({
                     />
                   </div>
 
+                  <div className="md:col-span-3 space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Via de administracion</label>
+                    <select
+                      name="viaAdministracion"
+                      value={medForm.viaAdministracion}
+                      onChange={updateMedForm}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                    >
+                      {administrationRoutes.map((route) => (
+                        <option key={route}>{route}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="md:col-span-6 grid grid-cols-12 gap-3">
                     <div className="col-span-5 space-y-1.5">
                       <label className="text-[10px] font-black text-slate-500 uppercase">Cada</label>
@@ -686,6 +939,7 @@ export default function NewConsultationModal({
                             {m.dosis ? <span className="text-slate-400 font-bold"> | {m.dosis}</span> : null}
                           </p>
                           <p className="text-xs text-slate-500 font-bold">
+                            Via: {m.viaAdministracion || "Sin via"} |{" "}
                             {m.cadaCantidad ? `Cada ${m.cadaCantidad} ${m.cadaUnidad.toLowerCase()}` : "Cada --"} |{" "}
                             {m.duranteCantidad
                               ? `Durante ${m.duranteCantidad} ${m.duranteUnidad.toLowerCase()}`
@@ -755,6 +1009,61 @@ export default function NewConsultationModal({
                       <option>Interconsulta</option>
                     </select>
                   </div>
+
+                  <div className="md:col-span-12 space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Problema clinico en estudio</label>
+                    <input
+                      name="problemaClinico"
+                      value={studyForm.problemaClinico}
+                      onChange={updateStudyForm}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                      placeholder="Ej: Dolor abdominal, anemia en estudio, infeccion respiratoria, control metabolico..."
+                    />
+                  </div>
+
+                  <div className="md:col-span-4 space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Fecha del estudio</label>
+                    <input
+                      type="datetime-local"
+                      name="fechaEstudio"
+                      value={studyForm.fechaEstudio}
+                      onChange={updateStudyForm}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                    />
+                  </div>
+
+                  <div className="md:col-span-4 space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Medico solicita</label>
+                    <input
+                      name="medicoSolicitaNombre"
+                      value={studyForm.medicoSolicitaNombre}
+                      onChange={updateStudyForm}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                      placeholder={currentUser?.nombre || "Nombre del medico"}
+                    />
+                  </div>
+
+                  <div className="md:col-span-4 space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Cedula del medico</label>
+                    <input
+                      name="medicoSolicitaCedula"
+                      value={studyForm.medicoSolicitaCedula}
+                      onChange={updateStudyForm}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                      placeholder={currentUser?.cedula_profesional || clinicConfig?.cedula_profesional || "Cedula profesional"}
+                    />
+                  </div>
+
+                  <div className="md:col-span-12 space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase">Interpretacion del medico</label>
+                    <textarea
+                      name="interpretacion"
+                      value={studyForm.interpretacion}
+                      onChange={updateStudyForm}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700 min-h-24 resize-none"
+                      placeholder="Interpretacion clinica inicial o comentario del medico solicitante..."
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-6 space-y-3">
@@ -773,6 +1082,11 @@ export default function NewConsultationModal({
                           <p className="text-xs text-slate-500 font-bold">
                             {study.tipo} | {study.estado || "Solicitado"}
                           </p>
+                          {study.problemaClinico ? (
+                            <p className="text-xs text-slate-500 font-bold mt-1 truncate">
+                              Motivo clinico: {study.problemaClinico}
+                            </p>
+                          ) : null}
                         </div>
 
                         <button
@@ -840,7 +1154,12 @@ export default function NewConsultationModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
                   <p className="text-[10px] font-black uppercase text-slate-400">Paciente</p>
-                  <p className="text-sm font-bold text-slate-700 mt-1">{patient?.nombre || "Sin paciente"}</p>
+                  <input
+                    name="pacienteNombre"
+                    value={consentForm.pacienteNombre}
+                    onChange={updateConsentForm}
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
+                  />
                 </div>
                 <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4">
                   <p className="text-[10px] font-black uppercase text-slate-400">Fecha y hora</p>
@@ -848,61 +1167,168 @@ export default function NewConsultationModal({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500">Lugar de emision</label>
+                  <input
+                    name="lugarEmision"
+                    value={consentForm.lugarEmision}
+                    onChange={updateConsentForm}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500">Titulo del documento</label>
+                  <div className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-700">
+                    Consentimiento informado clinico
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-slate-500">Descripcion del acto medico</label>
                 <textarea
-                  value={medicalActDescription}
-                  onChange={(e) => setMedicalActDescription(e.target.value)}
+                  name="actoMedico"
+                  value={consentForm.actoMedico}
+                  onChange={updateConsentForm}
                   className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700 min-h-28 resize-none"
                 />
               </div>
 
-              <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4">
-                <p className="text-[10px] font-black uppercase text-amber-600">Riesgos generales</p>
-                <p className="text-sm font-bold text-amber-800 mt-2 leading-relaxed">
-                  Molestias temporales, persistencia o progresion de sintomas, necesidad de estudios complementarios,
-                  ajustes terapeuticos, reacciones no esperadas al tratamiento y necesidad de revaloracion medica.
-                </p>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Riesgos generales</label>
+                <textarea
+                  name="riesgosGenerales"
+                  value={consentForm.riesgosGenerales}
+                  onChange={updateConsentForm}
+                  className="w-full p-4 bg-amber-50 border border-amber-100 rounded-2xl outline-none focus:ring-2 focus:ring-amber-300 font-bold text-amber-900 min-h-24 resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-500">Beneficios esperados del acto medico</label>
+                <textarea
+                  name="beneficiosEsperados"
+                  value={consentForm.beneficiosEsperados}
+                  onChange={updateConsentForm}
+                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700 min-h-24 resize-none"
+                  placeholder="Ej: Valoracion oportuna, integracion diagnostica, definicion de tratamiento y seguimiento medico."
+                />
               </div>
 
               <div className="rounded-2xl bg-teal-50 border border-teal-100 p-4">
                 <p className="text-[10px] font-black uppercase text-teal-600">Medico responsable</p>
-                <p className="text-sm font-bold text-slate-800 mt-1">{currentUser?.nombre || "Sin medico"}</p>
-                <p className="text-xs font-bold text-slate-500 mt-1">
-                  Cedula: {currentUser?.cedula_profesional || clinicConfig?.cedula_profesional || "Sin registro"}
-                </p>
-                <p className="text-xs font-bold text-slate-500 mt-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500">Nombre completo</label>
+                    <input
+                      name="medicoNombre"
+                      value={consentForm.medicoNombre}
+                      onChange={updateConsentForm}
+                      className="w-full p-3 bg-white border border-teal-100 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</label>
+                    <input
+                      name="medicoCedula"
+                      value={consentForm.medicoCedula}
+                      onChange={updateConsentForm}
+                      className="w-full p-3 bg-white border border-teal-100 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs font-bold text-slate-500 mt-3">
                   {clinicConfig?.nombre_consultorio || "Consultorio Paupediente"}
                 </p>
               </div>
 
               <label className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer">
                 <input
+                  name="autorizacionContingencias"
                   type="checkbox"
-                  checked={consentAccepted}
-                  onChange={(e) => setConsentAccepted(e.target.checked)}
+                  checked={consentForm.autorizacionContingencias}
+                  onChange={updateConsentForm}
                   className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                 />
                 <span className="text-sm font-bold text-slate-600 leading-relaxed">
-                  Confirmo que la paciente acepta el acto medico descrito, comprende los riesgos generales y autoriza
+                  Autorizo al personal de salud para atencion de contingencias y urgencias derivadas del acto autorizado.
+                </span>
+              </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500">Firma del paciente</label>
+                  <input
+                    name="pacienteFirma"
+                    value={consentForm.pacienteFirma}
+                    onChange={updateConsentForm}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                    placeholder="El paciente firma de conformidad"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500">Firma del medico</label>
+                  <input
+                    name="medicoFirma"
+                    value={consentForm.medicoFirma}
+                    onChange={updateConsentForm}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                    placeholder="Nombre completo como firma escrita"
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 cursor-pointer">
+                <input
+                  name="aceptado"
+                  type="checkbox"
+                  checked={consentForm.aceptado}
+                  onChange={updateConsentForm}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                />
+                <span className="text-sm font-bold text-slate-600 leading-relaxed">
+                  Confirmo que el paciente recibio informacion suficiente, acepta el acto medico descrito y autorizo
                   registrar este consentimiento junto con la consulta.
                 </span>
               </label>
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setConsentOpen(false)}
-                className="px-6 py-3 rounded-2xl font-black text-slate-500 hover:text-slate-700"
-                disabled={isSaving}
-              >
-                Cancelar
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setConsentOpen(false)}
+                  className="px-6 py-3 rounded-2xl font-black text-slate-500 hover:text-slate-700"
+                  disabled={isSaving}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={openPrintableConsent}
+                  className="px-6 py-3 rounded-2xl font-black border border-slate-200 text-slate-700 hover:bg-white"
+                  disabled={isSaving}
+                >
+                  Imprimir consentimiento
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={confirmClinicalConsent}
-                disabled={isSaving || !consentAccepted || !medicalActDescription.trim()}
+                disabled={
+                  isSaving ||
+                  !consentForm.aceptado ||
+                  !consentForm.lugarEmision.trim() ||
+                  !consentForm.actoMedico.trim() ||
+                  !consentForm.beneficiosEsperados.trim() ||
+                  !consentForm.autorizacionContingencias ||
+                  !consentForm.pacienteNombre.trim() ||
+                  !consentForm.pacienteFirma.trim() ||
+                  !consentForm.medicoNombre.trim() ||
+                  !consentForm.medicoCedula.trim() ||
+                  !consentForm.medicoFirma.trim()
+                }
                 className="px-8 py-3 rounded-2xl font-black bg-teal-600 text-white shadow-xl shadow-teal-200 hover:bg-teal-700 transition-all disabled:opacity-60"
               >
                 {isSaving ? "Guardando..." : "Aceptar y guardar consulta"}

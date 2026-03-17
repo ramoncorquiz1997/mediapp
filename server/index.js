@@ -10,7 +10,7 @@ process.env.TZ = process.env.TZ || "America/Tijuana";
 const app = express();
 const host = process.env.HOST || "0.0.0.0";
 const port = process.env.PORT || 4000;
-const jwtSecret = process.env.JWT_SECRET || "paupediente-dev-secret";
+const jwtSecret = process.env.JWT_SECRET || "Paupediente-dev-secret";
 const privacyNoticeVersion = process.env.PRIVACY_NOTICE_VERSION || "2026.03-v1";
 const curpRegex =
   /^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$/;
@@ -21,12 +21,13 @@ const antecedentTypes = [
   "Alergicos",
   "Gineco-obstetricos",
   "No patologicos",
+  "Habitos",
 ];
 const defaultClinicInfo = {
   nombre_consultorio: "Consultorio Paupediente",
   direccion: "Tijuana, Baja California",
   telefono: "664 000 0000",
-  email_contacto: "doctora@paupediente.mx",
+  email_contacto: "doctora@Paupediente.mx",
   cedula_profesional: "12345678",
   especialidad: "Medicina general",
   zona_horaria: "America/Tijuana",
@@ -184,6 +185,44 @@ const verifyPassword = (password, storedHash) => {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(derived, "hex"));
 };
 
+const generateConsultationSignature = ({
+  paciente_id,
+  fecha,
+  motivo,
+  padecimiento_actual,
+  interrogatorio_aparatos_sistemas,
+  descripcion_fisica,
+  diagnostico,
+  cie10_codigo,
+  cie10_descripcion,
+  pronostico,
+  plan_tratamiento,
+  signos,
+  notas,
+  medico_id,
+  timestamp,
+}) => {
+  const payload = JSON.stringify({
+    paciente_id: paciente_id ?? null,
+    fecha: fecha ?? null,
+    motivo: motivo ?? null,
+    padecimiento_actual: padecimiento_actual ?? null,
+    interrogatorio_aparatos_sistemas: interrogatorio_aparatos_sistemas ?? null,
+    descripcion_fisica: descripcion_fisica ?? null,
+    diagnostico: diagnostico ?? null,
+    cie10_codigo: cie10_codigo ?? null,
+    cie10_descripcion: cie10_descripcion ?? null,
+    pronostico: pronostico ?? null,
+    plan_tratamiento: plan_tratamiento ?? null,
+    signos: signos ?? {},
+    notas: notas ?? null,
+    medico_id: medico_id ?? null,
+    timestamp,
+  });
+
+  return crypto.createHash("sha256").update(payload).digest("hex");
+};
+
 const writeAuditLog = async (db, user, accion, entidad, entidadId, detalle = {}) => {
   await db.query(
     `INSERT INTO audit_log (
@@ -217,6 +256,24 @@ const sanitizePdfText = (value) =>
     .replace(/[^\x20-\x7E\n]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+const buildExplorationText = (consultation) => {
+  if (consultation.descripcion_fisica) {
+    return String(consultation.descripcion_fisica).trim();
+  }
+
+  const sections = [
+    ["Habitus exterior", consultation.habitus_exterior],
+    ["Cabeza", consultation.exploracion_cabeza],
+    ["Cuello", consultation.exploracion_cuello],
+    ["Torax", consultation.exploracion_torax],
+    ["Abdomen", consultation.exploracion_abdomen],
+    ["Extremidades", consultation.exploracion_extremidades],
+    ["Genitales", consultation.exploracion_genitales],
+  ].filter(([, value]) => String(value || "").trim());
+
+  return sections.map(([label, value]) => `${label}: ${value}`).join(" | ");
+};
 
 const normalizeWorkingSchedule = (value) => {
   const source = value && typeof value === "object" ? value : {};
@@ -535,14 +592,17 @@ app.get("/api/portal/:token", asyncHandler(async (req, res) => {
        ORDER BY start DESC, id DESC`,
       [patient.id]
     ),
-    pool.query(
-      `SELECT
-         id,
-         fecha,
-         motivo,
-         diagnostico,
-         cie10_codigo,
-         cie10_descripcion,
+        pool.query(
+          `SELECT
+             id,
+             fecha,
+             motivo,
+             paciente_nombre_snapshot,
+             paciente_edad_snapshot,
+             paciente_sexo_snapshot,
+             diagnostico,
+             cie10_codigo,
+             cie10_descripcion,
          plan_tratamiento,
          signos,
          medico_nombre,
@@ -551,10 +611,11 @@ app.get("/api/portal/:token", asyncHandler(async (req, res) => {
            (
              SELECT json_agg(
                json_build_object(
-                 'id', r.id,
-                 'medicamento', r.medicamento,
-                 'dosis', r.dosis,
-                 'frecuencia_cantidad', r.frecuencia_cantidad,
+                'id', r.id,
+                'medicamento', r.medicamento,
+                'dosis', r.dosis,
+                'via_administracion', r.via_administracion,
+                'frecuencia_cantidad', r.frecuencia_cantidad,
                  'frecuencia_unidad', r.frecuencia_unidad,
                  'duracion_cantidad', r.duracion_cantidad,
                  'duracion_unidad', r.duracion_unidad,
@@ -669,6 +730,7 @@ app.get("/api/portal/:token/recetas", asyncHandler(async (req, res) => {
        r.medicamento,
        r.presentacion,
        r.dosis,
+       r.via_administracion,
        r.frecuencia_cantidad,
        r.frecuencia_unidad,
        r.duracion_cantidad,
@@ -690,6 +752,68 @@ app.get("/api/portal/:token/recetas", asyncHandler(async (req, res) => {
   res.json({
     paciente: patient,
     recetas: recipesResult.rows,
+  });
+}));
+
+app.get("/api/portal/curp/:curp", asyncHandler(async (req, res) => {
+  const normalizedCurp = String(req.params.curp || "").trim().toUpperCase();
+
+  if (!normalizedCurp) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "CURP requerida",
+    });
+  }
+
+  const result = await pool.query(
+    `SELECT id, nombre, curp, portal_token
+     FROM pacientes
+     WHERE UPPER(curp) = $1
+       AND dado_de_baja = FALSE
+     LIMIT 1`,
+    [normalizedCurp]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "No encontramos tu expediente. Consulta con tu medico para obtener acceso.",
+    });
+  }
+
+  res.json({
+    paciente: {
+      id: result.rows[0].id,
+      nombre: result.rows[0].nombre,
+      curp: result.rows[0].curp,
+      portal_token: result.rows[0].portal_token,
+    },
+  });
+}));
+
+app.post("/api/leads", asyncHandler(async (req, res) => {
+  const nombre = String(req.body?.nombre || "").trim();
+  const email = String(req.body?.email || "").trim();
+  const telefono = String(req.body?.telefono || "").trim();
+  const especialidad = String(req.body?.especialidad || "").trim();
+
+  if (!nombre || !email) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Nombre y email son obligatorios",
+    });
+  }
+
+  const result = await pool.query(
+    `INSERT INTO leads (nombre, email, telefono, especialidad, fecha)
+     VALUES ($1, $2, $3, $4, NOW())
+     RETURNING id, nombre, email, telefono, especialidad, fecha`,
+    [nombre, email, telefono || null, especialidad || null]
+  );
+
+  res.status(201).json({
+    lead: result.rows[0],
+    message: "Lead registrada correctamente",
   });
 }));
 
@@ -826,6 +950,7 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
                'medicamento', r.medicamento,
                'presentacion', r.presentacion,
                'dosis', r.dosis,
+               'via_administracion', r.via_administracion,
                'frecuencia_cantidad', r.frecuencia_cantidad,
                'frecuencia_unidad', r.frecuencia_unidad,
                'duracion_cantidad', r.duracion_cantidad,
@@ -853,8 +978,13 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
   }
 
   const consultation = consultationResult.rows[0];
+  const patientName = consultation.paciente_nombre_snapshot || consultation.paciente_nombre || "Sin paciente";
   const patientAge =
-    consultation.paciente_edad ?? calculateAge(consultation.fecha_nacimiento) ?? "Sin registro";
+    consultation.paciente_edad_snapshot ??
+    consultation.paciente_edad ??
+    calculateAge(consultation.fecha_nacimiento) ??
+    "Sin registro";
+  const patientSex = consultation.paciente_sexo_snapshot || "Sin registro";
   const recetas = Array.isArray(consultation.recetas) ? consultation.recetas : [];
   const diagnosis = consultation.cie10_codigo
     ? `${consultation.cie10_codigo} - ${consultation.cie10_descripcion || consultation.diagnostico || "Sin diagnostico"}`
@@ -900,9 +1030,10 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
   );
 
   doc.moveDown();
-  doc.fontSize(11).fillColor("#0f172a").text(`Paciente: ${sanitizePdfText(consultation.paciente_nombre)}`);
-  doc.text(`Edad: ${sanitizePdfText(patientAge)}`);
-  doc.text(`Fecha: ${sanitizePdfText(new Date(consultation.fecha).toLocaleString("es-MX"))}`);
+    doc.fontSize(11).fillColor("#0f172a").text(`Paciente: ${sanitizePdfText(patientName)}`);
+    doc.text(`Edad: ${sanitizePdfText(patientAge)}`);
+    doc.text(`Sexo: ${sanitizePdfText(patientSex)}`);
+    doc.text(`Fecha: ${sanitizePdfText(new Date(consultation.fecha).toLocaleString("es-MX"))}`);
   doc.moveDown();
   doc.fontSize(12).fillColor("#0f766e").text("Diagnostico CIE-10");
   doc.fontSize(11).fillColor("#0f172a").text(sanitizePdfText(diagnosis));
@@ -920,7 +1051,7 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
       doc
         .fontSize(10)
         .fillColor("#0f172a")
-        .text(`- ${sanitizePdfText(item.medicamento)} | Dosis: ${sanitizePdfText(item.dosis || "Sin dosis")}`);
+        .text(`- ${sanitizePdfText(item.medicamento)} | Dosis: ${sanitizePdfText(item.dosis || "Sin dosis")} | Via: ${sanitizePdfText(item.via_administracion || "Sin via especificada")}`);
       doc
         .fontSize(9)
         .fillColor("#475569")
@@ -1230,7 +1361,8 @@ app.use("/api", (req, res, next) => {
     req.path.startsWith("/health") ||
     req.path.startsWith("/auth/") ||
     req.path.startsWith("/portal/") ||
-    req.path.startsWith("/agenda-publica/")
+    req.path.startsWith("/agenda-publica/") ||
+    req.path.startsWith("/leads")
   ) {
     return next();
   }
@@ -1409,21 +1541,36 @@ app.get("/api/pacientes/:id/datos", asyncHandler(async (req, res) => {
        ORDER BY created_at DESC, id DESC`,
       [id]
     ),
-    pool.query(
-      `SELECT
-         id,
-         fecha,
-         motivo,
-         diagnostico,
-         cie10_codigo,
-         cie10_descripcion,
-         pronostico,
-         plan_tratamiento,
-         medico_nombre,
-         medico_cedula
-       FROM consultas
-       WHERE paciente_id = $1
-       ORDER BY fecha DESC`,
+      pool.query(
+        `SELECT
+           id,
+           fecha,
+           motivo,
+           diagnostico,
+           cie10_codigo,
+           cie10_descripcion,
+           pronostico,
+           interrogatorio_aparatos_sistemas,
+           firma_hash,
+           firma_timestamp,
+           descripcion_fisica,
+           habitus_exterior,
+           exploracion_cabeza,
+           exploracion_cuello,
+           exploracion_torax,
+           exploracion_abdomen,
+           exploracion_extremidades,
+           exploracion_genitales,
+           plan_tratamiento,
+           signos,
+           notas,
+           created_at,
+           updated_at,
+           medico_nombre,
+           medico_cedula
+         FROM consultas
+         WHERE paciente_id = $1
+         ORDER BY fecha DESC`,
       [id]
     ),
     pool.query(
@@ -2089,6 +2236,7 @@ app.get("/api/consultas", asyncHandler(async (req, res) => {
                'medicamento', r.medicamento,
                'presentacion', r.presentacion,
                'dosis', r.dosis,
+               'via_administracion', r.via_administracion,
                'frecuencia_cantidad', r.frecuencia_cantidad,
                'frecuencia_unidad', r.frecuencia_unidad,
                'duracion_cantidad', r.duracion_cantidad,
@@ -2104,14 +2252,19 @@ app.get("/api/consultas", asyncHandler(async (req, res) => {
        COALESCE(
          (
            SELECT json_agg(
-             json_build_object(
-               'id', e.id,
-               'nombre', e.nombre,
-               'tipo', e.tipo,
-               'estado', e.estado,
-               'resultado', e.resultado
+               json_build_object(
+                 'id', e.id,
+                 'nombre', e.nombre,
+                 'tipo', e.tipo,
+                 'estado', e.estado,
+                 'resultado', e.resultado,
+                 'problema_clinico', e.problema_clinico,
+                 'fecha_estudio', e.fecha_estudio,
+                 'interpretacion', e.interpretacion,
+                 'medico_solicita_nombre', e.medico_solicita_nombre,
+                 'medico_solicita_cedula', e.medico_solicita_cedula
+               )
              )
-           )
            FROM estudios e
            WHERE e.consulta_id = c.id
          ),
@@ -2178,6 +2331,7 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
                  'medicamento', r.medicamento,
                  'dosis', r.dosis,
                  'presentacion', r.presentacion,
+                 'via_administracion', r.via_administracion,
                  'frecuencia_cantidad', r.frecuencia_cantidad,
                  'frecuencia_unidad', r.frecuencia_unidad,
                  'duracion_cantidad', r.duracion_cantidad,
@@ -2196,7 +2350,12 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
                  'nombre', e.nombre,
                  'tipo', e.tipo,
                  'estado', e.estado,
-                 'resultado', e.resultado
+                 'resultado', e.resultado,
+                 'problema_clinico', e.problema_clinico,
+                 'fecha_estudio', e.fecha_estudio,
+                 'interpretacion', e.interpretacion,
+                 'medico_solicita_nombre', e.medico_solicita_nombre,
+                 'medico_solicita_cedula', e.medico_solicita_cedula
                )
              )
              FROM estudios e
@@ -2290,6 +2449,14 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
       }
 
       doc.fontSize(11).text(`Fecha: ${sanitizePdfText(new Date(consulta.fecha).toLocaleString("es-MX"))}`);
+      const consultationSnapshotName = consulta.paciente_nombre_snapshot || patient.nombre || "Sin registro";
+      const consultationSnapshotAge =
+        consulta.paciente_edad_snapshot ?? patient.edad ?? calculateAge(patient.fecha_nacimiento) ?? "Sin registro";
+      const consultationSnapshotSex = consulta.paciente_sexo_snapshot || patient.sexo || "Sin registro";
+
+      doc.text(`Paciente: ${sanitizePdfText(consultationSnapshotName)}`);
+      doc.text(`Edad: ${sanitizePdfText(String(consultationSnapshotAge))}`);
+      doc.text(`Sexo: ${sanitizePdfText(consultationSnapshotSex)}`);
       doc.text(`Motivo: ${sanitizePdfText(consulta.motivo || "Sin registro")}`);
       doc.text(
         `Diagnostico: ${sanitizePdfText(
@@ -2302,8 +2469,18 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
       doc.text(`Plan: ${sanitizePdfText(consulta.plan_tratamiento || "Sin registro")}`);
       doc.text(`Medico: ${sanitizePdfText(consulta.medico_nombre || "Sin registro")}`);
       doc.text(`Cedula: ${sanitizePdfText(consulta.medico_cedula || "Sin registro")}`);
+      doc.text(
+        `Firma digital: Firmado digitalmente por Dr. ${sanitizePdfText(consulta.medico_nombre || "Sin medico")}, Cedula ${sanitizePdfText(
+          consulta.medico_cedula || "Sin registro"
+        )} el ${sanitizePdfText(new Date(consulta.firma_timestamp || consulta.updated_at || consulta.fecha).toLocaleString("es-MX"))}`
+      );
+      if (consulta.firma_hash) {
+        doc.fontSize(8).fillColor("#475569").text(`SHA-256: ${sanitizePdfText(consulta.firma_hash)}`);
+        doc.fontSize(10).fillColor("#111827");
+      }
       doc.text(`Padecimiento actual: ${sanitizePdfText(consulta.padecimiento_actual || "Sin registro")}`);
-      doc.text(`Exploracion fisica: ${sanitizePdfText(consulta.descripcion_fisica || "Sin registro")}`);
+      doc.text(`Interrogatorio por aparatos y sistemas: ${sanitizePdfText(consulta.interrogatorio_aparatos_sistemas || "Sin registro")}`);
+      doc.text(`Exploracion fisica: ${sanitizePdfText(buildExplorationText(consulta) || "Sin registro")}`);
 
       const recetas = Array.isArray(consulta.recetas) ? consulta.recetas : [];
       const estudios = Array.isArray(consulta.estudios) ? consulta.estudios : [];
@@ -2311,17 +2488,29 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
       if (recetas.length) {
         doc.text("Receta:");
         recetas.forEach((receta) => {
-          doc.text(
-            `  - ${sanitizePdfText(receta.medicamento)} ${sanitizePdfText(receta.dosis || "")} ${sanitizePdfText(receta.presentacion || "")}`
-          );
+      doc.text(
+        `  - ${sanitizePdfText(receta.medicamento)} ${sanitizePdfText(receta.dosis || "")} ${sanitizePdfText(receta.presentacion || "")} | Via: ${sanitizePdfText(receta.via_administracion || "Sin via especificada")}`
+      );
         });
       }
 
       if (estudios.length) {
         doc.text("Estudios:");
         estudios.forEach((estudio) => {
+          doc.text(`  - ${sanitizePdfText(estudio.nombre)} (${sanitizePdfText(estudio.tipo || "Sin tipo")})`);
+          doc.text(`    Estado: ${sanitizePdfText(estudio.estado || "Solicitado")}`);
+          doc.text(`    Problema clinico: ${sanitizePdfText(estudio.problema_clinico || "Sin registro")}`);
           doc.text(
-            `  - ${sanitizePdfText(estudio.nombre)} (${sanitizePdfText(estudio.tipo || "Sin tipo")})`
+            `    Fecha del estudio: ${sanitizePdfText(
+              estudio.fecha_estudio ? new Date(estudio.fecha_estudio).toLocaleString("es-MX") : "Sin registro"
+            )}`
+          );
+          doc.text(`    Resultado: ${sanitizePdfText(estudio.resultado || "Sin resultado")}`);
+          doc.text(`    Interpretacion: ${sanitizePdfText(estudio.interpretacion || "Sin interpretacion")}`);
+          doc.text(
+            `    Medico solicita: ${sanitizePdfText(estudio.medico_solicita_nombre || "Sin registro")} | Cedula: ${sanitizePdfText(
+              estudio.medico_solicita_cedula || "Sin registro"
+            )}`
           );
         });
       }
@@ -2351,6 +2540,7 @@ app.get("/api/consultas/:id/receta-pdf", asyncHandler(async (req, res) => {
                'medicamento', r.medicamento,
                'presentacion', r.presentacion,
                'dosis', r.dosis,
+               'via_administracion', r.via_administracion,
                'frecuencia_cantidad', r.frecuencia_cantidad,
                'frecuencia_unidad', r.frecuencia_unidad,
                'duracion_cantidad', r.duracion_cantidad,
@@ -2377,8 +2567,13 @@ app.get("/api/consultas/:id/receta-pdf", asyncHandler(async (req, res) => {
   }
 
   const consultation = consultationResult.rows[0];
+  const patientName = consultation.paciente_nombre_snapshot || consultation.paciente_nombre || "Sin paciente";
   const patientAge =
-    consultation.paciente_edad ?? calculateAge(consultation.fecha_nacimiento) ?? "Sin registro";
+    consultation.paciente_edad_snapshot ??
+    consultation.paciente_edad ??
+    calculateAge(consultation.fecha_nacimiento) ??
+    "Sin registro";
+  const patientSex = consultation.paciente_sexo_snapshot || "Sin registro";
   const recetas = Array.isArray(consultation.recetas) ? consultation.recetas : [];
   const diagnosis = consultation.cie10_codigo
     ? `${consultation.cie10_codigo} - ${consultation.cie10_descripcion || consultation.diagnostico || "Sin diagnostico"}`
@@ -2440,8 +2635,9 @@ app.get("/api/consultas/:id/receta-pdf", asyncHandler(async (req, res) => {
   doc.fontSize(12).fillColor("#0f172a").text("Datos del paciente");
   doc.moveDown(0.3);
   doc.fontSize(10);
-  doc.text(`Nombre: ${sanitizePdfText(consultation.paciente_nombre)}`);
+  doc.text(`Nombre: ${sanitizePdfText(patientName)}`);
   doc.text(`Edad: ${sanitizePdfText(String(patientAge))}`);
+  doc.text(`Sexo: ${sanitizePdfText(patientSex)}`);
   doc.text(`Fecha: ${sanitizePdfText(new Date(consultation.fecha).toLocaleString("es-MX"))}`);
 
   doc.moveDown();
@@ -2507,7 +2703,15 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
     fecha,
     motivo,
     padecimiento_actual,
+    interrogatorio_aparatos_sistemas,
     descripcion_fisica,
+    habitus_exterior,
+    exploracion_cabeza,
+    exploracion_cuello,
+    exploracion_torax,
+    exploracion_abdomen,
+    exploracion_extremidades,
+    exploracion_genitales,
     diagnostico,
     cie10_codigo,
     cie10_descripcion,
@@ -2520,10 +2724,35 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
     consentimiento_clinico,
   } = req.body;
 
-  if (!consentimiento_clinico?.aceptado || !String(consentimiento_clinico?.texto || "").trim()) {
+  const consentText = String(consentimiento_clinico?.texto || "").trim();
+  const placeOfIssue = String(consentimiento_clinico?.lugar_emision || "").trim();
+  const medicalAct = String(consentimiento_clinico?.acto_medico || "").trim();
+  const expectedBenefits = String(consentimiento_clinico?.beneficios_esperados || "").trim();
+  const patientNameForConsent = String(consentimiento_clinico?.paciente_nombre || "").trim();
+  const patientSignature = String(consentimiento_clinico?.paciente_firma || "").trim();
+  const doctorNameForConsent = String(consentimiento_clinico?.medico_nombre || req.user?.nombre || "").trim();
+  const doctorLicenseForConsent = String(
+    consentimiento_clinico?.medico_cedula || req.user?.cedula_profesional || ""
+  ).trim();
+  const doctorSignature = String(consentimiento_clinico?.medico_firma || "").trim();
+  const generalRisks = String(consentimiento_clinico?.riesgos_generales || "").trim();
+
+  if (
+    !consentimiento_clinico?.aceptado ||
+    !consentText ||
+    !placeOfIssue ||
+    !medicalAct ||
+    !expectedBenefits ||
+    !consentimiento_clinico?.autorizacion_contingencias ||
+    !patientNameForConsent ||
+    !patientSignature ||
+    !doctorNameForConsent ||
+    !doctorLicenseForConsent ||
+    !doctorSignature
+  ) {
     return res.status(400).json({
       error: "validation_error",
-      message: "Debes registrar el consentimiento informado clinico antes de guardar la consulta",
+      message: "Debes completar el consentimiento informado clinico antes de guardar la consulta",
     });
   }
 
@@ -2533,20 +2762,42 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
     await client.query("BEGIN");
 
     const patientLookup = await client.query(
-      `SELECT nombre, external_id
+      `SELECT nombre, sexo, edad, fecha_nacimiento, external_id
        FROM pacientes
        WHERE id = $1`,
       [paciente_id]
     );
     const patient = patientLookup.rows[0] || null;
+    const patientAgeSnapshot = patient?.edad ?? calculateAge(patient?.fecha_nacimiento) ?? null;
+    const signatureTimestamp = new Date().toISOString();
+    const physicalDescription = descripcion_fisica || habitus_exterior || null;
+    const signatureHash = generateConsultationSignature({
+      paciente_id,
+      fecha,
+      motivo,
+      padecimiento_actual,
+      interrogatorio_aparatos_sistemas: interrogatorio_aparatos_sistemas || null,
+      descripcion_fisica: physicalDescription,
+      diagnostico,
+      cie10_codigo: cie10_codigo ?? null,
+      cie10_descripcion: cie10_descripcion ?? null,
+      pronostico: pronostico || null,
+      plan_tratamiento,
+      signos,
+      notas: notas ?? null,
+      medico_id: req.user.id,
+      timestamp: signatureTimestamp,
+    });
 
     const consultationResult = await client.query(
       `INSERT INTO consultas (
-        paciente_id, cita_id, fecha, motivo, padecimiento_actual, descripcion_fisica,
-        diagnostico, cie10_codigo, cie10_descripcion, pronostico, plan_tratamiento, signos, notas,
-        medico_user_id, medico_nombre, medico_cedula
+        paciente_id, cita_id, fecha, motivo, padecimiento_actual, interrogatorio_aparatos_sistemas,
+        paciente_nombre_snapshot, paciente_edad_snapshot, paciente_sexo_snapshot, descripcion_fisica,
+        habitus_exterior, exploracion_cabeza, exploracion_cuello, exploracion_torax, exploracion_abdomen,
+        exploracion_extremidades, exploracion_genitales, diagnostico, cie10_codigo, cie10_descripcion, pronostico,
+        plan_tratamiento, signos, notas, firma_hash, firma_timestamp, medico_user_id, medico_nombre, medico_cedula
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
       RETURNING *`,
       [
         paciente_id,
@@ -2554,7 +2805,18 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
         fecha,
         motivo,
         padecimiento_actual,
-        descripcion_fisica,
+        interrogatorio_aparatos_sistemas || null,
+        patient?.nombre || null,
+        patientAgeSnapshot,
+        patient?.sexo || null,
+        physicalDescription,
+        habitus_exterior || descripcion_fisica || null,
+        exploracion_cabeza || null,
+        exploracion_cuello || null,
+        exploracion_torax || null,
+        exploracion_abdomen || null,
+        exploracion_extremidades || null,
+        exploracion_genitales || null,
         diagnostico,
         cie10_codigo ?? null,
         cie10_descripcion ?? null,
@@ -2562,6 +2824,8 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
         plan_tratamiento,
         signos,
         notas ?? null,
+        signatureHash,
+        signatureTimestamp,
         req.user.id,
         req.user.nombre,
         req.user.cedula_profesional ?? null,
@@ -2572,14 +2836,31 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
 
     await client.query(
       `INSERT INTO consentimientos_clinicos (
-        paciente_id, consulta_id, medico_id, texto, fecha, aceptado
+        paciente_id, consulta_id, medico_id, texto, lugar_emision, acto_medico, riesgos_generales,
+        beneficios_esperados, autorizacion_contingencias, paciente_nombre, paciente_firma,
+        testigo_uno_nombre, testigo_uno_firma, testigo_dos_nombre, testigo_dos_firma,
+        medico_nombre, medico_cedula, medico_firma, fecha, aceptado
       )
-      VALUES ($1, $2, $3, $4, $5, $6)`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
       [
         paciente_id,
         consultation.id,
         req.user.id,
-        String(consentimiento_clinico.texto).trim(),
+        consentText,
+        placeOfIssue,
+        medicalAct,
+        generalRisks || null,
+        expectedBenefits,
+        true,
+        patientNameForConsent,
+        patientSignature,
+        null,
+        null,
+        null,
+        null,
+        doctorNameForConsent,
+        doctorLicenseForConsent,
+        doctorSignature,
         consentimiento_clinico.fecha ?? fecha,
         true,
       ]
@@ -2588,16 +2869,17 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
     for (const med of medicamentos) {
       await client.query(
         `INSERT INTO recetas (
-          consulta_id, medicamento, presentacion, dosis,
+          consulta_id, medicamento, presentacion, dosis, via_administracion,
           frecuencia_cantidad, frecuencia_unidad, duracion_cantidad,
           duracion_unidad, indicaciones
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
         [
           consultation.id,
           med.nombre,
           med.presentacion || null,
           med.dosis || null,
+          med.viaAdministracion || "Oral",
           med.cadaCantidad ? Number(med.cadaCantidad) : null,
           med.cadaUnidad || null,
           med.duranteCantidad ? Number(med.duranteCantidad) : null,
@@ -2612,15 +2894,25 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
 
       await client.query(
         `INSERT INTO estudios (
-          consulta_id, nombre, tipo, estado, resultado
+          consulta_id, nombre, tipo, estado, problema_clinico, fecha_estudio,
+          resultado, interpretacion, medico_solicita_nombre, medico_solicita_cedula
         )
-        VALUES ($1, $2, $3, $4, $5)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           consultation.id,
           String(estudio.nombre).trim(),
           estudio.tipo ? String(estudio.tipo).trim() : null,
           estudio.estado ? String(estudio.estado).trim() : "Solicitado",
+          estudio.problemaClinico ? String(estudio.problemaClinico).trim() : null,
+          estudio.fechaEstudio ? new Date(estudio.fechaEstudio).toISOString() : null,
           estudio.resultado ? String(estudio.resultado).trim() : null,
+          estudio.interpretacion ? String(estudio.interpretacion).trim() : null,
+          estudio.medicoSolicitaNombre
+            ? String(estudio.medicoSolicitaNombre).trim()
+            : req.user.nombre,
+          estudio.medicoSolicitaCedula
+            ? String(estudio.medicoSolicitaCedula).trim()
+            : req.user.cedula_profesional ?? null,
         ]
       );
     }
@@ -2680,7 +2972,15 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
     fecha,
     motivo,
     padecimiento_actual,
+    interrogatorio_aparatos_sistemas,
     descripcion_fisica,
+    habitus_exterior,
+    exploracion_cabeza,
+    exploracion_cuello,
+    exploracion_torax,
+    exploracion_abdomen,
+    exploracion_extremidades,
+    exploracion_genitales,
     diagnostico,
     cie10_codigo,
     cie10_descripcion,
@@ -2690,6 +2990,7 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
     notas,
     medicamentos = [],
     estudios = [],
+    consentimiento_clinico,
   } = req.body;
 
   const client = await pool.connect();
@@ -2704,6 +3005,25 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
       [paciente_id]
     );
     const patient = patientLookup.rows[0] || null;
+    const signatureTimestamp = new Date().toISOString();
+    const physicalDescription = descripcion_fisica || habitus_exterior || null;
+    const signatureHash = generateConsultationSignature({
+      paciente_id,
+      fecha,
+      motivo,
+      padecimiento_actual,
+      interrogatorio_aparatos_sistemas: interrogatorio_aparatos_sistemas || null,
+      descripcion_fisica: physicalDescription,
+      diagnostico,
+      cie10_codigo: cie10_codigo ?? null,
+      cie10_descripcion: cie10_descripcion ?? null,
+      pronostico: pronostico || null,
+      plan_tratamiento,
+      signos,
+      notas: notas ?? null,
+      medico_id: req.user.id,
+      timestamp: signatureTimestamp,
+    });
 
     const consultationResult = await client.query(
       `UPDATE consultas
@@ -2712,22 +3032,40 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
          fecha = $2,
          motivo = $3,
          padecimiento_actual = $4,
-         descripcion_fisica = $5,
-         diagnostico = $6,
-         cie10_codigo = $7,
-         cie10_descripcion = $8,
-         pronostico = $9,
-         plan_tratamiento = $10,
-         signos = $11,
-         notas = $12
-       WHERE id = $13
+         interrogatorio_aparatos_sistemas = $5,
+         descripcion_fisica = $6,
+         habitus_exterior = $7,
+         exploracion_cabeza = $8,
+         exploracion_cuello = $9,
+         exploracion_torax = $10,
+         exploracion_abdomen = $11,
+         exploracion_extremidades = $12,
+         exploracion_genitales = $13,
+         diagnostico = $14,
+         cie10_codigo = $15,
+         cie10_descripcion = $16,
+         pronostico = $17,
+         plan_tratamiento = $18,
+         signos = $19,
+         notas = $20,
+         firma_hash = $21,
+         firma_timestamp = $22
+       WHERE id = $23
        RETURNING *`,
       [
         paciente_id,
         fecha,
         motivo,
         padecimiento_actual,
-        descripcion_fisica,
+        interrogatorio_aparatos_sistemas || null,
+        physicalDescription,
+        habitus_exterior || descripcion_fisica || null,
+        exploracion_cabeza || null,
+        exploracion_cuello || null,
+        exploracion_torax || null,
+        exploracion_abdomen || null,
+        exploracion_extremidades || null,
+        exploracion_genitales || null,
         diagnostico,
         cie10_codigo ?? null,
         cie10_descripcion ?? null,
@@ -2735,6 +3073,8 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
         plan_tratamiento,
         signos,
         notas ?? null,
+        signatureHash,
+        signatureTimestamp,
         id,
       ]
     );
@@ -2755,16 +3095,17 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
     for (const med of medicamentos) {
       await client.query(
         `INSERT INTO recetas (
-          consulta_id, medicamento, presentacion, dosis,
+          consulta_id, medicamento, presentacion, dosis, via_administracion,
           frecuencia_cantidad, frecuencia_unidad, duracion_cantidad,
           duracion_unidad, indicaciones
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
         [
           consultation.id,
           med.nombre,
           med.presentacion || null,
           med.dosis || null,
+          med.viaAdministracion || "Oral",
           med.cadaCantidad ? Number(med.cadaCantidad) : null,
           med.cadaUnidad || null,
           med.duranteCantidad ? Number(med.duranteCantidad) : null,
@@ -2779,17 +3120,89 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
 
       await client.query(
         `INSERT INTO estudios (
-          consulta_id, nombre, tipo, estado, resultado
+          consulta_id, nombre, tipo, estado, problema_clinico, fecha_estudio,
+          resultado, interpretacion, medico_solicita_nombre, medico_solicita_cedula
         )
-        VALUES ($1, $2, $3, $4, $5)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           consultation.id,
           String(estudio.nombre).trim(),
           estudio.tipo ? String(estudio.tipo).trim() : null,
           estudio.estado ? String(estudio.estado).trim() : "Solicitado",
+          estudio.problemaClinico ? String(estudio.problemaClinico).trim() : null,
+          estudio.fechaEstudio ? new Date(estudio.fechaEstudio).toISOString() : null,
           estudio.resultado ? String(estudio.resultado).trim() : null,
+          estudio.interpretacion ? String(estudio.interpretacion).trim() : null,
+          estudio.medicoSolicitaNombre
+            ? String(estudio.medicoSolicitaNombre).trim()
+            : req.user.nombre,
+          estudio.medicoSolicitaCedula
+            ? String(estudio.medicoSolicitaCedula).trim()
+            : req.user.cedula_profesional ?? null,
         ]
       );
+    }
+
+    if (consentimiento_clinico?.aceptado) {
+      const consentText = String(consentimiento_clinico?.texto || "").trim();
+      const placeOfIssue = String(consentimiento_clinico?.lugar_emision || "").trim();
+      const medicalAct = String(consentimiento_clinico?.acto_medico || "").trim();
+      const expectedBenefits = String(consentimiento_clinico?.beneficios_esperados || "").trim();
+      const patientNameForConsent = String(consentimiento_clinico?.paciente_nombre || "").trim();
+      const patientSignature = String(consentimiento_clinico?.paciente_firma || "").trim();
+      const doctorNameForConsent = String(consentimiento_clinico?.medico_nombre || req.user?.nombre || "").trim();
+      const doctorLicenseForConsent = String(
+        consentimiento_clinico?.medico_cedula || req.user?.cedula_profesional || ""
+      ).trim();
+      const doctorSignature = String(consentimiento_clinico?.medico_firma || "").trim();
+      const generalRisks = String(consentimiento_clinico?.riesgos_generales || "").trim();
+
+      if (
+        consentText &&
+        placeOfIssue &&
+        medicalAct &&
+        expectedBenefits &&
+        consentimiento_clinico?.autorizacion_contingencias &&
+        patientNameForConsent &&
+        patientSignature &&
+        doctorNameForConsent &&
+        doctorLicenseForConsent &&
+        doctorSignature
+      ) {
+        await client.query("DELETE FROM consentimientos_clinicos WHERE consulta_id = $1", [id]);
+
+        await client.query(
+          `INSERT INTO consentimientos_clinicos (
+            paciente_id, consulta_id, medico_id, texto, lugar_emision, acto_medico, riesgos_generales,
+            beneficios_esperados, autorizacion_contingencias, paciente_nombre, paciente_firma,
+            testigo_uno_nombre, testigo_uno_firma, testigo_dos_nombre, testigo_dos_firma,
+            medico_nombre, medico_cedula, medico_firma, fecha, aceptado
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
+          [
+            paciente_id,
+            consultation.id,
+            req.user.id,
+            consentText,
+            placeOfIssue,
+            medicalAct,
+            generalRisks || null,
+            expectedBenefits,
+            true,
+            patientNameForConsent,
+            patientSignature,
+            null,
+            null,
+            null,
+            null,
+            doctorNameForConsent,
+            doctorLicenseForConsent,
+            doctorSignature,
+            consentimiento_clinico.fecha ?? fecha,
+            true,
+          ]
+        );
+      }
     }
 
     await writeAuditLog(
@@ -2822,7 +3235,7 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
 
 app.put("/api/estudios/:id", asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { estado, resultado } = req.body;
+  const { estado, resultado, interpretacion, fecha_estudio, problema_clinico } = req.body;
   const normalizedEstado = String(estado || "").trim();
 
   if (![
@@ -2840,12 +3253,21 @@ app.put("/api/estudios/:id", asyncHandler(async (req, res) => {
     `UPDATE estudios e
      SET
        estado = $1,
+       problema_clinico = COALESCE(NULLIF($4, ''), problema_clinico),
+       fecha_estudio = CASE
+         WHEN NULLIF($5, '') IS NOT NULL THEN $5::timestamptz
+         ELSE fecha_estudio
+       END,
        resultado = CASE
          WHEN $1 = 'Revisado por el medico' THEN NULLIF($2, '')
          ELSE resultado
+       END,
+       interpretacion = CASE
+         WHEN $1 = 'Revisado por el medico' THEN NULLIF($3, '')
+         ELSE interpretacion
        END
      FROM consultas c, pacientes p
-     WHERE e.id = $3
+     WHERE e.id = $6
        AND c.id = e.consulta_id
        AND p.id = c.paciente_id
      RETURNING
@@ -2854,11 +3276,23 @@ app.put("/api/estudios/:id", asyncHandler(async (req, res) => {
        e.nombre,
        e.tipo,
        e.estado,
+       e.problema_clinico,
+       e.fecha_estudio,
        e.resultado,
+       e.interpretacion,
+       e.medico_solicita_nombre,
+       e.medico_solicita_cedula,
        p.id AS paciente_id,
        p.nombre AS paciente_nombre,
        p.external_id`,
-    [normalizedEstado, String(resultado || "").trim(), id]
+    [
+      normalizedEstado,
+      String(resultado || "").trim(),
+      String(interpretacion || "").trim(),
+      String(problema_clinico || "").trim(),
+      String(fecha_estudio || "").trim(),
+      id,
+    ]
   );
 
   if (result.rowCount === 0) {
@@ -2882,6 +3316,7 @@ app.put("/api/estudios/:id", asyncHandler(async (req, res) => {
       external_id: study.external_id,
       estudio: study.nombre,
       estado: study.estado,
+      interpretacion: study.interpretacion || null,
     }
   );
 

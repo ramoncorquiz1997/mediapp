@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS configuracion_consultorio (
   nombre_consultorio TEXT NOT NULL DEFAULT 'Consultorio Paupediente',
   direccion TEXT DEFAULT 'Tijuana, Baja California',
   telefono TEXT DEFAULT '664 000 0000',
-  email_contacto TEXT DEFAULT 'doctora@paupediente.mx',
+  email_contacto TEXT DEFAULT 'doctora@Paupediente.mx',
   cedula_profesional TEXT DEFAULT '12345678',
   especialidad TEXT DEFAULT 'Medicina general',
   zona_horaria TEXT NOT NULL DEFAULT 'America/Tijuana',
@@ -217,6 +217,16 @@ CREATE TABLE IF NOT EXISTS pagos (
   CONSTRAINT pagos_estado_valido CHECK (estado IN ('Pendiente', 'Pagado', 'Cancelado'))
 );
 
+CREATE TABLE IF NOT EXISTS leads (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  email TEXT NOT NULL,
+  telefono TEXT,
+  especialidad TEXT,
+  fecha TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS consultas (
   id SERIAL PRIMARY KEY,
   paciente_id INTEGER NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
@@ -224,12 +234,25 @@ CREATE TABLE IF NOT EXISTS consultas (
   fecha TIMESTAMPTZ NOT NULL,
   motivo TEXT,
   padecimiento_actual TEXT,
+  interrogatorio_aparatos_sistemas TEXT,
+  paciente_nombre_snapshot TEXT,
+  paciente_edad_snapshot INTEGER,
+  paciente_sexo_snapshot TEXT,
   descripcion_fisica TEXT,
+  habitus_exterior TEXT,
+  exploracion_cabeza TEXT,
+  exploracion_cuello TEXT,
+  exploracion_torax TEXT,
+  exploracion_abdomen TEXT,
+  exploracion_extremidades TEXT,
+  exploracion_genitales TEXT,
   diagnostico TEXT,
   pronostico TEXT,
   plan_tratamiento TEXT,
   signos JSONB NOT NULL DEFAULT '{}'::jsonb,
   notas TEXT,
+  firma_hash TEXT,
+  firma_timestamp TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -251,6 +274,45 @@ ADD COLUMN IF NOT EXISTS cie10_descripcion TEXT;
 
 ALTER TABLE consultas
 ADD COLUMN IF NOT EXISTS pronostico TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS interrogatorio_aparatos_sistemas TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS firma_hash TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS firma_timestamp TIMESTAMPTZ;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS paciente_nombre_snapshot TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS paciente_edad_snapshot INTEGER;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS paciente_sexo_snapshot TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS habitus_exterior TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS exploracion_cabeza TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS exploracion_cuello TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS exploracion_torax TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS exploracion_abdomen TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS exploracion_extremidades TEXT;
+
+ALTER TABLE consultas
+ADD COLUMN IF NOT EXISTS exploracion_genitales TEXT;
 
 CREATE TABLE IF NOT EXISTS cie10 (
   codigo TEXT PRIMARY KEY,
@@ -293,6 +355,7 @@ CREATE TABLE IF NOT EXISTS recetas (
   medicamento TEXT NOT NULL,
   presentacion TEXT,
   dosis TEXT,
+  via_administracion TEXT,
   frecuencia_cantidad INTEGER,
   frecuencia_unidad TEXT,
   duracion_cantidad INTEGER,
@@ -301,13 +364,21 @@ CREATE TABLE IF NOT EXISTS recetas (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE recetas
+ADD COLUMN IF NOT EXISTS via_administracion TEXT;
+
 CREATE TABLE IF NOT EXISTS estudios (
   id SERIAL PRIMARY KEY,
   consulta_id INTEGER NOT NULL REFERENCES consultas(id) ON DELETE CASCADE,
   nombre TEXT NOT NULL,
   tipo TEXT,
   estado TEXT NOT NULL DEFAULT 'Solicitado',
+  problema_clinico TEXT,
+  fecha_estudio TIMESTAMPTZ,
   resultado TEXT,
+  interpretacion TEXT,
+  medico_solicita_nombre TEXT,
+  medico_solicita_cedula TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT estudios_estado_valido CHECK (
@@ -317,6 +388,21 @@ CREATE TABLE IF NOT EXISTS estudios (
 
 ALTER TABLE estudios
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+ALTER TABLE estudios
+ADD COLUMN IF NOT EXISTS problema_clinico TEXT;
+
+ALTER TABLE estudios
+ADD COLUMN IF NOT EXISTS fecha_estudio TIMESTAMPTZ;
+
+ALTER TABLE estudios
+ADD COLUMN IF NOT EXISTS interpretacion TEXT;
+
+ALTER TABLE estudios
+ADD COLUMN IF NOT EXISTS medico_solicita_nombre TEXT;
+
+ALTER TABLE estudios
+ADD COLUMN IF NOT EXISTS medico_solicita_cedula TEXT;
 
 ALTER TABLE estudios
 DROP CONSTRAINT IF EXISTS estudios_estado_valido;
@@ -332,10 +418,66 @@ CREATE TABLE IF NOT EXISTS consentimientos_clinicos (
   consulta_id INTEGER NOT NULL REFERENCES consultas(id) ON DELETE CASCADE,
   medico_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
   texto TEXT NOT NULL,
+  lugar_emision TEXT,
+  acto_medico TEXT,
+  riesgos_generales TEXT,
+  beneficios_esperados TEXT,
+  autorizacion_contingencias BOOLEAN NOT NULL DEFAULT FALSE,
+  paciente_nombre TEXT,
+  paciente_firma TEXT,
+  testigo_uno_nombre TEXT,
+  testigo_uno_firma TEXT,
+  testigo_dos_nombre TEXT,
+  testigo_dos_firma TEXT,
+  medico_nombre TEXT,
+  medico_cedula TEXT,
+  medico_firma TEXT,
   fecha TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   aceptado BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS lugar_emision TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS acto_medico TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS riesgos_generales TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS beneficios_esperados TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS autorizacion_contingencias BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS paciente_nombre TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS paciente_firma TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS testigo_uno_nombre TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS testigo_uno_firma TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS testigo_dos_nombre TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS testigo_dos_firma TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS medico_nombre TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS medico_cedula TEXT;
+
+ALTER TABLE consentimientos_clinicos
+ADD COLUMN IF NOT EXISTS medico_firma TEXT;
 
 CREATE TABLE IF NOT EXISTS audit_log (
   id SERIAL PRIMARY KEY,
@@ -394,6 +536,7 @@ CREATE INDEX IF NOT EXISTS idx_cie10_seleccionable ON cie10(seleccionable);
 CREATE INDEX IF NOT EXISTS idx_cuestionarios_previos_cita_id ON cuestionarios_previos(cita_id);
 CREATE INDEX IF NOT EXISTS idx_pagos_paciente_id ON pagos(paciente_id);
 CREATE INDEX IF NOT EXISTS idx_pagos_cita_id ON pagos(cita_id);
+CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
 
 DROP TRIGGER IF EXISTS pacientes_set_updated_at ON pacientes;
 CREATE TRIGGER pacientes_set_updated_at
@@ -458,15 +601,13 @@ EXECUTE FUNCTION set_updated_at();
 INSERT INTO usuarios (
   nombre,
   email,
-  slug,
   password_hash,
   rol,
   cedula_profesional
 )
 VALUES (
   'Dra. Paulina',
-  'doctora@paupediente.mx',
-  'dra-paulina',
+  'doctora@Paupediente.mx',
   'scrypt$7505e9071edcc63a7023019a9c94484b$5535ec0ef0acb88383c6fcee649951ff6d86a810443afdad98434245280f67239323c7e4a17aa5afe4ee87af0b38b4b269fbb65f1c3bf8fc2adefc3ade174556',
   'admin',
   '12345678'
@@ -475,5 +616,11 @@ ON CONFLICT (email) DO NOTHING;
 
 UPDATE usuarios
 SET slug = 'dra-paulina'
-WHERE email = 'doctora@paupediente.mx'
-  AND slug IS DISTINCT FROM 'dra-paulina';
+WHERE email = 'doctora@Paupediente.mx'
+  AND slug IS DISTINCT FROM 'dra-paulina'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM usuarios conflict_usuario
+    WHERE conflict_usuario.slug = 'dra-paulina'
+      AND conflict_usuario.email <> 'doctora@Paupediente.mx'
+  );

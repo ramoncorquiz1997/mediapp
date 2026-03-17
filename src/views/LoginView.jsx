@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Activity, Lock, Mail } from "lucide-react";
 
 export default function LoginView({ onLogin, isLoading, error }) {
-  const [email, setEmail] = useState("doctora@paupediente.mx");
+  const [email, setEmail] = useState("doctora@Paupediente.mx");
   const [password, setPassword] = useState("Paupediente2026!");
 
   const submit = async (e) => {
@@ -35,7 +35,7 @@ export default function LoginView({ onLogin, isLoading, error }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-                placeholder="doctora@paupediente.mx"
+                placeholder="doctora@Paupediente.mx"
                 autoComplete="email"
               />
             </div>
@@ -65,7 +65,7 @@ export default function LoginView({ onLogin, isLoading, error }) {
           <div className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-xs font-bold text-slate-500">
             Acceso inicial:
             <br />
-            Correo: `doctora@paupediente.mx`
+            Correo: `doctora@Paupediente.mx`
             <br />
             Contrasena: `Paupediente2026!`
           </div>
