@@ -128,15 +128,7 @@ const buildExplorationSections = (entry) => {
   return sections.filter((section) => String(section.value || "").trim());
 };
 
-function RecordActionButton({
-  icon: Icon,
-  label,
-  description,
-  onClick,
-  disabled = false,
-  title,
-  variant = "neutral",
-}) {
+function RecordActionButton({ icon: Icon, label, onClick, disabled = false, title, variant = "neutral" }) {
   const variantStyles = {
     neutral:
       "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
@@ -156,19 +148,10 @@ function RecordActionButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`flex min-h-[76px] w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]}`}
+      className={`inline-flex min-h-0 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-black whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]}`}
     >
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
-          variant === "primary" ? "bg-white/15" : "bg-white"
-        }`}
-      >
-        <Icon size={18} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-black leading-tight">{label}</p>
-        {description ? <p className="mt-1 text-xs font-bold opacity-80 leading-tight">{description}</p> : null}
-      </div>
+      <Icon size={16} className="shrink-0" />
+      <span>{label}</span>
     </button>
   );
 }
@@ -741,18 +724,16 @@ export default function ClinicalRecordView({
                   </p>
                 </div>
 
-                <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-[repeat(4,minmax(0,1fr))_1.15fr]">
+                <div className="flex w-full flex-wrap items-center justify-start gap-3 lg:max-w-[780px] lg:justify-end">
                   <RecordActionButton
                     icon={Link2}
                     label="Copiar link"
-                    description="Portal del paciente"
                     onClick={copyPatientPortalLink}
                     variant="teal"
                   />
                   <RecordActionButton
                     icon={MessageCircleMore}
                     label="Enviar por WhatsApp"
-                    description="Compartir acceso"
                     onClick={sendPortalLinkByWhatsApp}
                     disabled={!normalizeWhatsAppPhone(patient?.telefono)}
                     title={!normalizeWhatsAppPhone(patient?.telefono) ? "Falta telefono del paciente" : "Enviar link por WhatsApp"}
@@ -761,7 +742,6 @@ export default function ClinicalRecordView({
                   <RecordActionButton
                     icon={NotebookText}
                     label={isExportingPdf ? "Exportando PDF..." : "Exportar PDF"}
-                    description="Descargar expediente"
                     onClick={exportPdf}
                     disabled={isExportingPdf}
                     variant="teal"
@@ -770,7 +750,6 @@ export default function ClinicalRecordView({
                     <RecordActionButton
                       icon={Activity}
                       label="Reactivar paciente"
-                      description="Habilitar expediente"
                       onClick={reactivatePatient}
                       variant="success"
                     />
@@ -778,7 +757,6 @@ export default function ClinicalRecordView({
                     <RecordActionButton
                       icon={Trash2}
                       label="Dar de baja"
-                      description="Desactivar expediente"
                       onClick={() => setIsDeleteModalOpen(true)}
                       variant="danger"
                     />
@@ -786,7 +764,6 @@ export default function ClinicalRecordView({
                   <RecordActionButton
                     icon={Plus}
                     label="Nueva consulta"
-                    description="Abrir nota clinica"
                     onClick={onNewConsultation}
                     variant="primary"
                   />
