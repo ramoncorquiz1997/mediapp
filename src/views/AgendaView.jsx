@@ -1042,20 +1042,20 @@ export default function AgendaView({
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
               Indice de colores
             </p>
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {DEFAULT_STATUS.map((status) => {
                 const appearance = getStatusAppearance(status);
                 return (
                   <div
                     key={status}
-                    className={`flex items-center gap-3 rounded-2xl border px-3 py-3 ${appearance.legend}`}
+                    className={`flex min-h-[64px] items-center gap-2 rounded-2xl border px-3 py-2.5 ${appearance.legend}`}
                   >
                     <span
-                      className={`h-10 w-10 shrink-0 rounded-xl ${appearance.accentBar} shadow-sm ring-1 ring-white/70`}
+                      className={`h-6 w-6 shrink-0 rounded-lg ${appearance.accentBar} shadow-sm ring-1 ring-white/70`}
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
-                      <p className="text-sm font-black leading-none">{statusLabel(status)}</p>
+                      <p className="text-sm font-black leading-tight">{statusLabel(status)}</p>
                     </div>
                   </div>
                 );

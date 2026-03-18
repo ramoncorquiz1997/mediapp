@@ -76,14 +76,6 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
             </div>
           ) : null}
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
-            Acceso inicial:
-            <br />
-            Correo: `doctora@MyCliniq.lat`
-            <br />
-            Contrasena: `MyCliniq2026!`
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}

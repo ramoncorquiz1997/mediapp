@@ -62,14 +62,6 @@ export default function LoginView({ onLogin, isLoading, error }) {
             </div>
           ) : null}
 
-          <div className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-xs font-bold text-slate-500">
-            Acceso inicial:
-            <br />
-            Correo: `doctora@MyCliniq.lat`
-            <br />
-            Contrasena: `MyCliniq2026!`
-          </div>
-
           <button
             type="submit"
             disabled={isLoading}
