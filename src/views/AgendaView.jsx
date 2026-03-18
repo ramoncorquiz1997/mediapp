@@ -105,36 +105,42 @@ const STATUS_APPEARANCE = {
     card: "border-emerald-200 bg-white shadow-emerald-100/70",
     accentBar: "bg-emerald-400",
     pill: "bg-emerald-100 text-emerald-700",
+    legend: "border-emerald-200 bg-emerald-50 text-emerald-900",
     colorCode: "#34D399",
   },
   "En espera": {
     card: "border-orange-200 bg-white shadow-orange-100/70",
     accentBar: "bg-orange-400",
     pill: "bg-orange-100 text-orange-700",
+    legend: "border-orange-200 bg-orange-50 text-orange-900",
     colorCode: "#FB923C",
   },
   "En consulta": {
     card: "border-teal-200 bg-white shadow-teal-100/80",
     accentBar: "bg-teal-500",
     pill: "bg-teal-100 text-teal-700",
+    legend: "border-teal-200 bg-teal-50 text-teal-900",
     colorCode: "#14B8A6",
   },
   Cancelado: {
     card: "border-red-200 bg-white shadow-red-100/70",
     accentBar: "bg-red-400",
     pill: "bg-red-100 text-red-700",
+    legend: "border-red-200 bg-red-50 text-red-900",
     colorCode: "#F87171",
   },
   Completado: {
     card: "border-sky-200 bg-white shadow-sky-100/80",
     accentBar: "bg-sky-400",
     pill: "bg-sky-100 text-sky-700",
+    legend: "border-sky-200 bg-sky-50 text-sky-900",
     colorCode: "#38BDF8",
   },
   "No asistio": {
     card: "border-slate-300 bg-white shadow-slate-100/80",
     accentBar: "bg-slate-300",
     pill: "bg-slate-200 text-slate-700",
+    legend: "border-slate-200 bg-slate-100 text-slate-800",
     colorCode: "#CBD5E1",
   },
 };
@@ -144,6 +150,7 @@ const getStatusAppearance = (status) =>
     card: "border-slate-300 bg-white shadow-slate-100/80",
     accentBar: "bg-slate-300",
     pill: "bg-slate-200 text-slate-700",
+    legend: "border-slate-200 bg-slate-100 text-slate-800",
     colorCode: "#CBD5E1",
   };
 
@@ -1035,16 +1042,24 @@ export default function AgendaView({
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
               Indice de colores
             </p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 space-y-2">
               {DEFAULT_STATUS.map((status) => {
                 const appearance = getStatusAppearance(status);
                 return (
                   <div
                     key={status}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[11px] font-black text-slate-600 border border-slate-200"
+                    className={`flex items-center gap-3 rounded-2xl border px-3 py-3 ${appearance.legend}`}
                   >
-                    <span className={`h-2.5 w-2.5 rounded-full ${appearance.accentBar}`} aria-hidden="true" />
-                    {statusLabel(status)}
+                    <span
+                      className={`h-10 w-10 shrink-0 rounded-xl ${appearance.accentBar} shadow-sm ring-1 ring-white/70`}
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-black leading-none">{statusLabel(status)}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
+                        Color de la cita
+                      </p>
+                    </div>
                   </div>
                 );
               })}
