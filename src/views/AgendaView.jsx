@@ -66,27 +66,34 @@ const parseDateTime = (dateStr, timeStr) => {
   return new Date(y, m - 1, d, hh, mm, 0, 0);
 };
 
-const normalizeAppointment = (appointment) => ({
-  ...appointment,
-  paciente_id: appointment.paciente_id ?? null,
-  paciente: appointment.paciente ?? appointment.paciente_nombre ?? "Paciente sin nombre",
-  portal_token: appointment.portal_token ?? "",
-  paciente_telefono: appointment.paciente_telefono ?? "",
-  start: appointment.start instanceof Date ? appointment.start : new Date(appointment.start),
-  duracion: Number(appointment.duracion) || 30,
-  cuestionario_id: appointment.cuestionario_id ?? null,
-  cuestionario_motivo_consulta: appointment.cuestionario_motivo_consulta ?? "",
-  cuestionario_sintomas_actuales: appointment.cuestionario_sintomas_actuales ?? "",
-  cuestionario_medicamentos_actuales: appointment.cuestionario_medicamentos_actuales ?? "",
-  cuestionario_alergias_conocidas: appointment.cuestionario_alergias_conocidas ?? "",
-  cuestionario_cambios_desde_ultima_visita: appointment.cuestionario_cambios_desde_ultima_visita ?? "",
-  cuestionario_actualizado_at: appointment.cuestionario_actualizado_at ?? null,
-  consulta_id: appointment.consulta_id ?? null,
-  consulta_fecha: appointment.consulta_fecha ?? null,
-  consulta_diagnostico: appointment.consulta_diagnostico ?? "",
-  consulta_cie10_codigo: appointment.consulta_cie10_codigo ?? "",
-  consulta_cie10_descripcion: appointment.consulta_cie10_descripcion ?? "",
-});
+const isValidDate = (value) => value instanceof Date && !Number.isNaN(value.getTime());
+
+const normalizeAppointment = (appointment) => {
+  const parsedStart =
+    appointment.start instanceof Date ? appointment.start : new Date(appointment.start);
+
+  return {
+    ...appointment,
+    paciente_id: appointment.paciente_id ?? null,
+    paciente: appointment.paciente ?? appointment.paciente_nombre ?? "Paciente sin nombre",
+    portal_token: appointment.portal_token ?? "",
+    paciente_telefono: appointment.paciente_telefono ?? "",
+    start: isValidDate(parsedStart) ? parsedStart : new Date(),
+    duracion: Number(appointment.duracion) || 30,
+    cuestionario_id: appointment.cuestionario_id ?? null,
+    cuestionario_motivo_consulta: appointment.cuestionario_motivo_consulta ?? "",
+    cuestionario_sintomas_actuales: appointment.cuestionario_sintomas_actuales ?? "",
+    cuestionario_medicamentos_actuales: appointment.cuestionario_medicamentos_actuales ?? "",
+    cuestionario_alergias_conocidas: appointment.cuestionario_alergias_conocidas ?? "",
+    cuestionario_cambios_desde_ultima_visita: appointment.cuestionario_cambios_desde_ultima_visita ?? "",
+    cuestionario_actualizado_at: appointment.cuestionario_actualizado_at ?? null,
+    consulta_id: appointment.consulta_id ?? null,
+    consulta_fecha: appointment.consulta_fecha ?? null,
+    consulta_diagnostico: appointment.consulta_diagnostico ?? "",
+    consulta_cie10_codigo: appointment.consulta_cie10_codigo ?? "",
+    consulta_cie10_descripcion: appointment.consulta_cie10_descripcion ?? "",
+  };
+};
 
 const minutesFromMidnight = (date) => date.getHours() * 60 + date.getMinutes();
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -153,17 +160,28 @@ const normalizeWhatsAppPhone = (value) => {
   return digits;
 };
 
-const buildPortalUrl = (token) =>
-  token && typeof window !== "undefined" ? `${window.location.origin}/p/${token}` : "";
+const buildPortalUrl = (token) => {
+  if (!token || typeof window === "undefined") return "";
 
-const formatAppointmentDateLabel = (value) =>
-  new Date(value).toLocaleString("es-MX", {
+  try {
+    return new URL(`/p/${encodeURIComponent(String(token))}`, window.location.origin).toString();
+  } catch {
+    return "";
+  }
+};
+
+const formatAppointmentDateLabel = (value) => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!isValidDate(date)) return "fecha pendiente";
+
+  return date.toLocaleString("es-MX", {
     weekday: "long",
     day: "numeric",
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
   });
+};
 
 const isWithinNext24Hours = (value) => {
   const start = new Date(value);
@@ -191,8 +209,13 @@ const buildWhatsAppLink = (appointment, variant = "confirmacion") => {
           "Por favor llena tu cuestionario previo antes de acudir a consulta.",
         ];
 
-  const baseUrl = phone ? `https://wa.me/${phone}` : "https://wa.me/";
-  return `${baseUrl}?text=${encodeURIComponent(lines.filter(Boolean).join("\n"))}`;
+  try {
+    const url = new URL(phone ? `https://wa.me/${phone}` : "https://wa.me/");
+    url.searchParams.set("text", lines.filter(Boolean).join("\n"));
+    return url.toString();
+  } catch {
+    return "";
+  }
 };
 
 function AppointmentModal({
@@ -220,7 +243,8 @@ function AppointmentModal({
   useEffect(() => {
     if (!open) return;
 
-    const sourceDate = initialAppointment?.start ?? initialDateTime ?? new Date();
+    const candidateDate = initialAppointment?.start ?? initialDateTime ?? new Date();
+    const sourceDate = isValidDate(candidateDate) ? candidateDate : new Date();
     setForm({
       paciente_id: initialAppointment?.paciente_id ? String(initialAppointment.paciente_id) : "",
       paciente: initialAppointment?.paciente || "",
@@ -734,8 +758,17 @@ export default function AgendaView({
 
   const openWhatsApp = (appointment, variant) => {
     const url = buildWhatsAppLink(appointment, variant);
+    if (!url) {
+      setError("No se pudo generar el enlace de WhatsApp para esta cita.");
+      return;
+    }
+
     if (typeof window !== "undefined") {
-      window.open(url, "_blank", "noopener,noreferrer");
+      try {
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch {
+        setError("No se pudo abrir WhatsApp desde esta cita.");
+      }
     }
   };
 
