@@ -59,6 +59,23 @@ const defaultSaasConfig = {
   smtp_from_email: "",
   leads_notify_email: "",
 };
+const sepConfig = {
+  apiUrl: process.env.SEP_API_URL || "https://cedulaprofesional.sep.gob.mx/api",
+  clientId: process.env.SEP_CLIENT_ID || "rnp-angular-app-prod",
+  apiKey: process.env.SEP_API_KEY || "65da8s675f8s75fda675s8d76as87d5as675da",
+};
+const allowedMedicalProfessionTerms = [
+  "MEDICO",
+  "MÉDICO",
+  "MEDICO CIRUJANO",
+  "MÉDICO CIRUJANO",
+  "CIRUJANO Y PARTERO",
+  "DOCTOR EN MEDICINA",
+];
+let sepTokenCache = {
+  token: "",
+  expiresAt: 0,
+};
 
 app.use(cors());
 app.use(express.json({ limit: "6mb" }));
@@ -119,6 +136,133 @@ const normalizePhone = (value) =>
   String(value ?? "")
     .replace(/\D/g, "")
     .trim();
+
+const normalizeSearchText = (value) =>
+  String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+
+const isAllowedMedicalProfession = (profession) => {
+  const normalizedProfession = normalizeSearchText(profession);
+  return allowedMedicalProfessionTerms.some((term) => normalizedProfession.includes(normalizeSearchText(term)));
+};
+
+const buildFullName = (...parts) =>
+  parts
+    .map((part) => String(part ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+const getSepAccessToken = async () => {
+  if (sepTokenCache.token && sepTokenCache.expiresAt > Date.now() + 30_000) {
+    return sepTokenCache.token;
+  }
+
+  const response = await fetch(`${sepConfig.apiUrl}/auth/token`, {
+    method: "GET",
+    headers: {
+      "X-Client-Id": sepConfig.clientId,
+      "X-API-Key": sepConfig.apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`SEP auth ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (!data?.access_token) {
+    throw new Error("SEP auth token no disponible");
+  }
+
+  let expiresAt = Date.now() + 10 * 60 * 1000;
+
+  try {
+    const payloadSegment = String(data.access_token).split(".")[1];
+    if (payloadSegment) {
+      const payloadJson = Buffer.from(payloadSegment, "base64url").toString("utf8");
+      const payload = JSON.parse(payloadJson);
+      if (payload?.exp) {
+        expiresAt = Number(payload.exp) * 1000;
+      }
+    }
+  } catch {
+    // Ignore JWT parsing failures and fall back to a short cache window.
+  }
+
+  sepTokenCache = {
+    token: data.access_token,
+    expiresAt,
+  };
+
+  return data.access_token;
+};
+
+const fetchSepLicenseData = async (cedula) => {
+  const normalizedCedula = String(cedula ?? "").replace(/\D/g, "").trim();
+
+  if (!/^\d{7,8}$/.test(normalizedCedula)) {
+    return {
+      valid: false,
+      cedula: normalizedCedula,
+      isMedicalDoctor: false,
+      message: "La cedula debe contener 7 u 8 digitos",
+    };
+  }
+
+  const token = await getSepAccessToken();
+  const response = await fetch(`${sepConfig.apiUrl}/solr/profesionista/consultar/byDetalle`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ numCedula: normalizedCedula }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`SEP lookup ${response.status}`);
+  }
+
+  const rows = await response.json();
+  const record = Array.isArray(rows)
+    ? rows.find((item) => String(item?.cedula || "").trim() === normalizedCedula) || rows[0]
+    : null;
+
+  if (!record) {
+    return {
+      valid: false,
+      cedula: normalizedCedula,
+      isMedicalDoctor: false,
+      message: "No se encontro informacion para esa cedula",
+    };
+  }
+
+  const fullName = buildFullName(record.nombre, record.primerApellido, record.segundoApellido);
+  const profession = String(record.profesion || record.carrera || "").trim();
+  const isMedicalDoctor = isAllowedMedicalProfession(profession);
+
+  return {
+    valid: true,
+    cedula: String(record.cedula || normalizedCedula).trim(),
+    isMedicalDoctor,
+    message: isMedicalDoctor
+      ? "Cedula validada contra SEP"
+      : "La cedula existe, pero no corresponde a una profesion medica permitida",
+    fullName,
+    firstName: String(record.nombre || "").trim(),
+    paternalLastName: String(record.primerApellido || "").trim(),
+    maternalLastName: String(record.segundoApellido || "").trim(),
+    profession,
+    institution: String(record.institucion || "").trim(),
+    institutionState: String(record.entidadInstitucion || "").trim(),
+    registrationYear: String(record.anioRegistro || "").trim(),
+    expeditionDate: String(record.fechaExpedicion || "").trim(),
+    raw: record,
+  };
+};
 
 const isValidCurp = (value) => curpRegex.test(normalizeCurp(value));
 
@@ -786,6 +930,17 @@ app.get("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =>
   res.json(result.rows);
 }));
 
+app.post("/api/owner/doctors/validate-license", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const cedula = String(req.body?.cedula_profesional || req.body?.cedula || "").trim();
+  const result = await fetchSepLicenseData(cedula);
+
+  if (!result.valid) {
+    return res.status(404).json(result);
+  }
+
+  res.json(result);
+}));
+
 app.get("/api/owner/leads", requireOwnerAuth, asyncHandler(async (req, res) => {
   const safeLimit = Math.max(1, Math.min(Number(req.query?.limit) || 100, 500));
   const result = await pool.query(
@@ -839,10 +994,10 @@ app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "") || `medico-${Date.now()}`;
 
-  if (!nombre || !email || !password) {
+  if (!nombre || !email || !password || !cedula) {
     return res.status(400).json({
       error: "validation_error",
-      message: "Nombre, email y password son obligatorios",
+      message: "Nombre, email, password y cedula son obligatorios",
     });
   }
 
@@ -850,6 +1005,23 @@ app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =
     return res.status(400).json({
       error: "validation_error",
       message: "La password inicial debe tener al menos 8 caracteres",
+    });
+  }
+
+  const licenseValidation = await fetchSepLicenseData(cedula);
+
+  if (!licenseValidation.valid) {
+    return res.status(400).json({
+      error: "license_validation_failed",
+      message: licenseValidation.message || "No se pudo validar la cedula en SEP",
+    });
+  }
+
+  if (!licenseValidation.isMedicalDoctor) {
+    return res.status(400).json({
+      error: "license_not_medical",
+      message: "La cedula existe, pero no corresponde a una profesion medica permitida",
+      license: licenseValidation,
     });
   }
 

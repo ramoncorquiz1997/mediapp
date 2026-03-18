@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { EyeOff, Mail, Plus, Save, Shield, UserPlus, Users } from "lucide-react";
+import { BadgeCheck, EyeOff, Mail, Plus, Save, SearchCheck, Shield, UserPlus, Users } from "lucide-react";
 
 const defaultOwnerLogin = {
   email: "",
@@ -48,7 +48,9 @@ export default function OwnerConsolePage({
   onLogin,
   onLogout,
   onCreateDoctor,
+  onValidateDoctorLicense,
   isCreatingDoctor,
+  isValidatingDoctorLicense,
   createDoctorError,
   doctorSuccessMessage,
   onSaveConfig,
@@ -61,6 +63,8 @@ export default function OwnerConsolePage({
   const [doctorForm, setDoctorForm] = useState(defaultDoctorForm);
   const [smtpForm, setSmtpForm] = useState(defaultSmtpForm);
   const [leadDrafts, setLeadDrafts] = useState({});
+  const [doctorLicenseValidation, setDoctorLicenseValidation] = useState(null);
+  const [doctorLicenseMessage, setDoctorLicenseMessage] = useState("");
 
   useEffect(() => {
     setSmtpForm((prev) => ({
@@ -91,10 +95,36 @@ export default function OwnerConsolePage({
 
   const submitDoctor = async (e) => {
     e.preventDefault();
+
+    if (!doctorLicenseValidation?.valid || !doctorLicenseValidation?.isMedicalDoctor) {
+      setDoctorLicenseMessage("Primero valida una cedula medica permitida antes de crear al medico.");
+      return;
+    }
+
+    if (String(doctorLicenseValidation.cedula || "") !== String(doctorForm.cedula_profesional || "").trim()) {
+      setDoctorLicenseMessage("La cedula validada ya no coincide con la capturada. Vuelve a validarla.");
+      return;
+    }
+
     const created = await onCreateDoctor(doctorForm);
     if (created) {
       setDoctorForm(defaultDoctorForm);
+      setDoctorLicenseValidation(null);
+      setDoctorLicenseMessage("");
     }
+  };
+
+  const validateDoctorLicense = async () => {
+    const result = await onValidateDoctorLicense(doctorForm.cedula_profesional);
+    if (!result) return;
+
+    setDoctorLicenseValidation(result);
+    setDoctorLicenseMessage(result.message || "");
+    setDoctorForm((prev) => ({
+      ...prev,
+      cedula_profesional: result.cedula || prev.cedula_profesional,
+      nombre: result.fullName || prev.nombre,
+    }));
   };
 
   const submitConfig = async (e) => {
@@ -120,6 +150,12 @@ export default function OwnerConsolePage({
     const draft = leadDrafts[leadId];
     if (!draft) return;
     await onUpdateLead(leadId, draft);
+  };
+
+  const handleDoctorCedulaChange = (value) => {
+    setDoctorForm((prev) => ({ ...prev, cedula_profesional: value.replace(/\D/g, "").slice(0, 8) }));
+    setDoctorLicenseValidation(null);
+    setDoctorLicenseMessage("");
   };
 
   if (!isReady) {
@@ -397,11 +433,65 @@ export default function OwnerConsolePage({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</label>
-                    <input
-                      value={doctorForm.cedula_profesional}
-                      onChange={(e) => setDoctorForm((prev) => ({ ...prev, cedula_profesional: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                    />
+                    <div className="flex flex-col gap-3 md:flex-row">
+                      <input
+                        value={doctorForm.cedula_profesional}
+                        onChange={(e) => handleDoctorCedulaChange(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
+                        inputMode="numeric"
+                        maxLength={8}
+                      />
+                      <button
+                        type="button"
+                        onClick={validateDoctorLicense}
+                        disabled={isValidatingDoctorLicense || doctorForm.cedula_profesional.trim().length < 7}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-black text-teal-700 transition-colors hover:bg-teal-100 disabled:opacity-60"
+                      >
+                        <SearchCheck size={16} />
+                        <span>{isValidatingDoctorLicense ? "Validando..." : "Validar cédula"}</span>
+                      </button>
+                    </div>
+                    {doctorLicenseMessage ? (
+                      <div
+                        className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+                          doctorLicenseValidation?.valid && doctorLicenseValidation?.isMedicalDoctor
+                            ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
+                            : "border border-amber-100 bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {doctorLicenseMessage}
+                      </div>
+                    ) : null}
+                    {doctorLicenseValidation?.valid ? (
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`rounded-2xl p-2 ${
+                              doctorLicenseValidation.isMedicalDoctor
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            <BadgeCheck size={18} />
+                          </div>
+                          <div className="space-y-1 text-sm font-bold text-slate-600">
+                            <p className="text-slate-900">{doctorLicenseValidation.fullName || "Sin nombre SEP"}</p>
+                            <p>{doctorLicenseValidation.profession || "Profesion no disponible"}</p>
+                            <p>
+                              {doctorLicenseValidation.institution || "Institucion no disponible"}
+                              {doctorLicenseValidation.institutionState
+                                ? ` • ${doctorLicenseValidation.institutionState}`
+                                : ""}
+                            </p>
+                            <p className={doctorLicenseValidation.isMedicalDoctor ? "text-emerald-700" : "text-amber-700"}>
+                              {doctorLicenseValidation.isMedicalDoctor
+                                ? "Profesion medica permitida"
+                                : "La cedula existe, pero no pasa como medico permitido"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="space-y-1.5">
@@ -416,7 +506,13 @@ export default function OwnerConsolePage({
 
                 <button
                   type="submit"
-                  disabled={isCreatingDoctor}
+                  disabled={
+                    isCreatingDoctor ||
+                    isValidatingDoctorLicense ||
+                    !doctorLicenseValidation?.valid ||
+                    !doctorLicenseValidation?.isMedicalDoctor ||
+                    String(doctorLicenseValidation?.cedula || "") !== String(doctorForm.cedula_profesional || "").trim()
+                  }
                   className="inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
                 >
                   <Plus size={16} />

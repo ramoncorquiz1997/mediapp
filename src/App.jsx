@@ -215,6 +215,7 @@ export default function App() {
   const [ownerLeadsLoading, setOwnerLeadsLoading] = useState(false);
   const [updatingOwnerLeadId, setUpdatingOwnerLeadId] = useState(null);
   const [isCreatingOwnerDoctor, setIsCreatingOwnerDoctor] = useState(false);
+  const [isValidatingOwnerDoctorLicense, setIsValidatingOwnerDoctorLicense] = useState(false);
   const [createOwnerDoctorError, setCreateOwnerDoctorError] = useState("");
   const [ownerDoctorSuccessMessage, setOwnerDoctorSuccessMessage] = useState("");
 
@@ -1012,6 +1013,35 @@ export default function App() {
     }
   };
 
+  const validateOwnerDoctorLicense = async (cedulaProfesional) => {
+    try {
+      setIsValidatingOwnerDoctorLicense(true);
+      setCreateOwnerDoctorError("");
+      setOwnerDoctorSuccessMessage("");
+
+      const response = await ownerApiFetch("/api/owner/doctors/validate-license", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cedula_profesional: cedulaProfesional }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo validar la cedula (${response.status})`);
+      }
+
+      return data;
+    } catch (error) {
+      setCreateOwnerDoctorError(error.message || "No se pudo validar la cedula");
+      return null;
+    } finally {
+      setIsValidatingOwnerDoctorLicense(false);
+    }
+  };
+
   if (!authReady) {
     if (isOwnerConsoleRoute) {
       return (
@@ -1030,7 +1060,9 @@ export default function App() {
           onLogin={ownerLogin}
           onLogout={ownerLogout}
           onCreateDoctor={createOwnerDoctor}
+          onValidateDoctorLicense={validateOwnerDoctorLicense}
           isCreatingDoctor={isCreatingOwnerDoctor}
+          isValidatingDoctorLicense={isValidatingOwnerDoctorLicense}
           createDoctorError={createOwnerDoctorError}
           doctorSuccessMessage={ownerDoctorSuccessMessage}
           onSaveConfig={saveOwnerConfiguration}
@@ -1082,7 +1114,9 @@ export default function App() {
         onLogin={ownerLogin}
         onLogout={ownerLogout}
         onCreateDoctor={createOwnerDoctor}
+        onValidateDoctorLicense={validateOwnerDoctorLicense}
         isCreatingDoctor={isCreatingOwnerDoctor}
+        isValidatingDoctorLicense={isValidatingOwnerDoctorLicense}
         createDoctorError={createOwnerDoctorError}
         doctorSuccessMessage={ownerDoctorSuccessMessage}
         onSaveConfig={saveOwnerConfiguration}
