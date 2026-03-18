@@ -1228,31 +1228,6 @@ export default function AgendaView({
             )}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-              Indice de colores
-            </p>
-            <div className="mt-3 space-y-2">
-              {DEFAULT_STATUS.map((status) => {
-                const appearance = getStatusAppearance(status);
-                return (
-                  <div
-                    key={status}
-                    className={`flex items-center gap-3 rounded-2xl border px-3 py-3 ${appearance.legend}`}
-                  >
-                    <span
-                      className={`h-10 w-10 shrink-0 rounded-xl ${appearance.accentBar} shadow-sm ring-1 ring-white/70`}
-                      aria-hidden="true"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-sm font-black leading-none">{statusLabel(status)}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           <button
             onClick={() => openNew(new Date(selectedDay))}
             className="mt-5 w-full px-4 py-3 rounded-2xl bg-teal-600 text-white font-black shadow-lg shadow-teal-100 hover:bg-teal-700 flex items-center justify-center gap-2"
@@ -1260,6 +1235,31 @@ export default function AgendaView({
             <Plus size={18} />
             Crear cita en este dia
           </button>
+        </div>
+
+        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm p-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+            Indice de colores
+          </p>
+          <div className="mt-3 space-y-2">
+            {DEFAULT_STATUS.map((status) => {
+              const appearance = getStatusAppearance(status);
+              return (
+                <div
+                  key={status}
+                  className={`flex items-center gap-3 rounded-2xl border px-3 py-3 ${appearance.legend}`}
+                >
+                  <span
+                    className={`h-10 w-10 shrink-0 rounded-xl ${appearance.accentBar} shadow-sm ring-1 ring-white/70`}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-black leading-none">{statusLabel(status)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
