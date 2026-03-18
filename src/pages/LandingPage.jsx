@@ -630,7 +630,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
           </div>
 
           <div className="text-sm font-bold text-slate-500">
-            <p>© 2025 MyCliniq. Todos los derechos reservados.</p>
+            <p>© 2026 MyCliniq. Todos los derechos reservados.</p>
             <p className="mt-1">Hecho en Mexico</p>
           </div>
         </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { apiFetch } from "../lib/api";
 import {
+  getActivityActionLabel,
   activityTypeOptions,
   formatActivityDateTime,
   getActivityAccent,
@@ -141,7 +142,7 @@ export default function AuditLogView() {
                       {getActivityTypeLabel(entry)}
                     </span>
                     <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                      {entry.accion}
+                      {getActivityActionLabel(entry)}
                     </span>
                   </div>
                 </div>

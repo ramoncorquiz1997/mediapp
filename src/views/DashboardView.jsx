@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Users, Calendar, FileText, TrendingUp, Activity } from "lucide-react";
+import { Users, Calendar, FileText, TrendingUp, Activity, ChevronDown, ChevronUp } from "lucide-react";
 
 import StatCard from "../components/StatCard";
 import { apiFetch } from "../lib/api";
@@ -36,6 +36,7 @@ export default function DashboardView({ currentUser }) {
     to: "",
     type: "",
   });
+  const [isActivityExpanded, setIsActivityExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -215,73 +216,88 @@ export default function DashboardView({ currentUser }) {
 
       {["admin", "medico"].includes(currentUser?.rol) ? (
         <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
-            <div>
-              <h3 className="font-black text-xl text-slate-800">Actividad reciente</h3>
-              <p className="text-sm font-bold text-slate-500 mt-1">
-                Eventos clinicos y operativos en lenguaje natural para seguimiento rapido
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full lg:w-auto">
-              <input
-                type="date"
-                value={activityFilters.from}
-                onChange={(e) => setActivityFilters((prev) => ({ ...prev, from: e.target.value }))}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-              />
-              <input
-                type="date"
-                value={activityFilters.to}
-                onChange={(e) => setActivityFilters((prev) => ({ ...prev, to: e.target.value }))}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-              />
-              <select
-                value={activityFilters.type}
-                onChange={(e) => setActivityFilters((prev) => ({ ...prev, type: e.target.value }))}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-              >
-                {activityTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {isLoading ? (
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-sm font-bold text-slate-500">
-                Cargando actividad reciente...
+          <div className="flex flex-col gap-5">
+            <button
+              type="button"
+              onClick={() => setIsActivityExpanded((prev) => !prev)}
+              className="flex w-full items-start justify-between gap-4 text-left"
+            >
+              <div>
+                <h3 className="font-black text-xl text-slate-800">Actividad reciente</h3>
+                <p className="text-sm font-bold text-slate-500 mt-1">
+                  Eventos clinicos y operativos en lenguaje natural para seguimiento rapido
+                </p>
               </div>
-            ) : filteredActivity.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-sm font-bold text-slate-500">
-                No hay eventos que coincidan con los filtros.
-              </div>
-            ) : (
-              filteredActivity.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-3xl border border-slate-100 bg-slate-50/70 px-5 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
+
+              <span className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-600">
+                {isActivityExpanded ? "Ocultar" : "Mostrar"}
+                {isActivityExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </span>
+            </button>
+
+            {isActivityExpanded ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full lg:w-auto">
+                <input
+                  type="date"
+                  value={activityFilters.from}
+                  onChange={(e) => setActivityFilters((prev) => ({ ...prev, from: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                />
+                <input
+                  type="date"
+                  value={activityFilters.to}
+                  onChange={(e) => setActivityFilters((prev) => ({ ...prev, to: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
+                />
+                <select
+                  value={activityFilters.type}
+                  onChange={(e) => setActivityFilters((prev) => ({ ...prev, type: e.target.value }))}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
                 >
-                  <div className="min-w-0">
-                    <p className="text-sm font-black text-slate-800">{getActivityMessage(entry)}</p>
-                    <p className="text-xs font-bold text-slate-500 mt-1">
-                      {formatActivityDateTime(entry.created_at)} | {entry.usuario_nombre || "Sistema"}
-                    </p>
-                  </div>
-                  <span
-                    className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${getActivityAccent(
-                      entry
-                    )}`}
-                  >
-                    {getActivityTypeLabel(entry)}
-                  </span>
-                </div>
-              ))
-            )}
+                  {activityTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
           </div>
+
+          {isActivityExpanded ? (
+            <div className="mt-6 space-y-3">
+              {isLoading ? (
+                <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-sm font-bold text-slate-500">
+                  Cargando actividad reciente...
+                </div>
+              ) : filteredActivity.length === 0 ? (
+                <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-sm font-bold text-slate-500">
+                  No hay eventos que coincidan con los filtros.
+                </div>
+              ) : (
+                filteredActivity.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-3xl border border-slate-100 bg-slate-50/70 px-5 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-slate-800">{getActivityMessage(entry)}</p>
+                      <p className="text-xs font-bold text-slate-500 mt-1">
+                        {formatActivityDateTime(entry.created_at)} | {entry.usuario_nombre || "Sistema"}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${getActivityAccent(
+                        entry
+                      )}`}
+                    >
+                      {getActivityTypeLabel(entry)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
