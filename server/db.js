@@ -13,7 +13,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-const csvDecoder = new TextDecoder("windows-1252");
+const utf8CsvDecoder = new TextDecoder("utf-8", { fatal: true });
+const latin1CsvDecoder = new TextDecoder("windows-1252");
 
 const resolveCie10CsvPath = () => {
   const configuredPath = process.env.CIE10_CSV_PATH;
@@ -78,8 +79,16 @@ const parseCsv = (content) => {
   return rows;
 };
 
+const decodeCatalogBuffer = (buffer) => {
+  try {
+    return utf8CsvDecoder.decode(buffer);
+  } catch {
+    return latin1CsvDecoder.decode(buffer);
+  }
+};
+
 const parseCatalogRows = (buffer) => {
-  const content = csvDecoder.decode(buffer);
+  const content = decodeCatalogBuffer(buffer);
   const rows = parseCsv(content);
   if (rows.length === 0) return [];
 
