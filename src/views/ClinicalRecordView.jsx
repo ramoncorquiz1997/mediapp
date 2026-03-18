@@ -128,6 +128,51 @@ const buildExplorationSections = (entry) => {
   return sections.filter((section) => String(section.value || "").trim());
 };
 
+function RecordActionButton({
+  icon: Icon,
+  label,
+  description,
+  onClick,
+  disabled = false,
+  title,
+  variant = "neutral",
+}) {
+  const variantStyles = {
+    neutral:
+      "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+    teal:
+      "border-teal-100 bg-teal-50 text-teal-800 hover:border-teal-200 hover:bg-teal-100",
+    danger:
+      "border-red-100 bg-red-50 text-red-700 hover:border-red-200 hover:bg-red-100",
+    success:
+      "border-emerald-100 bg-emerald-50 text-emerald-700 hover:border-emerald-200 hover:bg-emerald-100",
+    primary:
+      "border-teal-600 bg-teal-600 text-white shadow-lg shadow-teal-100 hover:bg-teal-700 hover:border-teal-700",
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`flex min-h-[76px] w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-50 ${variantStyles[variant]}`}
+    >
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
+          variant === "primary" ? "bg-white/15" : "bg-white"
+        }`}
+      >
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-black leading-tight">{label}</p>
+        {description ? <p className="mt-1 text-xs font-bold opacity-80 leading-tight">{description}</p> : null}
+      </div>
+    </button>
+  );
+}
+
 function DeletePatientModal({ open, patient, onClose, onConfirm }) {
   const [motivo, setMotivo] = useState("");
 
@@ -696,55 +741,55 @@ export default function ClinicalRecordView({
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch gap-3">
-                  <button
+                <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-[repeat(4,minmax(0,1fr))_1.15fr]">
+                  <RecordActionButton
+                    icon={Link2}
+                    label="Copiar link"
+                    description="Portal del paciente"
                     onClick={copyPatientPortalLink}
-                    className="px-5 py-3 rounded-2xl font-bold flex items-center justify-center space-x-2 text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all"
-                  >
-                    <Link2 size={18} />
-                    <span>Copiar link del paciente</span>
-                  </button>
-                  <button
+                    variant="teal"
+                  />
+                  <RecordActionButton
+                    icon={MessageCircleMore}
+                    label="Enviar por WhatsApp"
+                    description="Compartir acceso"
                     onClick={sendPortalLinkByWhatsApp}
                     disabled={!normalizeWhatsAppPhone(patient?.telefono)}
-                    className="px-5 py-3 rounded-2xl font-bold flex items-center justify-center space-x-2 text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all disabled:opacity-50 disabled:hover:bg-slate-100"
                     title={!normalizeWhatsAppPhone(patient?.telefono) ? "Falta telefono del paciente" : "Enviar link por WhatsApp"}
-                  >
-                    <MessageCircleMore size={18} />
-                    <span>Enviar por WhatsApp</span>
-                  </button>
-                  <button
+                    variant="neutral"
+                  />
+                  <RecordActionButton
+                    icon={NotebookText}
+                    label={isExportingPdf ? "Exportando PDF..." : "Exportar PDF"}
+                    description="Descargar expediente"
                     onClick={exportPdf}
                     disabled={isExportingPdf}
-                    className="px-5 py-3 rounded-2xl font-bold flex items-center justify-center space-x-2 text-teal-700 bg-teal-50 hover:bg-teal-100 transition-all disabled:opacity-60"
-                  >
-                    <NotebookText size={18} />
-                    <span>{isExportingPdf ? "Exportando PDF..." : "Exportar PDF"}</span>
-                  </button>
+                    variant="teal"
+                  />
                   {patient.dado_de_baja ? (
-                    <button
+                    <RecordActionButton
+                      icon={Activity}
+                      label="Reactivar paciente"
+                      description="Habilitar expediente"
                       onClick={reactivatePatient}
-                      className="px-5 py-3 rounded-2xl font-bold flex items-center justify-center space-x-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all"
-                    >
-                      <Activity size={18} />
-                      <span>Reactivar paciente</span>
-                    </button>
+                      variant="success"
+                    />
                   ) : (
-                    <button
+                    <RecordActionButton
+                      icon={Trash2}
+                      label="Dar de baja"
+                      description="Desactivar expediente"
                       onClick={() => setIsDeleteModalOpen(true)}
-                      className="px-5 py-3 rounded-2xl font-bold flex items-center justify-center space-x-2 text-red-600 bg-red-50 hover:bg-red-100 transition-all"
-                    >
-                      <Trash2 size={18} />
-                      <span>Dar de baja</span>
-                    </button>
+                      variant="danger"
+                    />
                   )}
-                  <button
+                  <RecordActionButton
+                    icon={Plus}
+                    label="Nueva consulta"
+                    description="Abrir nota clinica"
                     onClick={onNewConsultation}
-                    className="bg-teal-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center space-x-2 shadow-lg shadow-teal-100 hover:scale-[1.02] transition-all"
-                  >
-                    <Plus size={20} />
-                    <span>Nueva consulta</span>
-                  </button>
+                    variant="primary"
+                  />
                 </div>
               </div>
 
