@@ -93,6 +93,52 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const DEFAULT_TYPES = ["Primera vez", "Seguimiento", "Resultados", "Urgencia"];
 const DEFAULT_STATUS = ["Confirmado", "En espera", "En consulta", "Cancelado", "Completado", "No asistio"];
+const STATUS_APPEARANCE = {
+  Confirmado: {
+    card: "border-emerald-200 bg-white shadow-emerald-100/70",
+    accentBar: "bg-emerald-400",
+    pill: "bg-emerald-100 text-emerald-700",
+    colorCode: "#34D399",
+  },
+  "En espera": {
+    card: "border-orange-200 bg-white shadow-orange-100/70",
+    accentBar: "bg-orange-400",
+    pill: "bg-orange-100 text-orange-700",
+    colorCode: "#FB923C",
+  },
+  "En consulta": {
+    card: "border-teal-200 bg-white shadow-teal-100/80",
+    accentBar: "bg-teal-500",
+    pill: "bg-teal-100 text-teal-700",
+    colorCode: "#14B8A6",
+  },
+  Cancelado: {
+    card: "border-red-200 bg-white shadow-red-100/70",
+    accentBar: "bg-red-400",
+    pill: "bg-red-100 text-red-700",
+    colorCode: "#F87171",
+  },
+  Completado: {
+    card: "border-sky-200 bg-white shadow-sky-100/80",
+    accentBar: "bg-sky-400",
+    pill: "bg-sky-100 text-sky-700",
+    colorCode: "#38BDF8",
+  },
+  "No asistio": {
+    card: "border-slate-300 bg-white shadow-slate-100/80",
+    accentBar: "bg-slate-300",
+    pill: "bg-slate-200 text-slate-700",
+    colorCode: "#CBD5E1",
+  },
+};
+
+const getStatusAppearance = (status) =>
+  STATUS_APPEARANCE[status] || {
+    card: "border-slate-300 bg-white shadow-slate-100/80",
+    accentBar: "bg-slate-300",
+    pill: "bg-slate-200 text-slate-700",
+    colorCode: "#CBD5E1",
+  };
 
 const statusLabel = (status) => {
   if (status === "No asistio") return "No asistio";
@@ -270,7 +316,7 @@ function AppointmentModal({
         } bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden`}
       >
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="p-2 rounded-2xl bg-teal-100 text-teal-600">
               {isEditing ? <Pencil size={18} /> : <Plus size={18} />}
             </div>
@@ -452,7 +498,7 @@ function AppointmentModal({
             ) : null}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={onClose}
               className="px-6 py-3 rounded-2xl font-black text-slate-500 hover:text-slate-700"
@@ -679,13 +725,7 @@ export default function AgendaView({
   const weekLabel = useMemo(() => fmtMonth(weekStart), [weekStart]);
 
   const statusPill = (status) => {
-    if (status === "Confirmado") return "bg-emerald-100 text-emerald-700";
-    if (status === "En espera") return "bg-orange-100 text-orange-700";
-    if (status === "En consulta") return "bg-teal-100 text-teal-700";
-    if (status === "Cancelado") return "bg-red-100 text-red-700";
-    if (status === "Completado") return "bg-teal-100 text-teal-700";
-    if (status === "No asistio") return "bg-slate-200 text-slate-700";
-    return "bg-slate-200 text-slate-700";
+    return getStatusAppearance(status).pill;
   };
 
   const rowHeight = 44;
@@ -703,7 +743,7 @@ export default function AgendaView({
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-in fade-in duration-300">
       <div className="xl:col-span-9 bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="p-2 rounded-2xl bg-teal-100 text-teal-600">
               <CalendarDays size={18} />
             </div>
@@ -713,7 +753,7 @@ export default function AgendaView({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setAnchor((d) => addDays(d, -7))}
               className="p-2 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
@@ -765,171 +805,163 @@ export default function AgendaView({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-8 border-b border-slate-100 sticky top-0 z-20 bg-white">
-          <div className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-[92px]">
-            Hora
-          </div>
-
-          {weekDays.map((day) => {
-            const isToday = sameDay(day, today);
-            const isSelected = sameDay(day, selectedDay);
-
-            const dayBubbleClass = isToday
-              ? "bg-teal-600 text-white"
-              : isSelected
-              ? "bg-white text-teal-600 ring-2 ring-teal-600"
-              : "bg-slate-100 text-slate-700";
-
-            return (
-              <button
-                key={toISODate(day)}
-                onClick={() => setSelectedDay(day)}
-                className={`p-4 text-left border-l border-slate-100 hover:bg-slate-50 transition-colors ${
-                  isSelected ? "bg-teal-50" : ""
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <p
-                    className={`text-[10px] font-black uppercase tracking-widest ${
-                      isToday ? "text-teal-600" : "text-slate-400"
-                    }`}
-                  >
-                    {fmtDayShort(day)}
-                  </p>
-
-                  <div
-                    className={`w-7 h-7 rounded-2xl flex items-center justify-center font-black text-sm ${dayBubbleClass}`}
-                  >
-                    {fmtDayNumber(day)}
-                  </div>
-                </div>
-
-                <p className="mt-2 text-xs font-bold text-slate-500">
-                  {(apptsByDay.get(toISODate(day)) ?? []).length} citas
-                </p>
-              </button>
-            );
-          })}
-        </div>
-
         {isLoading ? (
           <div className="p-8 text-sm font-bold text-slate-500">Cargando agenda...</div>
         ) : (
-          <div className="relative max-h-[72vh] overflow-y-auto">
-            <div className="grid grid-cols-8">
-              <div className="border-r border-slate-100 w-[92px]">
-                {timeSlots.map((slot, idx) => {
-                  const label = slot.m === 0 ? `${pad2(slot.h)}:00` : "";
-                  return (
-                    <div
-                      key={idx}
-                      className="h-[44px] px-4 flex items-center justify-start text-xs font-black text-slate-400 overflow-hidden"
-                    >
-                      <span className="whitespace-nowrap">{label}</span>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="border-t border-slate-100">
+            <div className="px-6 py-3 text-[11px] font-bold text-slate-400 xl:hidden">
+              Desliza horizontalmente para ver toda la semana.
+            </div>
 
-              {weekDays.map((day) => (
-                <div key={toISODate(day)} className="relative border-r border-slate-100">
-                  {timeSlots.map((slot, idx) => {
-                    const dt = new Date(day);
-                    dt.setHours(slot.h, slot.m, 0, 0);
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => openNew(dt)}
-                        className="w-full h-[44px] border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                        aria-label={`Crear cita ${toISODate(day)} ${pad2(slot.h)}:${pad2(slot.m)}`}
-                        title="Click para crear cita aqui"
-                      />
-                    );
-                  })}
+            <div className="max-h-[72vh] overflow-auto">
+              <div className="min-w-[1024px]">
+                <div className="grid grid-cols-8 border-b border-slate-100 sticky top-0 z-20 bg-white">
+                  <div className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-[92px]">
+                    Hora
+                  </div>
 
-                  {(apptsByDay.get(toISODate(day)) ?? []).map((appointment) => {
-                    const top = minuteToTop(minutesFromMidnight(appointment.start));
-                    const height = (appointment.duracion / slotMinutes) * rowHeight;
+                  {weekDays.map((day) => {
+                    const isToday = sameDay(day, today);
+                    const isSelected = sameDay(day, selectedDay);
 
-                    const pill =
-                      appointment.estado === "Confirmado"
-                        ? "border-emerald-200 bg-white shadow-emerald-100/70"
-                        : appointment.estado === "En espera"
-                        ? "border-orange-200 bg-white shadow-orange-100/70"
-                        : appointment.estado === "En consulta"
-                        ? "border-teal-200 bg-white shadow-teal-100/80"
-                        : appointment.estado === "Cancelado"
-                        ? "border-red-200 bg-white shadow-red-100/70"
-                        : appointment.estado === "Completado"
-                        ? "border-sky-200 bg-white shadow-sky-100/80"
-                        : "border-slate-300 bg-white shadow-slate-100/80";
-
-                    const accentBar =
-                      appointment.estado === "Confirmado"
-                        ? "bg-emerald-400"
-                        : appointment.estado === "En espera"
-                        ? "bg-orange-400"
-                        : appointment.estado === "En consulta"
-                        ? "bg-teal-500"
-                        : appointment.estado === "Cancelado"
-                        ? "bg-red-400"
-                        : appointment.estado === "Completado"
-                        ? "bg-sky-400"
-                        : "bg-slate-300";
+                    const dayBubbleClass = isToday
+                      ? "bg-teal-600 text-white"
+                      : isSelected
+                      ? "bg-white text-teal-600 ring-2 ring-teal-600"
+                      : "bg-slate-100 text-slate-700";
 
                     return (
                       <button
-                        key={appointment.id}
-                        type="button"
-                        onClick={() => openEdit(appointment)}
-                        className="absolute left-2 right-2 text-left"
-                        style={{
-                          top: `${top}px`,
-                          height: `${Math.max(54, height)}px`,
-                        }}
+                        key={toISODate(day)}
+                        onClick={() => setSelectedDay(day)}
+                        className={`p-4 text-left border-l border-slate-100 hover:bg-slate-50 transition-colors ${
+                          isSelected ? "bg-teal-50" : ""
+                        }`}
                       >
-                        <div
-                          className={`h-full rounded-[22px] border ${pill} p-3 flex flex-col justify-between shadow-lg hover:-translate-y-0.5 transition-all relative overflow-hidden`}
-                        >
-                          <div className={`absolute inset-y-0 left-0 w-1.5 ${accentBar}`} />
+                        <div className="flex items-center justify-between">
+                          <p
+                            className={`text-[10px] font-black uppercase tracking-widest ${
+                              isToday ? "text-teal-600" : "text-slate-400"
+                            }`}
+                          >
+                            {fmtDayShort(day)}
+                          </p>
 
-                          <div className="min-w-0 pl-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-[12px] font-black text-slate-800 truncate">
-                                {appointment.paciente}
-                              </p>
-                              {appointment.cuestionario_id ? (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-50 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-teal-700 border border-teal-100">
-                                  <ClipboardCheck size={10} />
-                                  Cuest.
-                                </span>
-                              ) : null}
-                            </div>
-                            <p className="mt-0.5 text-[11px] font-bold text-slate-500 truncate">
-                              {appointment.motivo || "Consulta"}
-                            </p>
-                            <p className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 truncate">
-                              {appointment.tipo || "Cita"}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center justify-between text-[10px] font-black text-slate-600 pl-2">
-                            <span className="flex items-center gap-1.5">
-                              <Clock size={11} />
-                              {pad2(appointment.start.getHours())}:{pad2(appointment.start.getMinutes())}
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                              <Timer size={11} />
-                              {appointment.duracion}m
-                            </span>
+                          <div
+                            className={`w-7 h-7 rounded-2xl flex items-center justify-center font-black text-sm ${dayBubbleClass}`}
+                          >
+                            {fmtDayNumber(day)}
                           </div>
                         </div>
+
+                        <p className="mt-2 text-xs font-bold text-slate-500">
+                          {(apptsByDay.get(toISODate(day)) ?? []).length} citas
+                        </p>
                       </button>
                     );
                   })}
                 </div>
-              ))}
+
+                <div className="grid grid-cols-8">
+                  <div className="border-r border-slate-100 w-[92px]">
+                    {timeSlots.map((slot, idx) => {
+                      const label = slot.m === 0 ? `${pad2(slot.h)}:00` : "";
+                      return (
+                        <div
+                          key={idx}
+                          className="h-[44px] px-4 flex items-center justify-start text-xs font-black text-slate-400 overflow-hidden"
+                        >
+                          <span className="whitespace-nowrap">{label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {weekDays.map((day) => (
+                    <div key={toISODate(day)} className="relative border-r border-slate-100">
+                      {timeSlots.map((slot, idx) => {
+                        const dt = new Date(day);
+                        dt.setHours(slot.h, slot.m, 0, 0);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => openNew(dt)}
+                            className="w-full h-[44px] border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                            aria-label={`Crear cita ${toISODate(day)} ${pad2(slot.h)}:${pad2(slot.m)}`}
+                            title="Click para crear cita aqui"
+                          />
+                        );
+                      })}
+
+                      {(apptsByDay.get(toISODate(day)) ?? []).map((appointment) => {
+                        const top = minuteToTop(minutesFromMidnight(appointment.start));
+                        const height = (appointment.duracion / slotMinutes) * rowHeight;
+                        const appearance = getStatusAppearance(appointment.estado);
+
+                        return (
+                          <button
+                            key={appointment.id}
+                            type="button"
+                            onClick={() => openEdit(appointment)}
+                            className="absolute left-2 right-2 text-left"
+                            style={{
+                              top: `${top}px`,
+                              height: `${Math.max(72, height)}px`,
+                            }}
+                          >
+                            <div
+                              className={`h-full rounded-[22px] border ${appearance.card} p-3 flex flex-col justify-between shadow-lg hover:-translate-y-0.5 transition-all relative overflow-hidden`}
+                            >
+                              <div className={`absolute inset-y-0 left-0 w-1.5 ${appearance.accentBar}`} />
+
+                              <div className="min-w-0 pl-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-[12px] font-black text-slate-800 truncate">
+                                    {appointment.paciente}
+                                  </p>
+                                  {appointment.cuestionario_id ? (
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-teal-50 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-teal-700 border border-teal-100">
+                                      <ClipboardCheck size={10} />
+                                      Cuest.
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="mt-0.5 text-[11px] font-bold text-slate-500 truncate">
+                                  {appointment.motivo || "Consulta"}
+                                </p>
+                                <div className="mt-1 flex items-center justify-between gap-2">
+                                  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 truncate">
+                                    {appointment.tipo || "Cita"}
+                                  </p>
+                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                    <span
+                                      className={`h-2 w-2 rounded-full ${appearance.accentBar}`}
+                                      aria-hidden="true"
+                                    />
+                                    {appearance.colorCode}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[10px] font-black text-slate-600 pl-2">
+                                <span className="flex items-center gap-1.5">
+                                  <Clock size={11} />
+                                  {pad2(appointment.start.getHours())}:{pad2(appointment.start.getMinutes())}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                  <Timer size={11} />
+                                  {appointment.duracion}m
+                                </span>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -990,6 +1022,10 @@ export default function AgendaView({
                   tabIndex={0}
                   className="w-full text-left p-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
                 >
+                  {(() => {
+                    const appearance = getStatusAppearance(appointment.estado);
+                    return (
+                      <>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -1014,7 +1050,7 @@ export default function AgendaView({
                     </span>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between text-xs font-black text-slate-500">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-black text-slate-500">
                     <span className="flex items-center gap-1">
                       <Clock size={14} />
                       {pad2(appointment.start.getHours())}:{pad2(appointment.start.getMinutes())}
@@ -1023,6 +1059,11 @@ export default function AgendaView({
                       <Timer size={14} />
                       {appointment.duracion} min
                     </span>
+                  </div>
+
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-[11px] font-black text-slate-600 border border-slate-200">
+                    <span className={`h-2.5 w-2.5 rounded-full ${appearance.accentBar}`} aria-hidden="true" />
+                    Color code: {appearance.colorCode}
                   </div>
 
                   {appointment.consulta_id ? (
@@ -1144,6 +1185,9 @@ export default function AgendaView({
                       ) : null}
                     </div>
                   ) : null}
+                      </>
+                    );
+                  })()}
                 </div>
               ))
             )}
