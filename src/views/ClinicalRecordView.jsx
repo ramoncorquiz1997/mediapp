@@ -714,7 +714,7 @@ export default function ClinicalRecordView({
             </div>
 
             <div className="flex-1 space-y-6">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+              <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
                 <div>
                   <h3 className="text-3xl font-black text-slate-800">{patient.nombre}</h3>
                   <p className="text-slate-500 font-medium">
@@ -724,49 +724,57 @@ export default function ClinicalRecordView({
                   </p>
                 </div>
 
-                <div className="flex w-full flex-wrap items-center justify-start gap-3 lg:max-w-[780px] lg:justify-end">
-                  <RecordActionButton
-                    icon={Link2}
-                    label="Copiar link"
-                    onClick={copyPatientPortalLink}
-                    variant="teal"
-                  />
-                  <RecordActionButton
-                    icon={MessageCircleMore}
-                    label="Enviar por WhatsApp"
-                    onClick={sendPortalLinkByWhatsApp}
-                    disabled={!normalizeWhatsAppPhone(patient?.telefono)}
-                    title={!normalizeWhatsAppPhone(patient?.telefono) ? "Falta telefono del paciente" : "Enviar link por WhatsApp"}
-                    variant="neutral"
-                  />
-                  <RecordActionButton
-                    icon={NotebookText}
-                    label={isExportingPdf ? "Exportando PDF..." : "Exportar PDF"}
-                    onClick={exportPdf}
-                    disabled={isExportingPdf}
-                    variant="teal"
-                  />
-                  {patient.dado_de_baja ? (
+                <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[520px] xl:items-end">
+                  <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+                    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-2">
+                      <RecordActionButton
+                        icon={Link2}
+                        label="Copiar link"
+                        onClick={copyPatientPortalLink}
+                        variant="teal"
+                      />
+                      <RecordActionButton
+                        icon={MessageCircleMore}
+                        label="Enviar por WhatsApp"
+                        onClick={sendPortalLinkByWhatsApp}
+                        disabled={!normalizeWhatsAppPhone(patient?.telefono)}
+                        title={!normalizeWhatsAppPhone(patient?.telefono) ? "Falta telefono del paciente" : "Enviar link por WhatsApp"}
+                        variant="neutral"
+                      />
+                      <RecordActionButton
+                        icon={NotebookText}
+                        label={isExportingPdf ? "Exportando PDF..." : "Exportar PDF"}
+                        onClick={exportPdf}
+                        disabled={isExportingPdf}
+                        variant="neutral"
+                      />
+                    </div>
+
                     <RecordActionButton
-                      icon={Activity}
-                      label="Reactivar paciente"
-                      onClick={reactivatePatient}
-                      variant="success"
+                      icon={Plus}
+                      label="Nueva consulta"
+                      onClick={onNewConsultation}
+                      variant="primary"
                     />
-                  ) : (
-                    <RecordActionButton
-                      icon={Trash2}
-                      label="Dar de baja"
-                      onClick={() => setIsDeleteModalOpen(true)}
-                      variant="danger"
-                    />
-                  )}
-                  <RecordActionButton
-                    icon={Plus}
-                    label="Nueva consulta"
-                    onClick={onNewConsultation}
-                    variant="primary"
-                  />
+                  </div>
+
+                  <div className="flex w-full justify-start lg:justify-end">
+                    {patient.dado_de_baja ? (
+                      <RecordActionButton
+                        icon={Activity}
+                        label="Reactivar paciente"
+                        onClick={reactivatePatient}
+                        variant="success"
+                      />
+                    ) : (
+                      <RecordActionButton
+                        icon={Trash2}
+                        label="Dar de baja"
+                        onClick={() => setIsDeleteModalOpen(true)}
+                        variant="danger"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
