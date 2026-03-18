@@ -211,6 +211,9 @@ export default function App() {
   const [ownerConfigSuccessMessage, setOwnerConfigSuccessMessage] = useState("");
   const [ownerDoctors, setOwnerDoctors] = useState([]);
   const [ownerDoctorsLoading, setOwnerDoctorsLoading] = useState(false);
+  const [ownerLeads, setOwnerLeads] = useState([]);
+  const [ownerLeadsLoading, setOwnerLeadsLoading] = useState(false);
+  const [updatingOwnerLeadId, setUpdatingOwnerLeadId] = useState(null);
   const [isCreatingOwnerDoctor, setIsCreatingOwnerDoctor] = useState(false);
   const [createOwnerDoctorError, setCreateOwnerDoctorError] = useState("");
   const [ownerDoctorSuccessMessage, setOwnerDoctorSuccessMessage] = useState("");
@@ -535,6 +538,50 @@ export default function App() {
     }
   };
 
+  const loadOwnerLeads = async () => {
+    try {
+      setOwnerLeadsLoading(true);
+      const response = await ownerApiFetch("/api/owner/leads?limit=100");
+      if (!response.ok) {
+        throw new Error(`No se pudieron cargar leads (${response.status})`);
+      }
+
+      const data = await response.json();
+      setOwnerLeads(data);
+    } catch (error) {
+      setOwnerConfigError((prev) => prev || error.message || "No se pudieron cargar leads");
+    } finally {
+      setOwnerLeadsLoading(false);
+    }
+  };
+
+  const updateOwnerLead = async (leadId, payload) => {
+    try {
+      setUpdatingOwnerLeadId(leadId);
+      const response = await ownerApiFetch(`/api/owner/leads/${leadId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo actualizar lead (${response.status})`);
+      }
+
+      setOwnerLeads((prev) => prev.map((lead) => (lead.id === leadId ? data : lead)));
+      return data;
+    } catch (error) {
+      setOwnerConfigError((prev) => prev || error.message || "No se pudo actualizar lead");
+      return null;
+    } finally {
+      setUpdatingOwnerLeadId(null);
+    }
+  };
+
   const loadConsultations = async (patientId) => {
     if (!patientId) {
       setConsultationHistory([]);
@@ -569,6 +616,7 @@ export default function App() {
     if (!ownerUser || !isOwnerConsoleRoute) return;
     loadOwnerConfig();
     loadOwnerDoctors();
+    loadOwnerLeads();
   }, [ownerUser, isOwnerConsoleRoute]);
 
   useEffect(() => {
@@ -974,6 +1022,9 @@ export default function App() {
           authError={ownerAuthError}
           doctors={ownerDoctors}
           doctorsLoading={ownerDoctorsLoading}
+          leads={ownerLeads}
+          leadsLoading={ownerLeadsLoading}
+          updatingLeadId={updatingOwnerLeadId}
           ownerConfig={ownerConfig}
           configLoading={ownerConfigLoading}
           onLogin={ownerLogin}
@@ -986,6 +1037,7 @@ export default function App() {
           isSavingConfig={ownerConfigLoading}
           configError={ownerConfigError}
           configSuccessMessage={ownerConfigSuccessMessage}
+          onUpdateLead={updateOwnerLead}
         />
       );
     }
@@ -1022,6 +1074,9 @@ export default function App() {
         authError={ownerAuthError}
         doctors={ownerDoctors}
         doctorsLoading={ownerDoctorsLoading}
+        leads={ownerLeads}
+        leadsLoading={ownerLeadsLoading}
+        updatingLeadId={updatingOwnerLeadId}
         ownerConfig={ownerConfig}
         configLoading={ownerConfigLoading}
         onLogin={ownerLogin}
@@ -1034,6 +1089,7 @@ export default function App() {
         isSavingConfig={ownerConfigLoading}
         configError={ownerConfigError}
         configSuccessMessage={ownerConfigSuccessMessage}
+        onUpdateLead={updateOwnerLead}
       />
     );
   }

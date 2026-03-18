@@ -786,6 +786,45 @@ app.get("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =>
   res.json(result.rows);
 }));
 
+app.get("/api/owner/leads", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const safeLimit = Math.max(1, Math.min(Number(req.query?.limit) || 100, 500));
+  const result = await pool.query(
+    `SELECT id, nombre, email, telefono, especialidad, estado, notas, fecha, created_at
+     FROM leads
+     ORDER BY fecha DESC, id DESC
+     LIMIT ${safeLimit}`
+  );
+
+  res.json(result.rows);
+}));
+
+app.put("/api/owner/leads/:id", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const allowedStatuses = ["nuevo", "contactado", "demo_agendada", "cerrado"];
+  const estado = allowedStatuses.includes(String(req.body?.estado || ""))
+    ? String(req.body.estado)
+    : "nuevo";
+  const notas = String(req.body?.notas || "").trim();
+
+  const result = await pool.query(
+    `UPDATE leads
+     SET estado = $1,
+         notas = $2
+     WHERE id = $3
+     RETURNING id, nombre, email, telefono, especialidad, estado, notas, fecha, created_at`,
+    [estado, notas || null, id]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Lead no encontrado",
+    });
+  }
+
+  res.json(result.rows[0]);
+}));
+
 app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) => {
   const nombre = String(req.body?.nombre || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
