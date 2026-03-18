@@ -235,7 +235,7 @@ export default function ClinicalRecordView({
     tipo: "Heredofamiliares",
     descripcion: "",
   });
-  const [isAntecedentsCollapsed, setIsAntecedentsCollapsed] = useState(false);
+  const [isAntecedentsCollapsed, setIsAntecedentsCollapsed] = useState(true);
   const [historyFilters, setHistoryFilters] = useState({ from: "", to: "", diagnosis: "", type: "Todos" });
   const [expandedConsultationId, setExpandedConsultationId] = useState(null);
   const [studyDrafts, setStudyDrafts] = useState({});
