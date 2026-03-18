@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Activity, ArrowLeft, Lock, Mail, ShieldCheck } from "lucide-react";
 
 export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
-  const [email, setEmail] = useState("doctora@cliniq.lat");
-  const [password, setPassword] = useState("Cliniq2026!");
+  const [email, setEmail] = useState("doctora@MyCliniq.lat");
+  const [password, setPassword] = useState("MyCliniq2026!");
 
   const submit = async (e) => {
     e.preventDefault();
@@ -33,7 +33,7 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
               <Activity size={28} />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">Cliniq</h1>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">MyCliniq</h1>
               <p className="text-sm font-bold text-slate-500">Acceso exclusivo para medicos</p>
             </div>
           </div>
@@ -49,7 +49,7 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="doctora@cliniq.mx"
+                placeholder="doctora@MyCliniq.mx"
                 autoComplete="email"
               />
             </div>
@@ -79,9 +79,9 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
             Acceso inicial:
             <br />
-            Correo: `doctora@cliniq.lat`
+            Correo: `doctora@MyCliniq.lat`
             <br />
-            Contrasena: `Cliniq2026!`
+            Contrasena: `MyCliniq2026!`
           </div>
 
           <button

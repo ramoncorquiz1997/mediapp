@@ -30,7 +30,7 @@ const testimonials = [
     initials: "CM",
     name: "Dr. Carlos Mendoza",
     specialty: "Medico General",
-    text: "Cliniq nos ahorro horas a la semana. El expediente y la agenda ya viven en el mismo lugar y eso se siente desde el primer dia.",
+    text: "MyCliniq nos ahorro horas a la semana. El expediente y la agenda ya viven en el mismo lugar y eso se siente desde el primer dia.",
   },
   {
     initials: "LR",
@@ -48,11 +48,11 @@ const testimonials = [
 
 const faqs = [
   {
-    question: "Cliniq cumple con la NOM-004?",
+    question: "MyCliniq cumple con la NOM-004?",
     answer:
-      "Si, Cliniq esta disenado para cumplir con los requisitos de la NOM-004-SSA3-2012 incluyendo historia clinica, notas de evolucion, consentimiento informado y conservacion de expedientes por minimo 5 anos.",
+      "Si, MyCliniq esta disenado para cumplir con los requisitos de la NOM-004-SSA3-2012 incluyendo historia clinica, notas de evolucion, consentimiento informado y conservacion de expedientes por minimo 5 anos.",
   },
-  { question: "Necesito instalar algo?", answer: "No. Cliniq funciona directo desde tu navegador, en computadora, tablet o celular." },
+  { question: "Necesito instalar algo?", answer: "No. MyCliniq funciona directo desde tu navegador, en computadora, tablet o celular." },
   { question: "Mis datos estan seguros?", answer: "Si. Toda la informacion esta cifrada y protegida bajo la LFPDPPP 2025." },
   { question: "Puedo cancelar cuando quiera?", answer: "Si. No hay contratos ni penalizaciones. Puedes cancelar en cualquier momento." },
   { question: "Tienen soporte tecnico?", answer: "Si. Incluimos soporte por WhatsApp y email sin costo adicional." },
@@ -183,7 +183,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               <Activity size={22} />
             </div>
             <div>
-              <p className="text-xl font-black tracking-tight text-slate-900">Cliniq</p>
+              <p className="text-xl font-black tracking-tight text-slate-900">MyCliniq</p>
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Hecho para consultorios</p>
             </div>
           </button>
@@ -306,7 +306,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-300">Dashboard clinico</p>
-                      <p className="mt-2 text-2xl font-black">Cliniq</p>
+                      <p className="mt-2 text-2xl font-black">MyCliniq</p>
                     </div>
                     <div className="rounded-2xl bg-white/10 px-4 py-3 text-right">
                       <p className="text-xs font-black uppercase text-slate-300">Citas hoy</p>
@@ -393,7 +393,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               Todo lo que necesitas para tu consultorio
             </h2>
             <p className="mt-4 text-base font-bold leading-8 text-slate-600">
-              Desde la primera cita hasta el seguimiento clinico, Cliniq conecta agenda, expediente, recetas y portal del paciente en un solo flujo.
+              Desde la primera cita hasta el seguimiento clinico, MyCliniq conecta agenda, expediente, recetas y portal del paciente en un solo flujo.
             </p>
           </div>
 
@@ -619,7 +619,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               <Activity size={22} />
             </div>
             <div>
-              <p className="text-xl font-black tracking-tight text-slate-900">Cliniq</p>
+              <p className="text-xl font-black tracking-tight text-slate-900">MyCliniq</p>
               <p className="text-xs font-bold text-slate-500">Hecho para consultorios en Mexico</p>
             </div>
           </div>
@@ -630,7 +630,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
           </div>
 
           <div className="text-sm font-bold text-slate-500">
-            <p>© 2025 Cliniq. Todos los derechos reservados.</p>
+            <p>© 2025 MyCliniq. Todos los derechos reservados.</p>
             <p className="mt-1">Hecho en Mexico</p>
           </div>
         </div>

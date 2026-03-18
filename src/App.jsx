@@ -200,10 +200,10 @@ export default function App() {
   const [focusedConsultationId, setFocusedConsultationId] = useState(null);
   const [agendaRefreshToken, setAgendaRefreshToken] = useState(0);
   const [clinicConfig, setClinicConfig] = useState({
-    nombre_consultorio: "Consultorio Cliniq",
+    nombre_consultorio: "Consultorio MyCliniq",
     direccion: "Tijuana, Baja California",
     telefono: "664 000 0000",
-    email_contacto: "doctora@cliniq.lat",
+    email_contacto: "doctora@mycliniq.lat",
     cedula_profesional: "12345678",
     especialidad: "Medicina general",
     zona_horaria: "America/Tijuana",

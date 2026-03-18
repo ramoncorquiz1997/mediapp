@@ -31,10 +31,10 @@ const antecedentTypes = [
   "Habitos",
 ];
 const defaultClinicInfo = {
-  nombre_consultorio: "Consultorio Cliniq",
+  nombre_consultorio: "Consultorio MyCliniq",
   direccion: "Tijuana, Baja California",
   telefono: "664 000 0000",
-  email_contacto: "doctora@cliniq.lat",
+  email_contacto: "doctora@mycliniq.lat",
   cedula_profesional: "12345678",
   especialidad: "Medicina general",
   zona_horaria: "America/Tijuana",

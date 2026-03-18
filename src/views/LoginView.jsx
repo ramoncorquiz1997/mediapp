@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Activity, Lock, Mail } from "lucide-react";
 
 export default function LoginView({ onLogin, isLoading, error }) {
-  const [email, setEmail] = useState("doctora@cliniq.lat");
-  const [password, setPassword] = useState("Cliniq2026!");
+  const [email, setEmail] = useState("doctora@MyCliniq.lat");
+  const [password, setPassword] = useState("MyCliniq2026!");
 
   const submit = async (e) => {
     e.preventDefault();
@@ -19,7 +19,7 @@ export default function LoginView({ onLogin, isLoading, error }) {
               <Activity size={28} />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-800"><Cliniq></Cliniq></h1>
+              <h1 className="text-2xl font-black tracking-tight text-slate-800"><MyCliniq></MyCliniq></h1>
               <p className="text-sm text-slate-500 font-bold">Acceso al consultorio</p>
             </div>
           </div>
@@ -35,7 +35,7 @@ export default function LoginView({ onLogin, isLoading, error }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-                placeholder="doctora@cliniq.lat"
+                placeholder="doctora@MyCliniq.lat"
                 autoComplete="email"
               />
             </div>
@@ -65,9 +65,9 @@ export default function LoginView({ onLogin, isLoading, error }) {
           <div className="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 text-xs font-bold text-slate-500">
             Acceso inicial:
             <br />
-            Correo: `doctora@cliniq.lat`
+            Correo: `doctora@MyCliniq.lat`
             <br />
-            Contrasena: `Cliniq2026!`
+            Contrasena: `MyCliniq2026!`
           </div>
 
           <button

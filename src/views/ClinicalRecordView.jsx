@@ -27,10 +27,10 @@ import {
 import { apiFetch } from "../lib/api";
 
 const clinicInfo = {
-  nombre_consultorio: "Consultorio Cliniq",
+  nombre_consultorio: "Consultorio MyCliniq",
   direccion: "Tijuana, Baja California",
   telefono: "664 000 0000",
-  email_contacto: "doctora@cliniq.lat",
+  email_contacto: "doctora@MyCliniq.lat",
   cedula_profesional: "12345678",
 };
 
@@ -580,7 +580,7 @@ export default function ClinicalRecordView({
         <body>
           <div class="header">
             ${resolvedClinicInfo.logo_data_url ? `<img src="${resolvedClinicInfo.logo_data_url}" alt="Logo" style="width:56px;height:56px;object-fit:cover;border-radius:14px;margin-bottom:12px;" />` : ""}
-            <p class="title">${resolvedClinicInfo.nombre_consultorio || "Consultorio Cliniq"}</p>
+            <p class="title">${resolvedClinicInfo.nombre_consultorio || "Consultorio MyCliniq"}</p>
             <div class="meta">
               <div>${resolvedClinicInfo.direccion || ""}</div>
               <div>Telefono: ${resolvedClinicInfo.telefono || ""}</div>

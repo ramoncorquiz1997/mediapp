@@ -24,7 +24,7 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
             <Activity size={26} />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight italic text-white">Cliniq</h1>
+            <h1 className="text-2xl font-black tracking-tight italic text-white">MyCliniq</h1>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Consultorio digital</p>
           </div>
         </div>
