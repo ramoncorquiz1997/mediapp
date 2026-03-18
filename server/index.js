@@ -2,10 +2,17 @@ import express from "express";
 import cors from "cors";
 import crypto from "crypto";
 import PDFDocument from "pdfkit";
+import { existsSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { pool, ensureSchema } from "./db.js";
 
 process.env.TZ = process.env.TZ || "America/Tijuana";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendDistPath = path.resolve(__dirname, "../dist");
 
 const app = express();
 const host = process.env.HOST || "0.0.0.0";
@@ -3502,6 +3509,18 @@ app.put("/api/citas/:id", asyncHandler(async (req, res) => {
 
   res.json(result.rows[0]);
 }));
+
+if (existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath, { index: false }));
+
+  app.get(/^\/(?!api(?:\/|$)).*/, (req, res, next) => {
+    if (path.extname(req.path)) {
+      return next();
+    }
+
+    return res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err);
