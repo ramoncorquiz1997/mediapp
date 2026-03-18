@@ -559,6 +559,7 @@ export default function AgendaView({
   onStartConsultation,
 }) {
   const today = useMemo(() => new Date(), []);
+  const [calendarView, setCalendarView] = useState("week");
   const [anchor, setAnchor] = useState(() => new Date());
   const weekStart = useMemo(() => startOfWeekMonday(anchor), [anchor]);
   const weekDays = useMemo(
@@ -580,6 +581,12 @@ export default function AgendaView({
     const inWeek = selectedDay >= weekStart && selectedDay < addDays(weekStart, 7);
     if (!inWeek) setSelectedDay(weekStart);
   }, [selectedDay, weekStart]);
+
+  useEffect(() => {
+    if (calendarView === "day") {
+      setAnchor(selectedDay);
+    }
+  }, [calendarView, selectedDay]);
 
   const startHour = 8;
   const endHour = 25;
@@ -725,17 +732,29 @@ export default function AgendaView({
     return appointments.filter((appointment) => appointment.start >= weekStart && appointment.start < end);
   }, [appointments, weekStart]);
 
+  const visibleDays = useMemo(
+    () => (calendarView === "day" ? [selectedDay] : weekDays),
+    [calendarView, selectedDay, weekDays]
+  );
+
   const apptsByDay = useMemo(() => {
     const map = new Map();
-    weekDays.forEach((day) => map.set(toISODate(day), []));
-    apptsThisWeek.forEach((appointment) => {
+    visibleDays.forEach((day) => map.set(toISODate(day), []));
+
+    const sourceAppointments =
+      calendarView === "day"
+        ? appointments.filter((appointment) => sameDay(appointment.start, selectedDay))
+        : apptsThisWeek;
+
+    sourceAppointments.forEach((appointment) => {
       const key = toISODate(appointment.start);
-      if (!map.has(key)) map.set(key, []);
+      if (!map.has(key)) return;
       map.get(key).push(appointment);
     });
+
     map.forEach((items) => items.sort((a, b) => a.start - b.start));
     return map;
-  }, [apptsThisWeek, weekDays]);
+  }, [apptsThisWeek, appointments, calendarView, selectedDay, visibleDays]);
 
   const dayList = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -754,6 +773,16 @@ export default function AgendaView({
   }, [appointments, selectedDay, search]);
 
   const weekLabel = useMemo(() => fmtMonth(weekStart), [weekStart]);
+  const selectedDayLabel = useMemo(
+    () =>
+      selectedDay.toLocaleDateString("es-MX", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    [selectedDay]
+  );
 
   const statusPill = (status) => {
     return getStatusAppearance(status).pill;
@@ -788,16 +817,45 @@ export default function AgendaView({
               <CalendarDays size={18} />
             </div>
             <div>
-              <p className="text-xl font-black text-slate-800">Agenda semanal</p>
-              <p className="text-xs text-slate-500 font-bold capitalize">{weekLabel}</p>
+              <p className="text-xl font-black text-slate-800">
+                {calendarView === "day" ? "Agenda del dia" : "Agenda semanal"}
+              </p>
+              <p className="text-xs text-slate-500 font-bold capitalize">
+                {calendarView === "day" ? selectedDayLabel : weekLabel}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setCalendarView("day")}
+                className={`rounded-2xl px-3 py-2 text-sm font-black transition-colors ${
+                  calendarView === "day" ? "bg-white text-teal-700 shadow-sm" : "text-slate-500"
+                }`}
+              >
+                Dia
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalendarView("week")}
+                className={`rounded-2xl px-3 py-2 text-sm font-black transition-colors ${
+                  calendarView === "week" ? "bg-white text-teal-700 shadow-sm" : "text-slate-500"
+                }`}
+              >
+                Semana
+              </button>
+            </div>
+
             <button
-              onClick={() => setAnchor((d) => addDays(d, -7))}
+              onClick={() =>
+                calendarView === "day"
+                  ? setSelectedDay((d) => addDays(d, -1))
+                  : setAnchor((d) => addDays(d, -7))
+              }
               className="p-2 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
-              title="Semana anterior"
+              title={calendarView === "day" ? "Dia anterior" : "Semana anterior"}
             >
               <ChevronLeft size={18} />
             </button>
@@ -814,9 +872,13 @@ export default function AgendaView({
             </button>
 
             <button
-              onClick={() => setAnchor((d) => addDays(d, 7))}
+              onClick={() =>
+                calendarView === "day"
+                  ? setSelectedDay((d) => addDays(d, 1))
+                  : setAnchor((d) => addDays(d, 7))
+              }
               className="p-2 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100"
-              title="Siguiente semana"
+              title={calendarView === "day" ? "Siguiente dia" : "Siguiente semana"}
             >
               <ChevronRight size={18} />
             </button>
@@ -849,18 +911,22 @@ export default function AgendaView({
           <div className="p-8 text-sm font-bold text-slate-500">Cargando agenda...</div>
         ) : (
           <div className="border-t border-slate-100">
-            <div className="px-6 py-3 text-[11px] font-bold text-slate-400 xl:hidden">
+            <div className={`px-6 py-3 text-[11px] font-bold text-slate-400 xl:hidden ${calendarView === "day" ? "hidden" : ""}`}>
               Desliza horizontalmente para ver toda la semana.
             </div>
 
             <div className="max-h-[72vh] overflow-auto">
-              <div className="min-w-[1024px]">
-                <div className="grid grid-cols-8 border-b border-slate-100 sticky top-0 z-20 bg-white">
+              <div className={calendarView === "day" ? "min-w-0" : "min-w-[1024px]"}>
+                <div
+                  className={`grid border-b border-slate-100 sticky top-0 z-20 bg-white ${
+                    calendarView === "day" ? "grid-cols-[92px_minmax(0,1fr)]" : "grid-cols-8"
+                  }`}
+                >
                   <div className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 w-[92px]">
                     Hora
                   </div>
 
-                  {weekDays.map((day) => {
+                  {visibleDays.map((day) => {
                     const isToday = sameDay(day, today);
                     const isSelected = sameDay(day, selectedDay);
 
@@ -902,7 +968,7 @@ export default function AgendaView({
                   })}
                 </div>
 
-                <div className="grid grid-cols-8">
+                <div className={`grid ${calendarView === "day" ? "grid-cols-[92px_minmax(0,1fr)]" : "grid-cols-8"}`}>
                   <div className="border-r border-slate-100 w-[92px]">
                     {timeSlots.map((slot, idx) => {
                       const label = slot.m === 0 ? `${pad2(slot.h)}:00` : "";
@@ -917,7 +983,7 @@ export default function AgendaView({
                     })}
                   </div>
 
-                  {weekDays.map((day) => (
+                  {visibleDays.map((day) => (
                     <div key={toISODate(day)} className="relative border-r border-slate-100">
                       {timeSlots.map((slot, idx) => {
                         const dt = new Date(day);
