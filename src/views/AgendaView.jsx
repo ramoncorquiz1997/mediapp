@@ -967,12 +967,12 @@ export default function AgendaView({
                                   <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400 truncate">
                                     {appointment.tipo || "Cita"}
                                   </p>
-                                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                  <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] ${appearance.pill}`}>
                                     <span
                                       className={`h-2 w-2 rounded-full ${appearance.accentBar}`}
                                       aria-hidden="true"
                                     />
-                                    {appearance.colorCode}
+                                    {statusLabel(appointment.estado)}
                                   </span>
                                 </div>
                               </div>
@@ -1029,6 +1029,26 @@ export default function AgendaView({
               className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold text-slate-700"
               placeholder="Buscar paciente / motivo..."
             />
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+              Indice de colores
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {DEFAULT_STATUS.map((status) => {
+                const appearance = getStatusAppearance(status);
+                return (
+                  <div
+                    key={status}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[11px] font-black text-slate-600 border border-slate-200"
+                  >
+                    <span className={`h-2.5 w-2.5 rounded-full ${appearance.accentBar}`} aria-hidden="true" />
+                    {statusLabel(status)}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -1092,11 +1112,6 @@ export default function AgendaView({
                       <Timer size={14} />
                       {appointment.duracion} min
                     </span>
-                  </div>
-
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-[11px] font-black text-slate-600 border border-slate-200">
-                    <span className={`h-2.5 w-2.5 rounded-full ${appearance.accentBar}`} aria-hidden="true" />
-                    Color code: {appearance.colorCode}
                   </div>
 
                   {appointment.consulta_id ? (
