@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import pg from "pg";
 
-import { cie10Common } from csv";
+import { cie10Common } from "./data/cie10-common.js";
 
 const { Pool } = pg;
 const __filename = fileURLToPath(import.meta.url);
