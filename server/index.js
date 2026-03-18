@@ -59,10 +59,14 @@ const defaultSaasConfig = {
   smtp_from_email: "",
   leads_notify_email: "",
 };
-const sepConfig = {
-  apiUrl: process.env.SEP_API_URL || "https://cedulaprofesional.sep.gob.mx/api",
-  clientId: process.env.SEP_CLIENT_ID || "rnp-angular-app-prod",
-  apiKey: process.env.SEP_API_KEY || "65da8s675f8s75fda675s8d76as87d5as675da",
+const rapidApiCedulaConfig = {
+  url:
+    process.env.RAPIDAPI_CEDULAS_URL
+    || "https://cedulas-profesionales-sep.p.rapidapi.com/api/v1/sep/cedula",
+  host:
+    process.env.RAPIDAPI_CEDULAS_HOST
+    || "cedulas-profesionales-sep.p.rapidapi.com",
+  key: process.env.RAPIDAPI_CEDULAS_KEY || "",
 };
 const allowedMedicalProfessionTerms = [
   "MEDICO",
@@ -72,10 +76,6 @@ const allowedMedicalProfessionTerms = [
   "CIRUJANO Y PARTERO",
   "DOCTOR EN MEDICINA",
 ];
-let sepTokenCache = {
-  token: "",
-  expiresAt: 0,
-};
 
 app.use(cors());
 app.use(express.json({ limit: "6mb" }));
@@ -155,51 +155,6 @@ const buildFullName = (...parts) =>
     .filter(Boolean)
     .join(" ");
 
-const getSepAccessToken = async () => {
-  if (sepTokenCache.token && sepTokenCache.expiresAt > Date.now() + 30_000) {
-    return sepTokenCache.token;
-  }
-
-  const response = await fetch(`${sepConfig.apiUrl}/auth/token`, {
-    method: "GET",
-    headers: {
-      "X-Client-Id": sepConfig.clientId,
-      "X-API-Key": sepConfig.apiKey,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`SEP auth ${response.status}`);
-  }
-
-  const data = await response.json();
-  if (!data?.access_token) {
-    throw new Error("SEP auth token no disponible");
-  }
-
-  let expiresAt = Date.now() + 10 * 60 * 1000;
-
-  try {
-    const payloadSegment = String(data.access_token).split(".")[1];
-    if (payloadSegment) {
-      const payloadJson = Buffer.from(payloadSegment, "base64url").toString("utf8");
-      const payload = JSON.parse(payloadJson);
-      if (payload?.exp) {
-        expiresAt = Number(payload.exp) * 1000;
-      }
-    }
-  } catch {
-    // Ignore JWT parsing failures and fall back to a short cache window.
-  }
-
-  sepTokenCache = {
-    token: data.access_token,
-    expiresAt,
-  };
-
-  return data.access_token;
-};
-
 const fetchSepLicenseData = async (cedula) => {
   const normalizedCedula = String(cedula ?? "").replace(/\D/g, "").trim();
 
@@ -212,31 +167,36 @@ const fetchSepLicenseData = async (cedula) => {
     };
   }
 
-  const token = await getSepAccessToken();
-  const response = await fetch(`${sepConfig.apiUrl}/solr/profesionista/consultar/byDetalle`, {
-    method: "POST",
+  if (!rapidApiCedulaConfig.key) {
+    throw new Error("RapidAPI no configurado. Define RAPIDAPI_CEDULAS_KEY en el servidor");
+  }
+
+  const url = new URL(rapidApiCedulaConfig.url);
+  url.searchParams.set("cedula", normalizedCedula);
+
+  const response = await fetch(url, {
+    method: "GET",
+    signal: AbortSignal.timeout(12_000),
     headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      "x-rapidapi-host": rapidApiCedulaConfig.host,
+      "x-rapidapi-key": rapidApiCedulaConfig.key,
     },
-    body: JSON.stringify({ numCedula: normalizedCedula }),
   });
 
   if (!response.ok) {
-    throw new Error(`SEP lookup ${response.status}`);
+    throw new Error(`RapidAPI lookup ${response.status}`);
   }
 
-  const rows = await response.json();
-  const record = Array.isArray(rows)
-    ? rows.find((item) => String(item?.cedula || "").trim() === normalizedCedula) || rows[0]
-    : null;
+  const payload = await response.json();
+  const rows = Array.isArray(payload?.data) ? payload.data : [];
+  const record = rows.find((item) => String(item?.cedula || "").trim() === normalizedCedula) || rows[0];
 
   if (!record) {
     return {
       valid: false,
       cedula: normalizedCedula,
       isMedicalDoctor: false,
-      message: "No se encontro informacion para esa cedula",
+      message: "No se encontro informacion para esa cedula en SEP",
     };
   }
 

@@ -430,78 +430,78 @@ export default function OwnerConsolePage({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</label>
-                    <div className="flex flex-col gap-3 md:flex-row">
-                      <input
-                        value={doctorForm.cedula_profesional}
-                        onChange={(e) => handleDoctorCedulaChange(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                        inputMode="numeric"
-                        maxLength={8}
-                      />
-                      <button
-                        type="button"
-                        onClick={validateDoctorLicense}
-                        disabled={isValidatingDoctorLicense || doctorForm.cedula_profesional.trim().length < 7}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-black text-teal-700 transition-colors hover:bg-teal-100 disabled:opacity-60"
-                      >
-                        <SearchCheck size={16} />
-                        <span>{isValidatingDoctorLicense ? "Validando..." : "Validar cédula"}</span>
-                      </button>
-                    </div>
-                    {doctorLicenseMessage ? (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</label>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+                    <input
+                      value={doctorForm.cedula_profesional}
+                      onChange={(e) => handleDoctorCedulaChange(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
+                      inputMode="numeric"
+                      maxLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={validateDoctorLicense}
+                      disabled={isValidatingDoctorLicense || doctorForm.cedula_profesional.trim().length < 7}
+                      className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-black text-teal-700 transition-colors hover:bg-teal-100 disabled:opacity-60"
+                    >
+                      <SearchCheck size={16} />
+                      <span>{isValidatingDoctorLicense ? "Validando..." : "Validar cédula"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {doctorLicenseMessage ? (
+                  <div
+                    className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+                      doctorLicenseValidation?.valid && doctorLicenseValidation?.isMedicalDoctor
+                        ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
+                        : "border border-amber-100 bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    {doctorLicenseMessage}
+                  </div>
+                ) : null}
+
+                {doctorLicenseValidation?.valid ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-start gap-3">
                       <div
-                        className={`rounded-2xl px-4 py-3 text-sm font-bold ${
-                          doctorLicenseValidation?.valid && doctorLicenseValidation?.isMedicalDoctor
-                            ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
-                            : "border border-amber-100 bg-amber-50 text-amber-700"
+                        className={`rounded-2xl p-2 ${
+                          doctorLicenseValidation.isMedicalDoctor
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        {doctorLicenseMessage}
+                        <BadgeCheck size={18} />
                       </div>
-                    ) : null}
-                    {doctorLicenseValidation?.valid ? (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`rounded-2xl p-2 ${
-                              doctorLicenseValidation.isMedicalDoctor
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            <BadgeCheck size={18} />
-                          </div>
-                          <div className="space-y-1 text-sm font-bold text-slate-600">
-                            <p className="text-slate-900">{doctorLicenseValidation.fullName || "Sin nombre SEP"}</p>
-                            <p>{doctorLicenseValidation.profession || "Profesion no disponible"}</p>
-                            <p>
-                              {doctorLicenseValidation.institution || "Institucion no disponible"}
-                              {doctorLicenseValidation.institutionState
-                                ? ` • ${doctorLicenseValidation.institutionState}`
-                                : ""}
-                            </p>
-                            <p className={doctorLicenseValidation.isMedicalDoctor ? "text-emerald-700" : "text-amber-700"}>
-                              {doctorLicenseValidation.isMedicalDoctor
-                                ? "Profesion medica permitida"
-                                : "La cedula existe, pero no pasa como medico permitido"}
-                            </p>
-                          </div>
-                        </div>
+                      <div className="space-y-1 text-sm font-bold text-slate-600">
+                        <p className="text-slate-900">{doctorLicenseValidation.fullName || "Sin nombre SEP"}</p>
+                        <p>{doctorLicenseValidation.profession || "Profesion no disponible"}</p>
+                        <p>
+                          {doctorLicenseValidation.institution || "Institucion no disponible"}
+                          {doctorLicenseValidation.institutionState
+                            ? ` • ${doctorLicenseValidation.institutionState}`
+                            : ""}
+                        </p>
+                        <p className={doctorLicenseValidation.isMedicalDoctor ? "text-emerald-700" : "text-amber-700"}>
+                          {doctorLicenseValidation.isMedicalDoctor
+                            ? "Profesion medica permitida"
+                            : "La cedula existe, pero no pasa como medico permitido"}
+                        </p>
                       </div>
-                    ) : null}
+                    </div>
                   </div>
+                ) : null}
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500">Slug opcional</label>
-                    <input
-                      value={doctorForm.slug}
-                      onChange={(e) => setDoctorForm((prev) => ({ ...prev, slug: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-slate-500">Slug opcional</label>
+                  <input
+                    value={doctorForm.slug}
+                    onChange={(e) => setDoctorForm((prev) => ({ ...prev, slug: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
+                  />
                 </div>
 
                 <button
