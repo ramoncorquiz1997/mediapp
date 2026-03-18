@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Activity, Lock, Mail } from "lucide-react";
 
 export default function LoginView({ onLogin, isLoading, error }) {
-  const [email, setEmail] = useState("doctora@MyCliniq.lat");
-  const [password, setPassword] = useState("MyCliniq2026!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const submit = async (e) => {
     e.preventDefault();

@@ -1056,9 +1056,6 @@ export default function AgendaView({
                     />
                     <div className="min-w-0">
                       <p className="text-sm font-black leading-none">{statusLabel(status)}</p>
-                      <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] opacity-70">
-                        Color de la cita
-                      </p>
                     </div>
                   </div>
                 );
