@@ -250,7 +250,7 @@ F13,F01-F99,F10-F19,,,,Trastornos mentales y del comportamiento debidos al uso d
 F14,F01-F99,F10-F19,,,,Trastornos mentales y del comportamiento debidos al uso de cocaína,2,icdcode.info
 F15,F01-F99,F10-F19,,,,"Trastornos mentales y del comportamiento debidos al uso de otros estimulantes, incluida la cafeína",2,icdcode.info
 M95-M99,M00-M99,,,,,Otros trastornos del sistema osteomuscular y del tejido conjuntivo,1,icdcode.info
-F00,F01-F99,F00-F09,,,,Demencia en la enfermedad de Alzheimer (G30.–),2,icdcode.info
+F00,F01-F99,F00-F09,,,,Demencia en la enfermedad de Alzheimer (G30.-),2,icdcode.info
 F01,F01-F99,F00-F09,,,,Demencia vascular,2,icdcode.info
 F02,F01-F99,F00-F09,,,,Demencia en otras enfermedades clasificadas en otra parte,2,icdcode.info
 L55-L59,L00-L99,,,,,Trastornos de la piel y del tejido subcutáneo relacionados con radiación,1,icdcode.info
@@ -559,17 +559,17 @@ I09,I00-I99,I05-I09,,,,Otras enfermedades reumáticas del corazón,2,icdcode.inf
 I00,I00-I99,I00-I02,,,,Fiebre reumática sin mención de complicación cardíaca,2,icdcode.info
 I01,I00-I99,I00-I02,,,,Fiebre reumática con complicación cardíaca,2,icdcode.info
 I02,I00-I99,I00-I02,,,,Corea reumática,2,icdcode.info
-J30,J00-J99,J30–J39 ,,,,Rinitis alérgica y vasomotora,2,icdcode.info
-J31,J00-J99,J30–J39 ,,,,"Rinitis, rinofaringitis y faringitis crónicas",2,icdcode.info
-J32,J00-J99,J30–J39 ,,,,Sinusitis crónica,2,icdcode.info
-J33,J00-J99,J30–J39 ,,,,Pólipo nasal,2,icdcode.info
+J30,J00-J99,J30-J39 ,,,,Rinitis alérgica y vasomotora,2,icdcode.info
+J31,J00-J99,J30-J39 ,,,,"Rinitis, rinofaringitis y faringitis crónicas",2,icdcode.info
+J32,J00-J99,J30-J39 ,,,,Sinusitis crónica,2,icdcode.info
+J33,J00-J99,J30-J39 ,,,,Pólipo nasal,2,icdcode.info
 J20,J00-J99,J20-J22,,,,Bronquitis aguda,2,icdcode.info
 J21,J00-J99,J20-J22,,,,Bronquiolitis aguda,2,icdcode.info
 J22,J00-J99,J20-J22,,,,Infección aguda no especificada de las vías respiratorias inferiores,2,icdcode.info
-J09,J00-J99,J09–J18 ,,,,Influenza debida a virus de la influenza aviar identificado,2,icdcode.info
-J10,J00-J99,J09–J18 ,,,,Influenza debida a otro virus de la influenza identificado,2,icdcode.info
-J11,J00-J99,J09–J18 ,,,,Influenza debida a virus no identificado,2,icdcode.info
-J12,J00-J99,J09–J18 ,,,,"Neumonía viral, no clasificada en otra parte",2,icdcode.info
+J09,J00-J99,J09-J18 ,,,,Influenza debida a virus de la influenza aviar identificado,2,icdcode.info
+J10,J00-J99,J09-J18 ,,,,Influenza debida a otro virus de la influenza identificado,2,icdcode.info
+J11,J00-J99,J09-J18 ,,,,Influenza debida a virus no identificado,2,icdcode.info
+J12,J00-J99,J09-J18 ,,,,"Neumonía viral, no clasificada en otra parte",2,icdcode.info
 J00,J00-J99,J00-J06,,,,Rinofaringitis aguda [resfriado común],2,icdcode.info
 J01,J00-J99,J00-J06,,,,Sinusitis aguda,2,icdcode.info
 J02,J00-J99,J00-J06,,,,Faringitis aguda,2,icdcode.info
@@ -704,11 +704,11 @@ N03,N00-N99,N00-N08,,,,Síndrome nefrítico crónico,2,icdcode.info
 N04,N00-N99,N00-N08,,,,Síndrome nefrótico,2,icdcode.info
 N05,N00-N99,N00-N08,,,,Síndrome nefrítico no especificado,2,icdcode.info
 N06,N00-N99,N00-N08,,,,Proteinuria aislada con lesión morfológica especificada,2,icdcode.info
-O30,O00-O9A,O30–O48,,,,Embarazo múltiple,2,icdcode.info
-O31,O00-O9A,O30–O48,,,,Complicaciones específicas del embarazo múltiple,2,icdcode.info
-O32,O00-O9A,O30–O48,,,,"Atención materna por presentación anormal del feto, conocida o presunta",2,icdcode.info
-O33,O00-O9A,O30–O48,,,,Atención materna por desproporción conocida o presunta,2,icdcode.info
-O34,O00-O9A,O30–O48,,,,Atención materna por anormalidades conocidas o presuntas de los órganos pelvianos de la madre,2,icdcode.info
+O30,O00-O9A,O30-O48,,,,Embarazo múltiple,2,icdcode.info
+O31,O00-O9A,O30-O48,,,,Complicaciones específicas del embarazo múltiple,2,icdcode.info
+O32,O00-O9A,O30-O48,,,,"Atención materna por presentación anormal del feto, conocida o presunta",2,icdcode.info
+O33,O00-O9A,O30-O48,,,,Atención materna por desproporción conocida o presunta,2,icdcode.info
+O34,O00-O9A,O30-O48,,,,Atención materna por anormalidades conocidas o presuntas de los órganos pelvianos de la madre,2,icdcode.info
 G06,G00-G99,G00-G09,,,,Absceso y granuloma intracraneal e intrarraquídeo,2,icdcode.info
 G07,G00-G99,G00-G09,,,,Absceso y granuloma intracraneal e intrarraquídeo en enfermedades clasificadas en otra parte,2,icdcode.info
 G08,G00-G99,G00-G09,,,,Flebitis y tromboflebitis intracraneal e intrarraquídea,2,icdcode.info
@@ -832,7 +832,7 @@ E55,E00-E89,E50-E64,,,,Deficiencia de vitamina D,2,icdcode.info
 E56,E00-E89,E50-E64,,,,Otras deficiencias de vitaminas,2,icdcode.info
 G44,G00-G99,G40-G47,,,,Otros síndromes de cefalea,2,icdcode.info
 G45,G00-G99,G40-G47,,,,Ataques de isquemia cerebral transitoria y síndromes afines,2,icdcode.info
-G46,G00-G99,G40-G47,,,,Síndromes vasculares encefálicos en enfermedades cerebrovasculares (I60–I67),2,icdcode.info
+G46,G00-G99,G40-G47,,,,Síndromes vasculares encefálicos en enfermedades cerebrovasculares (I60-I67),2,icdcode.info
 G47,G00-G99,G40-G47,,,,Trastornos del sueño,2,icdcode.info
 E40,E00-E89,E40-E46,,,,Kwashiorkor,2,icdcode.info
 E41,E00-E89,E40-E46,,,,Marasmo nutricional,2,icdcode.info
@@ -905,9 +905,9 @@ E14,E00-E89,E10-E14,,,,"Diabetes mellitus, no especificada",2,icdcode.info
 E07,E00-E89,E00-E07,,,,Otros trastornos tiroideos,2,icdcode.info
 G130,G00-G99,G10-G13,G13,,,Neuromiopatía y neuropatía paraneoplásica,3,icdcode.info
 G131,G00-G99,G10-G13,G13,,,Otras atrofias sistémicas que afectan el sistema nervioso central en enfermedad neoplásica,3,icdcode.info
-G132,G00-G99,G10-G13,G13,,,"Atrofia sistémica que afecta primariamente el sistema nervioso central en el mixedema (E00.1, E03.–)",3,icdcode.info
+G132,G00-G99,G10-G13,G13,,,"Atrofia sistémica que afecta primariamente el sistema nervioso central en el mixedema (E00.1, E03.-)",3,icdcode.info
 G138,G00-G99,G10-G13,G13,,,Atrofia sistémica que afecta primariamente el sistema nervioso central en otras enfermedades clasificadas en otra parte,3,icdcode.info
-G120,G00-G99,G10-G13,G12,,,"Atrofia muscular espinal infantil, tipo I [Werdnig–Hoffman]",3,icdcode.info
+G120,G00-G99,G10-G13,G12,,,"Atrofia muscular espinal infantil, tipo I [Werdnig-Hoffman]",3,icdcode.info
 G121,G00-G99,G10-G13,G12,,,Otras atrofias musculares espinales hereditarias,3,icdcode.info
 G122,G00-G99,G10-G13,G12,,,Enfermedades de las neuronas motoras,3,icdcode.info
 G128,G00-G99,G10-G13,G12,,,Otras atrofias musculares espinales y sindromes afines,3,icdcode.info
@@ -935,7 +935,7 @@ G243,G00-G99,G20-G26,G24,,,Tortícolis espasmódica,3,icdcode.info
 G244,G00-G99,G20-G26,G24,,,Distonía bucofacial idiopática,3,icdcode.info
 G245,G00-G99,G20-G26,G24,,,Blefarospasmo,3,icdcode.info
 G248,G00-G99,G20-G26,G24,,,Otras distonías,3,icdcode.info
-G230,G00-G99,G20-G26,G23,,,Enfermedad de Hallervorden–Spatz,3,icdcode.info
+G230,G00-G99,G20-G26,G23,,,Enfermedad de Hallervorden-Spatz,3,icdcode.info
 G231,G00-G99,G20-G26,G23,,,Oftalmoplejia supranuclear progresiva [Steele-Richardson- Olszewski],3,icdcode.info
 G232,G00-G99,G20-G26,G23,,,Degeneración nigroestriada,3,icdcode.info
 G238,G00-G99,G20-G26,G23,,,Otras enfermedades degenerativas específicas de los núcleos de la base,3,icdcode.info
@@ -967,7 +967,7 @@ Z60,Z00-Z99,Z55-Z65,,,,Problemas relacionados con el ambiente social,2,icdcode.i
 Z40,Z00-Z99,Z40-Z54,,,,Cirugía profiláctica,2,icdcode.info
 Z41,Z00-Z99,Z40-Z54,,,,Procedimientos para otros propósitos que no sean los de mejorar el estado de salud,2,icdcode.info
 Z42,Z00-Z99,Z40-Z54,,,,Cuidados posteriores a la cirugía plástica,2,icdcode.info
-H280,H00-H59,H25-H28,H28,,,Catarata diabética (E10–E14 con cuarto carácter común .3),3,icdcode.info
+H280,H00-H59,H25-H28,H28,,,Catarata diabética (E10-E14 con cuarto carácter común .3),3,icdcode.info
 H281,H00-H59,H25-H28,H28,,,"Catarata en otras enfermedades endocrinas, nutricionales y metabólicas clasificadas en otra parte",3,icdcode.info
 H282,H00-H59,H25-H28,H28,,,Catarata en otras enfermedades clasificadas en otra parte,3,icdcode.info
 H288,H00-H59,H25-H28,H28,,,Otros trastornos del cristalino en enfermedades clasificadas en otra parte,3,icdcode.info
@@ -1122,11 +1122,11 @@ H492,H00-H59,H49-H52,H49,,,Parálisis del nervio motor ocular externo [VI par],3
 J95,J00-J99,J95-J99,,,,"Trastornos del sistema respiratorio consecutivos a procedimientos, no clasificados en otra parte",2,icdcode.info
 J96,J00-J99,J95-J99,,,,"Insuficiencia respiratoria, no clasificada en otra parte",2,icdcode.info
 J98,J00-J99,J95-J99,,,,Otros trastornos respiratorios,2,icdcode.info
-J90,J00-J99,J90–J94 ,,,,Derrame pleural no clasificado en otra parte,2,icdcode.info
-J91,J00-J99,J90–J94 ,,,,Derrame pleural en afecciones clasificadas en otra parte,2,icdcode.info
-J92,J00-J99,J90–J94 ,,,,Paquipleuritis,2,icdcode.info
-J93,J00-J99,J90–J94 ,,,,Neumotórax,2,icdcode.info
-J94,J00-J99,J90–J94 ,,,,Otras afecciones de la pleura,2,icdcode.info
+J90,J00-J99,J90-J94 ,,,,Derrame pleural no clasificado en otra parte,2,icdcode.info
+J91,J00-J99,J90-J94 ,,,,Derrame pleural en afecciones clasificadas en otra parte,2,icdcode.info
+J92,J00-J99,J90-J94 ,,,,Paquipleuritis,2,icdcode.info
+J93,J00-J99,J90-J94 ,,,,Neumotórax,2,icdcode.info
+J94,J00-J99,J90-J94 ,,,,Otras afecciones de la pleura,2,icdcode.info
 J85,J00-J99,J85-J86,,,,Absceso del pulmón y del mediastino,2,icdcode.info
 J86,J00-J99,J85-J86,,,,Piotórax,2,icdcode.info
 J80,J00-J99,J80-J84,,,,Síndrome de dificultad respiratoria del adulto,2,icdcode.info
@@ -1308,18 +1308,18 @@ I15,I00-I99,I10-I15,,,,Hipertensión secundaria,2,icdcode.info
 F220,F01-F99,F20-F29,F22,,,Trastorno delirante,3,icdcode.info
 F228,F01-F99,F20-F29,F22,,,Otros trastornos delirantes persistentes,3,icdcode.info
 F229,F01-F99,F20-F29,F22,,,"Trastorno delirante persistente, no especificado",3,icdcode.info
-J34,J00-J99,J30–J39 ,,,,Otros trastornos de la nariz y de los senos paranasales,2,icdcode.info
-J35,J00-J99,J30–J39 ,,,,Enfermedades crónicas de las amígdalas y de las adenoides,2,icdcode.info
-J36,J00-J99,J30–J39 ,,,,Absceso periamigdalino,2,icdcode.info
-J37,J00-J99,J30–J39 ,,,,Laringitis y laringotraqueítis crónicas,2,icdcode.info
-J38,J00-J99,J30–J39 ,,,,"Enfermedades de las cuerdas vocales y de la laringe, no clasificadas en otra parte",2,icdcode.info
-J39,J00-J99,J30–J39 ,,,,Otras enfermedades de las vías respiratorias superiores,2,icdcode.info
-J13,J00-J99,J09–J18 ,,,,Neumonía debida a Streptococcus pneumoniae,2,icdcode.info
-J14,J00-J99,J09–J18 ,,,,Neumonía debida a Haemophilus influenzae,2,icdcode.info
-J15,J00-J99,J09–J18 ,,,,"Neumonía bacteriana, no clasificada en otra parte",2,icdcode.info
-J16,J00-J99,J09–J18 ,,,,"Neumonía debida a otros microorganismos infecciosos, no clasificados en otra parte",2,icdcode.info
-J17,J00-J99,J09–J18 ,,,,Neumonía en enfermedades clasificadas en otra parte,2,icdcode.info
-J18,J00-J99,J09–J18 ,,,,"Neumonía, organismo no especificado",2,icdcode.info
+J34,J00-J99,J30-J39 ,,,,Otros trastornos de la nariz y de los senos paranasales,2,icdcode.info
+J35,J00-J99,J30-J39 ,,,,Enfermedades crónicas de las amígdalas y de las adenoides,2,icdcode.info
+J36,J00-J99,J30-J39 ,,,,Absceso periamigdalino,2,icdcode.info
+J37,J00-J99,J30-J39 ,,,,Laringitis y laringotraqueítis crónicas,2,icdcode.info
+J38,J00-J99,J30-J39 ,,,,"Enfermedades de las cuerdas vocales y de la laringe, no clasificadas en otra parte",2,icdcode.info
+J39,J00-J99,J30-J39 ,,,,Otras enfermedades de las vías respiratorias superiores,2,icdcode.info
+J13,J00-J99,J09-J18 ,,,,Neumonía debida a Streptococcus pneumoniae,2,icdcode.info
+J14,J00-J99,J09-J18 ,,,,Neumonía debida a Haemophilus influenzae,2,icdcode.info
+J15,J00-J99,J09-J18 ,,,,"Neumonía bacteriana, no clasificada en otra parte",2,icdcode.info
+J16,J00-J99,J09-J18 ,,,,"Neumonía debida a otros microorganismos infecciosos, no clasificados en otra parte",2,icdcode.info
+J17,J00-J99,J09-J18 ,,,,Neumonía en enfermedades clasificadas en otra parte,2,icdcode.info
+J18,J00-J99,J09-J18 ,,,,"Neumonía, organismo no especificado",2,icdcode.info
 J06,J00-J99,J00-J06,,,,"Infecciones agudas de las vías respiratorias superiores, de sitios múltiples o no especificados",2,icdcode.info
 F200,F01-F99,F20-F29,F20,,,Esquizofrenia paranoide,3,icdcode.info
 F201,F01-F99,F20-F29,F20,,,Esquizofrenia hebefrénica,3,icdcode.info
@@ -1504,15 +1504,15 @@ N15,N00-N99,N10-N16,,,,Otras enfermedades renales tubulointersticiales,2,icdcode
 N16,N00-N99,N10-N16,,,,Trastornos renales tubulointersticiales en enfermedades clasificadas en otra parte,2,icdcode.info
 N07,N00-N99,N00-N08,,,,"Nefropatía hereditaria, no clasificada en otra parte",2,icdcode.info
 N08,N00-N99,N00-N08,,,,Trastornos glomerulares en enfermedades clasificadas en otra parte,2,icdcode.info
-O35,O00-O9A,O30–O48,,,,"Atención materna por anormalidad o lesión fetal, conocida o presunta",2,icdcode.info
-O36,O00-O9A,O30–O48,,,,Atención materna por otros problemas fetales conocidos o presuntos,2,icdcode.info
-O40,O00-O9A,O30–O48,,,,Polihidramnios,2,icdcode.info
-O41,O00-O9A,O30–O48,,,,Otros trastornos del líquido amniótico y de las membranas,2,icdcode.info
-O42,O00-O9A,O30–O48,,,,Ruptura prematura de las membranas,2,icdcode.info
-O43,O00-O9A,O30–O48,,,,Trastornos placentarios,2,icdcode.info
-O44,O00-O9A,O30–O48,,,,Placenta previa,2,icdcode.info
-O45,O00-O9A,O30–O48,,,,Desprendimiento prematuro de la placenta [abruptio placentae],2,icdcode.info
-O46,O00-O9A,O30–O48,,,,"Hemorragia anteparto, no clasificada en otra parte",2,icdcode.info
+O35,O00-O9A,O30-O48,,,,"Atención materna por anormalidad o lesión fetal, conocida o presunta",2,icdcode.info
+O36,O00-O9A,O30-O48,,,,Atención materna por otros problemas fetales conocidos o presuntos,2,icdcode.info
+O40,O00-O9A,O30-O48,,,,Polihidramnios,2,icdcode.info
+O41,O00-O9A,O30-O48,,,,Otros trastornos del líquido amniótico y de las membranas,2,icdcode.info
+O42,O00-O9A,O30-O48,,,,Ruptura prematura de las membranas,2,icdcode.info
+O43,O00-O9A,O30-O48,,,,Trastornos placentarios,2,icdcode.info
+O44,O00-O9A,O30-O48,,,,Placenta previa,2,icdcode.info
+O45,O00-O9A,O30-O48,,,,Desprendimiento prematuro de la placenta [abruptio placentae],2,icdcode.info
+O46,O00-O9A,O30-O48,,,,"Hemorragia anteparto, no clasificada en otra parte",2,icdcode.info
 O28,O00-O9A,O20-O29,,,,Hallazgos anormales en el examen prenatal de la madre,2,icdcode.info
 O29,O00-O9A,O20-O29,,,,Complicaciones de la anestesia administrada durante el embarazo,2,icdcode.info
 O15,O00-O9A,O10-O16,,,,Eclampsia,2,icdcode.info
@@ -1603,7 +1603,7 @@ T82,S00-T88,T80-T88,,,,"Complicaciones de dispositivos protésicos, implantes e 
 T83,S00-T88,T80-T88,,,,"Complicaciones de dispositivos, implantes e injertos genitourinarios",2,icdcode.info
 T84,S00-T88,T80-T88,,,,"Complicaciones de dispositivos protésicos, implantes e injertos ortopédicos internos",2,icdcode.info
 G249,G00-G99,G20-G26,G24,,,"Distonía, no especificada",3,icdcode.info
-H360,H00-H59,H30-H36,H36,,,Retinopatía diabética (E10–E14 con cuarto carácter común .3),3,icdcode.info
+H360,H00-H59,H30-H36,H36,,,Retinopatía diabética (E10-E14 con cuarto carácter común .3),3,icdcode.info
 H368,H00-H59,H30-H36,H36,,,Otros trastornos de la retina en enfermedades clasificadas en otra parte,3,icdcode.info
 H350,H00-H59,H30-H36,H35,,,Retinopatías del fondo y cambios vasculares retinianos,3,icdcode.info
 H351,H00-H59,H30-H36,H35,,,Retinopatía de la prematuridad,3,icdcode.info
@@ -1638,7 +1638,7 @@ F064,F01-F99,F00-F09,F06,,,"Trastorno de ansiedad, orgánico",3,icdcode.info
 F058,F01-F99,F00-F09,F05,,,Otros delirios,3,icdcode.info
 F059,F01-F99,F00-F09,F05,,,"Delirio, no especificado",3,icdcode.info
 F020,F01-F99,F00-F09,F02,,,Demencia en la enfermedad de Pick (G3l.0),3,icdcode.info
-F021,F01-F99,F00-F09,F02,,,Demencia en la enfermedad de Creutzfeldt–Jakob (A81.0),3,icdcode.info
+F021,F01-F99,F00-F09,F02,,,Demencia en la enfermedad de Creutzfeldt-Jakob (A81.0),3,icdcode.info
 F022,F01-F99,F00-F09,F02,,,Demencia en la enfermedad de Huntington (Gl0),3,icdcode.info
 F250,F01-F99,F20-F29,F25,,,Trastorno esquizoafectivo de tipo maníaco,3,icdcode.info
 F251,F01-F99,F20-F29,F25,,,Trastorno esquizoafectivo de tipo depresivo,3,icdcode.info
@@ -1829,8 +1829,8 @@ N39,N00-N99,N30-N39,,,,Otros trastornos del sistema urinario,2,icdcode.info
 A46,A00-B99,A30-A49,,,,Erisipela,2,icdcode.info
 A48,A00-B99,A30-A49,,,,"Otras enfermedades bacterianas, no clasificadas en otra parte",2,icdcode.info
 A49,A00-B99,A30-A49,,,,Infección bacteriana de sitio no especificado,2,icdcode.info
-O47,O00-O9A,O30–O48,,,,Falso trabajo de parto,2,icdcode.info
-O48,O00-O9A,O30–O48,,,,Embarazo prolongado,2,icdcode.info
+O47,O00-O9A,O30-O48,,,,Falso trabajo de parto,2,icdcode.info
+O48,O00-O9A,O30-O48,,,,Embarazo prolongado,2,icdcode.info
 E84,E00-E89,E70-E90,,,,Fibrosis quística,2,icdcode.info
 E85,E00-E89,E70-E90,,,,Amiloidosis,2,icdcode.info
 E86,E00-E89,E70-E90,,,,Depleción del volumen,2,icdcode.info
@@ -2189,7 +2189,7 @@ R430,R00-R99,R40-R46,R43,,,Anosmia,3,icdcode.info
 R431,R00-R99,R40-R46,R43,,,Parosmia,3,icdcode.info
 R432,R00-R99,R40-R46,R43,,,Parageusia,3,icdcode.info
 R438,R00-R99,R40-R46,R43,,,Otras alteraciones del gusto y del olfato y las no especificadas,3,icdcode.info
-Q070,Q00-Q99,Q00-Q07,Q07,,,Síndrome de Arnold–Chiari,3,icdcode.info
+Q070,Q00-Q99,Q00-Q07,Q07,,,Síndrome de Arnold-Chiari,3,icdcode.info
 Q078,Q00-Q99,Q00-Q07,Q07,,,"Otras malformaciones congénitas del sistema nervioso, especificadas",3,icdcode.info
 Q079,Q00-Q99,Q00-Q07,Q07,,,"Malformación congénita del sistema nervioso, no especificada",3,icdcode.info
 Q060,Q00-Q99,Q00-Q07,Q06,,,Amielia,3,icdcode.info
@@ -2250,7 +2250,7 @@ Q262,Q00-Q99,Q20-Q28,Q26,,,Conexión anómala total de las venas pulmonares,3,ic
 Q263,Q00-Q99,Q20-Q28,Q26,,,Conexión anómala parcial de las venas pulmonares,3,icdcode.info
 Q264,Q00-Q99,Q20-Q28,Q26,,,"Conexión anómala de las venas pulmonares, sin otra especificación",3,icdcode.info
 Q265,Q00-Q99,Q20-Q28,Q26,,,Conexión anómala de la vena porta,3,icdcode.info
-Q266,Q00-Q99,Q20-Q28,Q26,,,Fístula arteria hepática–vena porta,3,icdcode.info
+Q266,Q00-Q99,Q20-Q28,Q26,,,Fístula arteria hepática-vena porta,3,icdcode.info
 Q268,Q00-Q99,Q20-Q28,Q26,,,Otras malformaciones congénitas de las grandes venas,3,icdcode.info
 Q269,Q00-Q99,Q20-Q28,Q26,,,"Malformación congénita de las grandes venas, no especificada",3,icdcode.info
 E440,E00-E89,E40-E46,E44,,,Desnutrición proteicocalórica moderada,3,icdcode.info
@@ -2287,11 +2287,11 @@ E801,E00-E89,E70-E90,E80,,,Porfiria cutánea tardía,3,icdcode.info
 E802,E00-E89,E70-E90,E80,,,Otras porfirias:,3,icdcode.info
 E803,E00-E89,E70-E90,E80,,,Defectos de catalasa y peroxidasa,3,icdcode.info
 E804,E00-E89,E70-E90,E80,,,Síndrome de Gilbert,3,icdcode.info
-E805,E00-E89,E70-E90,E80,,,Síndrome de Crigler–Najjar,3,icdcode.info
+E805,E00-E89,E70-E90,E80,,,Síndrome de Crigler-Najjar,3,icdcode.info
 E806,E00-E89,E70-E90,E80,,,Otros trastornos del metabolismo de la bilirrubina,3,icdcode.info
 E807,E00-E89,E70-E90,E80,,,"Trastorno del metabolismo de la bilirrubina, no especificado",3,icdcode.info
 E790,E00-E89,E70-E90,E79,,,Hiperuricemia sin signos de artritis inflamatoria y enfermedad tofácea,3,icdcode.info
-E791,E00-E89,E70-E90,E79,,,Síndrome de Lesch–Nyhan,3,icdcode.info
+E791,E00-E89,E70-E90,E79,,,Síndrome de Lesch-Nyhan,3,icdcode.info
 E798,E00-E89,E70-E90,E79,,,Otros trastornos del metabolismo de las purinas y de las pirimidinas,3,icdcode.info
 E799,E00-E89,E70-E90,E79,,,"Trastorno del metabolismo de las purinas y de las pirimidinas, no especificado",3,icdcode.info
 E780,E00-E89,E70-E90,E78,,,Hipercolesterolemia pura,3,icdcode.info
@@ -2361,7 +2361,7 @@ P284,P00-P96,P20-P29,P28,,,Otras apneas del recién nacido,3,icdcode.info
 P285,P00-P96,P20-P29,P28,,,Insuficiencia respiratoria del recién nacido,3,icdcode.info
 P288,P00-P96,P20-P29,P28,,,Otros problemas respiratorios especificados del recién nacido,3,icdcode.info
 P289,P00-P96,P20-P29,P28,,,Afección respiratoria no especificada del recién nacido,3,icdcode.info
-P270,P00-P96,P20-P29,P27,,,Síndrome de Wilson–Mikity,3,icdcode.info
+P270,P00-P96,P20-P29,P27,,,Síndrome de Wilson-Mikity,3,icdcode.info
 P271,P00-P96,P20-P29,P27,,,Displasia broncopulmonar originada en el período perinatal,3,icdcode.info
 P278,P00-P96,P20-P29,P27,,,Otras enfermedades respiratorias crónicas originadas en el período perinatal,3,icdcode.info
 P279,P00-P96,P20-P29,P27,,,Enfermedad respiratoria crónica no especificada originada en el período perinatal,3,icdcode.info
@@ -2999,7 +2999,7 @@ L711,L00-L99,L60-L75,L71,,,Rinofima,3,icdcode.info
 L718,L00-L99,L60-L75,L71,,,Otras rosáceas,3,icdcode.info
 L719,L00-L99,L60-L75,L71,,,"Rosácea, no especificada",3,icdcode.info
 E878,E00-E89,E70-E90,E87,,,"Otros trastornos del equilibrio de los electrólitos y de los líquidos, no clasificados en otra parte",3,icdcode.info
-L990,L00-L99,L80-L99,L99,,,Amiloidosis de la piel (E85.–),3,icdcode.info
+L990,L00-L99,L80-L99,L99,,,Amiloidosis de la piel (E85.-),3,icdcode.info
 L998,L00-L99,L80-L99,L99,,,Otros trastornos de la piel y del tejido subcutáneo en enfermedades clasificadas en otra parte,3,icdcode.info
 A481,A00-B99,A30-A49,A48,,,Enfermedad de los legionarios,3,icdcode.info
 A482,A00-B99,A30-A49,A48,,,Enfermedad de los legionarios no neumónica [fiebre de Pontiac],3,icdcode.info
@@ -3365,8 +3365,8 @@ L910,L00-L99,L80-L99,L91,,,Cicatriz queloide,3,icdcode.info
 L918,L00-L99,L80-L99,L91,,,Otros trastornos hipertróficos de la piel,3,icdcode.info
 L919,L00-L99,L80-L99,L91,,,"Trastorno hipertrófico de la piel, no especificado",3,icdcode.info
 L900,L00-L99,L80-L99,L90,,,Liquen escleroso y atrófico,3,icdcode.info
-L901,L00-L99,L80-L99,L90,,,Anetodermia de Schweninger–Buzzi,3,icdcode.info
-L902,L00-L99,L80-L99,L90,,,Anetodermia de Jadassohn–Pellizzari,3,icdcode.info
+L901,L00-L99,L80-L99,L90,,,Anetodermia de Schweninger-Buzzi,3,icdcode.info
+L902,L00-L99,L80-L99,L90,,,Anetodermia de Jadassohn-Pellizzari,3,icdcode.info
 L903,L00-L99,L80-L99,L90,,,Atrofoderma de Pasini y Pierini,3,icdcode.info
 L904,L00-L99,L80-L99,L90,,,Acrodermatitis crónica atrófica,3,icdcode.info
 L905,L00-L99,L80-L99,L90,,,Fibrosis y afecciones cicatriciales de la piel,3,icdcode.info
@@ -3465,7 +3465,7 @@ I692,I00-I99,I60-I69,I69,,,Secuelas de otras hemorragias intracraneales no traum
 I693,I00-I99,I60-I69,I69,,,Secuelas de infarto cerebral,3,icdcode.info
 I694,I00-I99,I60-I69,I69,,,"Secuelas de accidente vascular encefálico, no especificado como hemorrágico o isquémico",3,icdcode.info
 I698,I00-I99,I60-I69,I69,,,Secuelas de otras enfermedades cerebrovasculares y de las no especificadas,3,icdcode.info
-I680,I00-I99,I60-I69,I68,,,Angiopatía cerebral amiloide (E85.–),3,icdcode.info
+I680,I00-I99,I60-I69,I68,,,Angiopatía cerebral amiloide (E85.-),3,icdcode.info
 I681,I00-I99,I60-I69,I68,,,Arteritis cerebral en enfermedades infecciosas y parasitarias clasificadas en otra parte,3,icdcode.info
 I682,I00-I99,I60-I69,I68,,,Arteritis cerebral en otras enfermedades clasificadas en otra parte,3,icdcode.info
 I688,I00-I99,I60-I69,I68,,,Otros trastornos cerebrovasculares en enfermedades clasificadas en otra parte,3,icdcode.info
@@ -3571,8 +3571,8 @@ T422,S00-T88,T36-T50,T42,,,Succinamidas y derivados de la oxazolidina,3,icdcode.
 T423,S00-T88,T36-T50,T42,,,Barbitúricos,3,icdcode.info
 T424,S00-T88,T36-T50,T42,,,Benzodiazepinas,3,icdcode.info
 T425,S00-T88,T36-T50,T42,,,"Antiepilépticos mixtos, no clasificados en otra parte",3,icdcode.info
-T426,S00-T88,T36-T50,T42,,,Otros antiepilépticos y drogas hipnótico–sedantes,3,icdcode.info
-T427,S00-T88,T36-T50,T42,,,"Antiepilépticos y drogas hipnótico–sedantes, no especificados",3,icdcode.info
+T426,S00-T88,T36-T50,T42,,,Otros antiepilépticos y drogas hipnótico-sedantes,3,icdcode.info
+T427,S00-T88,T36-T50,T42,,,"Antiepilépticos y drogas hipnótico-sedantes, no especificados",3,icdcode.info
 T428,S00-T88,T36-T50,T42,,,Drogas antiparkinsonianas y otros depresores del tono muscular central,3,icdcode.info
 T410,S00-T88,T36-T50,T41,,,Anestésicos por inhalación,3,icdcode.info
 T411,S00-T88,T36-T50,T41,,,Anestésicos intravenosos,3,icdcode.info
@@ -3768,7 +3768,7 @@ Z928,Z00-Z99,Z80-Z99,Z92,,,Historia personal de otros tratamientos médicos,3,ic
 Z910,Z00-Z99,Z80-Z99,Z91,,,"Historia personal de alergia, no debida a drogas ni a sustancias biológicas",3,icdcode.info
 Z911,Z00-Z99,Z80-Z99,Z91,,,Historia personal de incumplimiento del régimen o tratamiento médico,3,icdcode.info
 Z912,Z00-Z99,Z80-Z99,Z91,,,Historia personal de higiene personal deficiente,3,icdcode.info
-Z913,Z00-Z99,Z80-Z99,Z91,,,Historia personal de ciclo sueño–vigilia no saludable,3,icdcode.info
+Z913,Z00-Z99,Z80-Z99,Z91,,,Historia personal de ciclo sueño-vigilia no saludable,3,icdcode.info
 Z914,Z00-Z99,Z80-Z99,Z91,,,"Historia personal de trauma psicológico, no clasificado en otra parte",3,icdcode.info
 Z915,Z00-Z99,Z80-Z99,Z91,,,Historia personal de lesión autoinfligida intencionalmente,3,icdcode.info
 Z916,Z00-Z99,Z80-Z99,Z91,,,Historia personal de otro trauma físico,3,icdcode.info
@@ -3941,7 +3941,7 @@ O359,O00-O9A,O30-O48,O35,,,Atención materna por (presunta) anormalidad y lesió
 N080,N00-N99,N00-N08,N08,,,Trastornos glomerulares en enfermedades infecciosas y parasitarias clasificadas en otra parte,3,icdcode.info
 N081,N00-N99,N00-N08,N08,,,Trastornos glomerulares en enfermedades neoplásicas,3,icdcode.info
 N082,N00-N99,N00-N08,N08,,,Trastornos glomerulares en enfermedades de la sangre y otros trastornos que afectan al mecanismo inmunitario,3,icdcode.info
-N083,N00-N99,N00-N08,N08,,,Trastornos glomerulares en diabetes mellitus (E10–E14 con cuarto carácter común .2),3,icdcode.info
+N083,N00-N99,N00-N08,N08,,,Trastornos glomerulares en diabetes mellitus (E10-E14 con cuarto carácter común .2),3,icdcode.info
 N084,N00-N99,N00-N08,N08,,,"Trastornos glomerulares en otras enfermedades endocrinas, nutricionales y metabólicas",3,icdcode.info
 N085,N00-N99,N00-N08,N08,,,Trastornos glomerulares en trastornos sistémicos del tejido conjuntivo,3,icdcode.info
 N088,N00-N99,N00-N08,N08,,,Trastornos glomerulares en otras enfermedades clasificadas en otra parte,3,icdcode.info
@@ -3950,7 +3950,7 @@ N161,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en enfermedad
 N162,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en enfermedades de la sangre y en trastornos que afectan el mecanismo inmunitario,3,icdcode.info
 N163,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en enfermedades metabólicas,3,icdcode.info
 N164,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en enfermedades del tejido conjuntivo,3,icdcode.info
-N165,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en rechazo de trasplante (T86.–),3,icdcode.info
+N165,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en rechazo de trasplante (T86.-),3,icdcode.info
 N168,N00-N99,N10-N16,N16,,,Trastornos renales tubulointersticiales en otras enfermedades clasificadas en otra parte,3,icdcode.info
 N150,N00-N99,N10-N16,N15,,,Nefropatía de los Balcanes,3,icdcode.info
 N151,N00-N99,N10-N16,N15,,,Absceso renal y perirrenal,3,icdcode.info
@@ -4067,10 +4067,10 @@ A930,A00-B99,A90-A99,A93,,,Enfermedad por virus de Oropouche,3,icdcode.info
 A931,A00-B99,A90-A99,A93,,,Fiebre transmitida por flebótomos,3,icdcode.info
 A932,A00-B99,A90-A99,A93,,,Fiebre de Colorado transmitida por garrapatas,3,icdcode.info
 A938,A00-B99,A90-A99,A93,,,Otras fiebres virales especificadas transmitidas por artrópodos,3,icdcode.info
-M360,M00-M99,M30-M36,M36,,,Dermato(poli)miositis en enfermedad neoplásica (C00–D48),3,icdcode.info
-M361,M00-M99,M30-M36,M36,,,Artropatía en enfermedad neoplásica (C00–D48),3,icdcode.info
-M362,M00-M99,M30-M36,M36,,,Artropatía hemofílica (D66–D68),3,icdcode.info
-M363,M00-M99,M30-M36,M36,,,Artropatía en otros trastornos de la sangre (D50–D76),3,icdcode.info
+M360,M00-M99,M30-M36,M36,,,Dermato(poli)miositis en enfermedad neoplásica (C00-D48),3,icdcode.info
+M361,M00-M99,M30-M36,M36,,,Artropatía en enfermedad neoplásica (C00-D48),3,icdcode.info
+M362,M00-M99,M30-M36,M36,,,Artropatía hemofílica (D66-D68),3,icdcode.info
+M363,M00-M99,M30-M36,M36,,,Artropatía en otros trastornos de la sangre (D50-D76),3,icdcode.info
 M364,M00-M99,M30-M36,M36,,,Artropatía en reacciones de hipersensibilidad clasificadas en otra parte,3,icdcode.info
 M368,M00-M99,M30-M36,M36,,,Trastornos sistémicos del tejido conjuntivo en otras enfermedades clasificadas en otra parte,3,icdcode.info
 N290,N00-N99,N25-N29,N29,,,Sífilis renal tardía,3,icdcode.info
@@ -4803,11 +4803,11 @@ Z281,Z00-Z99,Z20-Z29,Z28,,,"Inmunización no realizada por decisión del pacient
 Z282,Z00-Z99,Z20-Z29,Z28,,,"Inmunización no realizada por decisión del paciente, por otras razones y las no especificadas",3,icdcode.info
 Z288,Z00-Z99,Z20-Z29,Z28,,,Inmunización no realizada por otras razones,3,icdcode.info
 Z289,Z00-Z99,Z20-Z29,Z28,,,Inmunización no realizada por razón no especificada,3,icdcode.info
-Z270,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra el cólera y la tifoidea–paratifoidea [cólera + TAB],3,icdcode.info
-Z271,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra difteria–pertussis–tétanos combinados [DPT],3,icdcode.info
-Z272,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra difteria–pertussis–tétanos y tifoidea–paratifoidea [DPT + TAB],3,icdcode.info
-Z273,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra difteria–pertussis–tétanos y poliomielitis [DPT + polio],3,icdcode.info
-Z274,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra sarampión–parotiditis–rubéola [SPR] [MMR],3,icdcode.info
+Z270,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra el cólera y la tifoidea-paratifoidea [cólera + TAB],3,icdcode.info
+Z271,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra difteria-pertussis-tétanos combinados [DPT],3,icdcode.info
+Z272,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra difteria-pertussis-tétanos y tifoidea-paratifoidea [DPT + TAB],3,icdcode.info
+Z273,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra difteria-pertussis-tétanos y poliomielitis [DPT + polio],3,icdcode.info
+Z274,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra sarampión-parotiditis-rubéola [SPR] [MMR],3,icdcode.info
 Z278,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra otras combinaciones de enfermedades infecciosas,3,icdcode.info
 Z279,Z00-Z99,Z20-Z29,Z27,,,Necesidad de inmunización contra combinaciones no especificadas de enfermedades infecciosas,3,icdcode.info
 Z260,Z00-Z99,Z20-Z29,Z26,,,Necesidad de inmunización contra la leishmaniasis,3,icdcode.info
@@ -4824,7 +4824,7 @@ Z244,Z00-Z99,Z20-Z29,Z24,,,Necesidad de inmunización sólo contra el sarampión
 Z245,Z00-Z99,Z20-Z29,Z24,,,Necesidad de inmunización sólo contra la rubéola,3,icdcode.info
 Z246,Z00-Z99,Z20-Z29,Z24,,,Necesidad de inmunización contra la hepatitis viral,3,icdcode.info
 Z230,Z00-Z99,Z20-Z29,Z23,,,Necesidad de inmunización sólo contra el cólera,3,icdcode.info
-Z231,Z00-Z99,Z20-Z29,Z23,,,Necesidad de inmunización sólo contra la tifoidea–paratifoidea [TAB],3,icdcode.info
+Z231,Z00-Z99,Z20-Z29,Z23,,,Necesidad de inmunización sólo contra la tifoidea-paratifoidea [TAB],3,icdcode.info
 Z232,Z00-Z99,Z20-Z29,Z23,,,Necesidad de inmunización contra la tuberculosis [BCG],3,icdcode.info
 Z233,Z00-Z99,Z20-Z29,Z23,,,Necesidad de inmunización contra la peste,3,icdcode.info
 Z234,Z00-Z99,Z20-Z29,Z23,,,Necesidad de inmunización contra la tularemia,3,icdcode.info
@@ -5057,7 +5057,7 @@ K761,K00-K95,K70-K77,K76,,,Congestión pasiva crónica del hígado,3,icdcode.inf
 K762,K00-K95,K70-K77,K76,,,Necrosis hemorrágica central del hígado,3,icdcode.info
 K763,K00-K95,K70-K77,K76,,,Infarto del hígado,3,icdcode.info
 K764,K00-K95,K70-K77,K76,,,Peliosis hepática,3,icdcode.info
-K765,K00-K95,K70-K77,K76,,,Enfermedad veno–oclusiva del hígado,3,icdcode.info
+K765,K00-K95,K70-K77,K76,,,Enfermedad veno-oclusiva del hígado,3,icdcode.info
 K766,K00-K95,K70-K77,K76,,,Hipertensión portal,3,icdcode.info
 K767,K00-K95,K70-K77,K76,,,Síndrome hepatorrenal,3,icdcode.info
 K768,K00-K95,K70-K77,K76,,,Otras enfermedades especificadas del hígado,3,icdcode.info
@@ -5298,7 +5298,7 @@ I830,I00-I99,I80-I89,I83,,,Venas varicosas de los miembros inferiores con úlcer
 I831,I00-I99,I80-I89,I83,,,Venas varicosas de los miembros inferiores con inflamación,3,icdcode.info
 I832,I00-I99,I80-I89,I83,,,Venas varicosas de los miembros inferiores con úlcera e inflamación,3,icdcode.info
 I839,I00-I99,I80-I89,I83,,,Venas varicosas de los miembros inferiores sin úlcera ni inflamación,3,icdcode.info
-I820,I00-I99,I80-I89,I82,,,Síndrome de Budd–Chiari,3,icdcode.info
+I820,I00-I99,I80-I89,I82,,,Síndrome de Budd-Chiari,3,icdcode.info
 I821,I00-I99,I80-I89,I82,,,Tromboflebitis migratoria,3,icdcode.info
 I822,I00-I99,I80-I89,I82,,,Embolia y trombosis de vena cava,3,icdcode.info
 I823,I00-I99,I80-I89,I82,,,Embolia y trombosis de vena renal,3,icdcode.info
@@ -5451,7 +5451,7 @@ Z388,Z00-Z99,Z30-Z39,Z38,,,"Otros nacimientos múltiples, lugar de nacimiento no
 Z379,Z00-Z99,Z30-Z39,Z37,,,Producto del parto no especificado,3,icdcode.info
 T510,S00-T88,T51-T65,T51,,,Etanol,3,icdcode.info
 T511,S00-T88,T51-T65,T51,,,Metanol,3,icdcode.info
-T512,S00-T88,T51-T65,T51,,,Propanol–2,3,icdcode.info
+T512,S00-T88,T51-T65,T51,,,Propanol-2,3,icdcode.info
 T513,S00-T88,T51-T65,T51,,,Licor de alcohol insuficientemente destilado,3,icdcode.info
 T518,S00-T88,T51-T65,T51,,,Otros alcoholes,3,icdcode.info
 T519,S00-T88,T51-T65,T51,,,"Alcohol, no especificado",3,icdcode.info
@@ -5799,12 +5799,12 @@ G479,G00-G99,G40-G47,G47,,,"Trastorno del sueño, no especificado",3,icdcode.inf
 G460,G00-G99,G40-G47,G46,,,Síndrome de la arteria cerebral media (I66.0),3,icdcode.info
 G461,G00-G99,G40-G47,G46,,,Síndrome de la arteria cerebral anterior (I66.1),3,icdcode.info
 G462,G00-G99,G40-G47,G46,,,Síndrome de la arteria cerebral posterior (I66.2),3,icdcode.info
-G463,G00-G99,G40-G47,G46,,,Síndromes apopléticos del tallo encefálico (I60–I67),3,icdcode.info
-G464,G00-G99,G40-G47,G46,,,Síndrome de infarto cerebeloso (I60–I67),3,icdcode.info
-G465,G00-G99,G40-G47,G46,,,Síndrome lacunar motor puro (I60–I67),3,icdcode.info
-G466,G00-G99,G40-G47,G46,,,Síndrome lacunar sensorial puro (I60–I67),3,icdcode.info
-G467,G00-G99,G40-G47,G46,,,Otros síndromes lacunares (I60–I67),3,icdcode.info
-G468,G00-G99,G40-G47,G46,,,Otros síndromes vasculares encefálicos en enfermedades cerebrovasculares (I60–I67),3,icdcode.info
+G463,G00-G99,G40-G47,G46,,,Síndromes apopléticos del tallo encefálico (I60-I67),3,icdcode.info
+G464,G00-G99,G40-G47,G46,,,Síndrome de infarto cerebeloso (I60-I67),3,icdcode.info
+G465,G00-G99,G40-G47,G46,,,Síndrome lacunar motor puro (I60-I67),3,icdcode.info
+G466,G00-G99,G40-G47,G46,,,Síndrome lacunar sensorial puro (I60-I67),3,icdcode.info
+G467,G00-G99,G40-G47,G46,,,Otros síndromes lacunares (I60-I67),3,icdcode.info
+G468,G00-G99,G40-G47,G46,,,Otros síndromes vasculares encefálicos en enfermedades cerebrovasculares (I60-I67),3,icdcode.info
 G450,G00-G99,G40-G47,G45,,,Síndrome arterial vértebro-basilar,3,icdcode.info
 G451,G00-G99,G40-G47,G45,,,Síndrome de la arteria carótida (hemisférico),3,icdcode.info
 G452,G00-G99,G40-G47,G45,,,Síndromes arteriales precerebrales bilaterales y múltiples,3,icdcode.info
@@ -5921,7 +5921,7 @@ E713,E00-E89,E70-E90,E71,,,Trastornos del metabolismo de los ácidos grasos,3,ic
 E700,E00-E89,E70-E90,E70,,,Fenilcetonuria clásica,3,icdcode.info
 E701,E00-E89,E70-E90,E70,,,Otras hiperfenilalaninemias,3,icdcode.info
 E702,E00-E89,E70-E90,E70,,,Trastornos del metabolismo de la tirosina,3,icdcode.info
-G590,G00-G99,G50-G59,G59,,,Mononeuropatía diabética (E10–E14 con cuarto carácter común .4),3,icdcode.info
+G590,G00-G99,G50-G59,G59,,,Mononeuropatía diabética (E10-E14 con cuarto carácter común .4),3,icdcode.info
 G598,G00-G99,G50-G59,G59,,,Otras mononeuropatías en enfermedades clasificadas en otra parte,3,icdcode.info
 G580,G00-G99,G50-G59,G58,,,Neuropatía intercostal,3,icdcode.info
 G587,G00-G99,G50-G59,G58,,,Mononeuritis múltiple,3,icdcode.info
@@ -5933,10 +5933,10 @@ G572,G00-G99,G50-G59,G57,,,Lesión del nervio crural,3,icdcode.info
 G573,G00-G99,G50-G59,G57,,,Lesión del nervio ciático poplíteo externo,3,icdcode.info
 G560,G00-G99,G50-G59,G56,,,Síndrome del túnel carpiano,3,icdcode.info
 G561,G00-G99,G50-G59,G56,,,Otras lesiones del nervio mediano,3,icdcode.info
-G550,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en enfermedades neoplásicas (C00–D48),3,icdcode.info
-G551,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en trastornos de los discos intervertebrales (M50–M51),3,icdcode.info
-G552,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en la espondilosis (M47.–),3,icdcode.info
-G553,G00-G99,G50-G59,G55,,,"Compresiones de las raíces y plexos nerviosos en otras dorsopatías (M45–M46, M48.–, M53–M54)",3,icdcode.info
+G550,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en enfermedades neoplásicas (C00-D48),3,icdcode.info
+G551,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en trastornos de los discos intervertebrales (M50-M51),3,icdcode.info
+G552,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en la espondilosis (M47.-),3,icdcode.info
+G553,G00-G99,G50-G59,G55,,,"Compresiones de las raíces y plexos nerviosos en otras dorsopatías (M45-M46, M48.-, M53-M54)",3,icdcode.info
 G558,G00-G99,G50-G59,G55,,,Compresiones de las raíces y plexos nerviosos en otras enfermedades clasificadas en otra parte,3,icdcode.info
 G540,G00-G99,G50-G59,G54,,,Trastornos del plexo braquial,3,icdcode.info
 G541,G00-G99,G50-G59,G54,,,Trastornos del plexo lumbosacro,3,icdcode.info
@@ -5945,9 +5945,9 @@ G543,G00-G99,G50-G59,G54,,,"Trastornos de la raíz torácica, no clasificados en
 G544,G00-G99,G50-G59,G54,,,"Trastornos de la raíz lumbosacra, no clasificados en otra parte",3,icdcode.info
 G545,G00-G99,G50-G59,G54,,,Amiotrofia neurálgica,3,icdcode.info
 G530,G00-G99,G50-G59,G53,,,Neuralgia postherpes zoster (B02.2),3,icdcode.info
-G531,G00-G99,G50-G59,G53,,,Parálisis múltiple de los nervios craneales en enfermedades infecciosas y parasitarias clasificadas en otra parte (A00–B99),3,icdcode.info
+G531,G00-G99,G50-G59,G53,,,Parálisis múltiple de los nervios craneales en enfermedades infecciosas y parasitarias clasificadas en otra parte (A00-B99),3,icdcode.info
 G532,G00-G99,G50-G59,G53,,,"Parálisis múltiple de los nervios craneales, en la sarcoidosis (D86.8)",3,icdcode.info
-G533,G00-G99,G50-G59,G53,,,"Parálisis múltiple de los nervios craneales, en enfermedades neoplásicas (C00–D48)",3,icdcode.info
+G533,G00-G99,G50-G59,G53,,,"Parálisis múltiple de los nervios craneales, en enfermedades neoplásicas (C00-D48)",3,icdcode.info
 G538,G00-G99,G50-G59,G53,,,Otros trastornos de los nervios craneales en otras enfermedades clasificadas en otra parte,3,icdcode.info
 P040,P00-P96,P00-P04,P04,,,"Feto y recién nacido afectados por anestesia y analgesia materna en el embarazo, en el trabajo de parto y en el parto",3,icdcode.info
 P041,P00-P96,P00-P04,P04,,,Feto y recién nacido afectados por otras medicaciones maternas,3,icdcode.info
@@ -6193,10 +6193,10 @@ D831,D50-D89,D80-D89,D83,,,Inmunodeficiencia variable común con predominio de t
 D832,D50-D89,D80-D89,D83,,,Inmunodeficiencia variable común con autoanticuerpos anti-B o anti-T,3,icdcode.info
 D838,D50-D89,D80-D89,D83,,,Otras inmunodeficiencias variables comunes,3,icdcode.info
 D839,D50-D89,D80-D89,D83,,,"Inmunodeficiencia variable común, no especificada",3,icdcode.info
-D820,D50-D89,D80-D89,D82,,,Síndrome de Wiskott–Aldrich,3,icdcode.info
+D820,D50-D89,D80-D89,D82,,,Síndrome de Wiskott-Aldrich,3,icdcode.info
 D821,D50-D89,D80-D89,D82,,,Síndrome de Di George,3,icdcode.info
 D822,D50-D89,D80-D89,D82,,,Inmunodeficiencia con enanismo micromélico [miembros cortos],3,icdcode.info
-D823,D50-D89,D80-D89,D82,,,Inmunodeficiencia consecutiva a respuesta defectuosa hereditaria contra el virus de Epstein–Barr,3,icdcode.info
+D823,D50-D89,D80-D89,D82,,,Inmunodeficiencia consecutiva a respuesta defectuosa hereditaria contra el virus de Epstein-Barr,3,icdcode.info
 D810,D50-D89,D80-D89,D81,,,Inmunodeficiencia combinada severa [IDCS] con disgenesia reticular,3,icdcode.info
 D811,D50-D89,D80-D89,D81,,,Inmunodeficiencia combinada severa [IDCS] con linfocitopenia T y B,3,icdcode.info
 D812,D50-D89,D80-D89,D81,,,Inmunodeficiencia combinada severa [IDCS] con cifra baja o normal de linfocitos B,3,icdcode.info
@@ -6558,7 +6558,7 @@ O301,O00-O9A,O30-O48,O30,,,Embarazo triple,3,icdcode.info
 O302,O00-O9A,O30-O48,O30,,,Embarazo cuádruple,3,icdcode.info
 O308,O00-O9A,O30-O48,O30,,,Otros embarazos múltiples,3,icdcode.info
 O309,O00-O9A,O30-O48,O30,,,"Embarazo múltiple, no especificado",3,icdcode.info
-N130,N00-N99,N10-N16,N13,,,Hidronefrosis con obstrucción de la unión urétero–pélvica,3,icdcode.info
+N130,N00-N99,N10-N16,N13,,,Hidronefrosis con obstrucción de la unión urétero-pélvica,3,icdcode.info
 N131,N00-N99,N10-N16,N13,,,"Hidronefrosis con estrechez ureteral, no clasificada en otra parte",3,icdcode.info
 N132,N00-N99,N10-N16,N13,,,Hidronefrosis con obstrucción por cálculos del riñón y del uréter,3,icdcode.info
 N133,N00-N99,N10-N16,N13,,,Otras hidronefrosis y las no especificadas,3,icdcode.info
@@ -6604,7 +6604,7 @@ N170,N00-N99,N17-N19,N17,,,Insuficiencia renal aguda con necrosis tubular,3,icdc
 N171,N00-N99,N17-N19,N17,,,Insuficiencia renal aguda con necrosis cortical aguda,3,icdcode.info
 N172,N00-N99,N17-N19,N17,,,Insuficiencia renal aguda con necrosis medular,3,icdcode.info
 N178,N00-N99,N17-N19,N17,,,Otras insuficiencias renales agudas,3,icdcode.info
-N220,N00-N99,N20-N23,N22,,,Litiasis urinaria en esquistosomiasis [bilharziasis] (B65.–),3,icdcode.info
+N220,N00-N99,N20-N23,N22,,,Litiasis urinaria en esquistosomiasis [bilharziasis] (B65.-),3,icdcode.info
 N228,N00-N99,N20-N23,N22,,,Cálculo de las vías urinarias en otras enfermedades clasificadas en otra parte,3,icdcode.info
 N210,N00-N99,N20-N23,N21,,,Cálculo en la vejiga,3,icdcode.info
 N211,N00-N99,N20-N23,N21,,,Cálculo en la uretra,3,icdcode.info
@@ -6774,7 +6774,7 @@ A803,A00-B99,A80-A89,A80,,,"Otras poliomielitis agudas paralíticas, y las no es
 A804,A00-B99,A80-A89,A80,,,Poliomielitis aguda no paralítica,3,icdcode.info
 A809,A00-B99,A80-A89,A80,,,"Poliomielitis aguda, sin otra especificación",3,icdcode.info
 A920,A00-B99,A90-A99,A92,,,Enfermedad por virus Chikungunya,3,icdcode.info
-A921,A00-B99,A90-A99,A92,,,Fiebre de O’nyong-nyong,3,icdcode.info
+A921,A00-B99,A90-A99,A92,,,Fiebre de O'nyong-nyong,3,icdcode.info
 A922,A00-B99,A90-A99,A92,,,Fiebre equina venezolana,3,icdcode.info
 A923,A00-B99,A90-A99,A92,,,Enfermedad viral del oeste del Nilo,3,icdcode.info
 A924,A00-B99,A90-A99,A92,,,Fiebre del valle del Rift,3,icdcode.info
@@ -6984,7 +6984,7 @@ L401,L00-L99,L40-L45,L40,,,Psoriasis pustulosa generalizada,3,icdcode.info
 L402,L00-L99,L40-L45,L40,,,Acrodermatitis continua,3,icdcode.info
 L403,L00-L99,L40-L45,L40,,,Pustulosis palmar y plantar,3,icdcode.info
 L404,L00-L99,L40-L45,L40,,,Psoriasis guttata,3,icdcode.info
-L405,L00-L99,L40-L45,L40,,,"Artropatía psoriásica (M07.0–M07.3, M09.0)",3,icdcode.info
+L405,L00-L99,L40-L45,L40,,,"Artropatía psoriásica (M07.0-M07.3, M09.0)",3,icdcode.info
 L408,L00-L99,L40-L45,L40,,,Otras psoriasis,3,icdcode.info
 L409,L00-L99,L40-L45,L40,,,"Psoriasis, no especificada",3,icdcode.info
 K050,K00-K95,K00-K14,K05,,,Gingivitis aguda,3,icdcode.info
@@ -7459,7 +7459,7 @@ Z026,Z00-Z99,Z00-Z13,Z02,,,Examen para fines de seguros,3,icdcode.info
 Z027,Z00-Z99,Z00-Z13,Z02,,,Extensión de certificado médico,3,icdcode.info
 Z028,Z00-Z99,Z00-Z13,Z02,,,Otros exámenes para fines administrativos,3,icdcode.info
 Z029,Z00-Z99,Z00-Z13,Z02,,,"Examen para fines administrativos, no especificado",3,icdcode.info
-L444,L00-L99,L40-L45,L44,,,Acrodermatitis papular infantil [Giannotti–Crosti],3,icdcode.info
+L444,L00-L99,L40-L45,L44,,,Acrodermatitis papular infantil [Giannotti-Crosti],3,icdcode.info
 L448,L00-L99,L40-L45,L44,,,Otros trastornos papuloescamosos especificados,3,icdcode.info
 L449,L00-L99,L40-L45,L44,,,"Trastorno papuloescamoso, no especificado",3,icdcode.info
 Z010,Z00-Z99,Z00-Z13,Z01,,,Examen de ojos y de la visión,3,icdcode.info
@@ -7536,7 +7536,7 @@ E240,E00-E89,E20-E35,E24,,,Enfermedad de Cushing dependiente de la hipófisis,3,
 E241,E00-E89,E20-E35,E24,,,Síndrome de Nelson,3,icdcode.info
 E242,E00-E89,E20-E35,E24,,,Síndrome de Cushing inducido por drogas,3,icdcode.info
 E243,E00-E89,E20-E35,E24,,,Síndrome de ACTH ectópico,3,icdcode.info
-E244,E00-E89,E20-E35,E24,,,Síndrome de seudo–Cushing inducido por alcohol,3,icdcode.info
+E244,E00-E89,E20-E35,E24,,,Síndrome de seudo-Cushing inducido por alcohol,3,icdcode.info
 E248,E00-E89,E20-E35,E24,,,Otros tipos de síndrome de Cushing,3,icdcode.info
 E249,E00-E89,E20-E35,E24,,,"Síndrome de Cushing, no especificado",3,icdcode.info
 E230,E00-E89,E20-E35,E23,,,Hipopituitarismo,3,icdcode.info
@@ -7575,7 +7575,7 @@ M835,M00-M99,M80-M94,M80-M85,M83,,Otras osteomalacias del adulto inducidas por d
 M838,M00-M99,M80-M94,M80-M85,M83,,Otras osteomalacias del adulto,4,icdcode.info
 M839,M00-M99,M80-M94,M80-M85,M83,,"Osteomalacia del adulto, no especificada",4,icdcode.info
 M820,M00-M99,M80-M94,M80-M85,M82,,Osteoporosis en mielomatosis múltiple (C90.0),4,icdcode.info
-M821,M00-M99,M80-M94,M80-M85,M82,,Osteoporosis en trastornos endocrinos (E00–E34),4,icdcode.info
+M821,M00-M99,M80-M94,M80-M85,M82,,Osteoporosis en trastornos endocrinos (E00-E34),4,icdcode.info
 M828,M00-M99,M80-M94,M80-M85,M82,,Osteoporosis en otras enfermedades clasificadas en otra parte,4,icdcode.info
 M810,M00-M99,M80-M94,M80-M85,M81,,"Osteoporosis postmenopáusica, sin fractura patológica",4,icdcode.info
 M811,M00-M99,M80-M94,M80-M85,M81,,"Osteoporosis postooforectomía, sin fractura patológica",4,icdcode.info
@@ -7594,10 +7594,10 @@ M900,M00-M99,M80-M94,M86-M90,M90,,Tuberculosis ósea (A18.0),4,icdcode.info
 M901,M00-M99,M80-M94,M86-M90,M90,,Periostitis en otras enfermedades infecciosas clasificadas en otra parte,4,icdcode.info
 M902,M00-M99,M80-M94,M86-M90,M90,,Osteopatía en otras enfermedades infecciosas clasificadas en otra parte,4,icdcode.info
 M903,M00-M99,M80-M94,M86-M90,M90,,Osteonecrosis en la enfermedad causada por descompresión (T70.3),4,icdcode.info
-M904,M00-M99,M80-M94,M86-M90,M90,,Osteonecrosis debida a hemoglobinopatía (D50–D64),4,icdcode.info
+M904,M00-M99,M80-M94,M86-M90,M90,,Osteonecrosis debida a hemoglobinopatía (D50-D64),4,icdcode.info
 M905,M00-M99,M80-M94,M86-M90,M90,,Osteonecrosis en otras enfermedades clasificadas en otra parte,4,icdcode.info
-M906,M00-M99,M80-M94,M86-M90,M90,,Osteítis deformante en enfermedad neoplásica (C00–D48),4,icdcode.info
-M907,M00-M99,M80-M94,M86-M90,M90,,Fractura ósea en enfermedad neoplásica (C00–D48),4,icdcode.info
+M906,M00-M99,M80-M94,M86-M90,M90,,Osteítis deformante en enfermedad neoplásica (C00-D48),4,icdcode.info
+M907,M00-M99,M80-M94,M86-M90,M90,,Fractura ósea en enfermedad neoplásica (C00-D48),4,icdcode.info
 M908,M00-M99,M80-M94,M86-M90,M90,,Osteopatía en otras enfermedades clasificadas en otra parte,4,icdcode.info
 M890,M00-M99,M80-M94,M86-M90,M89,,Algoneurodistrofia,4,icdcode.info
 M891,M00-M99,M80-M94,M86-M90,M89,,Detención del crecimiento epifisario,4,icdcode.info
@@ -7628,7 +7628,7 @@ M927,M00-M99,M80-M94,M91-M94,M92,,Osteocondrosis juvenil del metatarso,4,icdcode
 M928,M00-M99,M80-M94,M91-M94,M92,,Otras osteocondrosis juveniles especificadas,4,icdcode.info
 M929,M00-M99,M80-M94,M91-M94,M92,,"Osteocondrosis juvenil, no especificada",4,icdcode.info
 M910,M00-M99,M80-M94,M91-M94,M91,,Osteocondrosis juvenil de la pelvis,4,icdcode.info
-M911,M00-M99,M80-M94,M91-M94,M91,,Osteocondrosis juvenil de la cabeza del fémur [Legg–Calvé–Perthes],4,icdcode.info
+M911,M00-M99,M80-M94,M91-M94,M91,,Osteocondrosis juvenil de la cabeza del fémur [Legg-Calvé-Perthes],4,icdcode.info
 M912,M00-M99,M80-M94,M91-M94,M91,,Coxa plana,4,icdcode.info
 M913,M00-M99,M80-M94,M91-M94,M91,,Pseudocoxalgia,4,icdcode.info
 M918,M00-M99,M80-M94,M91-M94,M91,,Otras osteocondrosis juveniles de la cadera y de la pelvis,4,icdcode.info
@@ -7700,8 +7700,8 @@ M709,M00-M99,M60-M79,M70-M79,M70,,"Trastorno no especificado de los tejidos blan
 M430,M00-M99,M40-M54,M40-M43,M43,,Espondilólisis,4,icdcode.info
 M431,M00-M99,M40-M54,M40-M43,M43,,Espondilolistesis,4,icdcode.info
 M432,M00-M99,M40-M54,M40-M43,M43,,Otras fusiones de la columna vertebral,4,icdcode.info
-M433,M00-M99,M40-M54,M40-M43,M43,,"Subluxación atlanto–axoidea recurrente, con mielopatía",4,icdcode.info
-M434,M00-M99,M40-M54,M40-M43,M43,,Otras subluxaciones atlanto–axoideas recurrentes,4,icdcode.info
+M433,M00-M99,M40-M54,M40-M43,M43,,"Subluxación atlanto-axoidea recurrente, con mielopatía",4,icdcode.info
+M434,M00-M99,M40-M54,M40-M43,M43,,Otras subluxaciones atlanto-axoideas recurrentes,4,icdcode.info
 M435,M00-M99,M40-M54,M40-M43,M43,,Otras subluxaciones vertebrales recurrentes,4,icdcode.info
 M436,M00-M99,M40-M54,M40-M43,M43,,Tortícolis,4,icdcode.info
 M438,M00-M99,M40-M54,M40-M43,M43,,Otras dorsopatías deformantes de la columna vertebral especificadas,4,icdcode.info
@@ -7724,15 +7724,15 @@ M403,M00-M99,M40-M54,M40-M43,M40,,Síndrome de espalda plana,4,icdcode.info
 M404,M00-M99,M40-M54,M40-M43,M40,,Otras lordosis,4,icdcode.info
 M405,M00-M99,M40-M54,M40-M43,M40,,"Lordosis, no especificada",4,icdcode.info
 M490,M00-M99,M40-M54,M45-M49,M49,,Tuberculosis de la columna vertebral (A18.0),4,icdcode.info
-M491,M00-M99,M40-M54,M45-M49,M49,,Espondilitis por brucelosis (A23.–),4,icdcode.info
-M492,M00-M99,M40-M54,M45-M49,M49,,Espondilitis por enterobacterias (A01–A04),4,icdcode.info
+M491,M00-M99,M40-M54,M45-M49,M49,,Espondilitis por brucelosis (A23.-),4,icdcode.info
+M492,M00-M99,M40-M54,M45-M49,M49,,Espondilitis por enterobacterias (A01-A04),4,icdcode.info
 M493,M00-M99,M40-M54,M45-M49,M49,,Espondilopatía en otras enfermedades infecciosas y parasitarias clasificadas en otra parte,4,icdcode.info
 M494,M00-M99,M40-M54,M45-M49,M49,,Espondilopatía neuropática,4,icdcode.info
 M495,M00-M99,M40-M54,M45-M49,M49,,Vértebra colapsada en enfermedades clasificadas en otra parte,4,icdcode.info
 M498,M00-M99,M40-M54,M45-M49,M49,,Espondilopatía en otras enfermedades clasificadas en otra parte,4,icdcode.info
 M480,M00-M99,M40-M54,M45-M49,M48,,Estenosis espinal,4,icdcode.info
 M481,M00-M99,M40-M54,M45-M49,M48,,Hiperostosis anquilosante [Forestier],4,icdcode.info
-M482,M00-M99,M40-M54,M45-M49,M48,,Espondilopatía interespinosa (vértebras “en beso”),4,icdcode.info
+M482,M00-M99,M40-M54,M45-M49,M48,,Espondilopatía interespinosa (vértebras "en beso"),4,icdcode.info
 M483,M00-M99,M40-M54,M45-M49,M48,,Espondilopatía traumática,4,icdcode.info
 M484,M00-M99,M40-M54,M45-M49,M48,,Fractura de vértebra por fatiga,4,icdcode.info
 M485,M00-M99,M40-M54,M45-M49,M48,,"Vértebra colapsada, no clasificada en otra parte",4,icdcode.info
@@ -7792,7 +7792,7 @@ M012,M00-M99,M00-M25,M00-M03,M01,,Artritis en la enfermedad de Lyme (A69.2),4,ic
 M013,M00-M99,M00-M25,M00-M03,M01,,Artritis en otras enfermedades bacterianas clasificadas en otra parte,4,icdcode.info
 M014,M00-M99,M00-M25,M00-M03,M01,,Artritis en rubéola (B06.8),4,icdcode.info
 M015,M00-M99,M00-M25,M00-M03,M01,,Artritis en otras enfermedades virales clasificadas en otra parte,4,icdcode.info
-M016,M00-M99,M00-M25,M00-M03,M01,,Artritis en micosis (B35–B49),4,icdcode.info
+M016,M00-M99,M00-M25,M00-M03,M01,,Artritis en micosis (B35-B49),4,icdcode.info
 M018,M00-M99,M00-M25,M00-M03,M01,,Artritis en otras enfermedades infecciosas y parasitarias clasificadas en otra parte,4,icdcode.info
 M000,M00-M99,M00-M25,M00-M03,M00,,Artritis y poliartritis estafilocócica,4,icdcode.info
 M001,M00-M99,M00-M25,M00-M03,M00,,Artritis y poliartritis neumocócica,4,icdcode.info
@@ -7811,8 +7811,8 @@ M103,M00-M99,M00-M25,M05-M14,M10,,Gota debida a alteración renal,4,icdcode.info
 M104,M00-M99,M00-M25,M05-M14,M10,,Otras gotas secundarias,4,icdcode.info
 M109,M00-M99,M00-M25,M05-M14,M10,,"Gota, no especificada",4,icdcode.info
 M090,M00-M99,M00-M25,M05-M14,M09,,Artritis juvenil en la psoriasis (L40.5),4,icdcode.info
-M091,M00-M99,M00-M25,M05-M14,M09,,Artritis juvenil en la enfermedad de Crohn [enteritis regional] (K50.–),4,icdcode.info
-M092,M00-M99,M00-M25,M05-M14,M09,,Artritis juvenil en la colitis ulcerativa (K51.–),4,icdcode.info
+M091,M00-M99,M00-M25,M05-M14,M09,,Artritis juvenil en la enfermedad de Crohn [enteritis regional] (K50.-),4,icdcode.info
+M092,M00-M99,M00-M25,M05-M14,M09,,Artritis juvenil en la colitis ulcerativa (K51.-),4,icdcode.info
 M098,M00-M99,M00-M25,M05-M14,M09,,Artritis juvenil en otras enfermedades clasificadas en otra parte,4,icdcode.info
 M080,M00-M99,M00-M25,M05-M14,M08,,Artritis reumatoide juvenil,4,icdcode.info
 M081,M00-M99,M00-M25,M05-M14,M08,,Espondilitis anquilosante juvenil,4,icdcode.info
@@ -7825,8 +7825,8 @@ M070,M00-M99,M00-M25,M05-M14,M07,,Artropatía psoriásica interfalángica distal
 M071,M00-M99,M00-M25,M05-M14,M07,,Artritis mutilante (L40.5),4,icdcode.info
 M072,M00-M99,M00-M25,M05-M14,M07,,Espondilitis psoriásica (L40.5),4,icdcode.info
 M073,M00-M99,M00-M25,M05-M14,M07,,Otras artropatías psoriásicas (L40.5),4,icdcode.info
-M074,M00-M99,M00-M25,M05-M14,M07,,Artropatía en la enfermedad de Crohn [enteritis regional] (K50.–),4,icdcode.info
-M075,M00-M99,M00-M25,M05-M14,M07,,Artropatía en la colitis ulcerativa (K51.–),4,icdcode.info
+M074,M00-M99,M00-M25,M05-M14,M07,,Artropatía en la enfermedad de Crohn [enteritis regional] (K50.-),4,icdcode.info
+M075,M00-M99,M00-M25,M05-M14,M07,,Artropatía en la colitis ulcerativa (K51.-),4,icdcode.info
 M076,M00-M99,M00-M25,M05-M14,M07,,Otras artropatías enteropáticas,4,icdcode.info
 M060,M00-M99,M00-M25,M05-M14,M06,,Artritis reumatoide seronegativa,4,icdcode.info
 M061,M00-M99,M00-M25,M05-M14,M06,,Enfermedad de Still de comienzo en el adulto,4,icdcode.info
@@ -7969,7 +7969,7 @@ D643,D50-D89,D60-D64,D64,,,Otras anemias sideroblásticas,3,icdcode.info
 D644,D50-D89,D60-D64,D64,,,Anemia diseritropoyética congénita,3,icdcode.info
 D648,D50-D89,D60-D64,D64,,,Otras anemias especificadas,3,icdcode.info
 D649,D50-D89,D60-D64,D64,,,Anemia de tipo no especificado,3,icdcode.info
-D630,D50-D89,D60-D64,D63,,,Anemia en enfermedad neoplásica (C00–D48),3,icdcode.info
+D630,D50-D89,D60-D64,D63,,,Anemia en enfermedad neoplásica (C00-D48),3,icdcode.info
 D638,D50-D89,D60-D64,D63,,,Anemia en otras enfermedades crónicas clasificadas en otra parte,3,icdcode.info
 D610,D50-D89,D60-D64,D61,,,Anemia aplástica constitucional,3,icdcode.info
 D611,D50-D89,D60-D64,D61,,,Anemia aplástica inducida por drogas,3,icdcode.info
@@ -8073,7 +8073,7 @@ M730,M00-M99,M60-M79,M70-M79,M73,,Bursitis gonocócica (A54.4),4,icdcode.info
 M731,M00-M99,M60-M79,M70-M79,M73,,Bursitis sifilítica (A52.7),4,icdcode.info
 M140,M00-M99,M00-M25,M05-M14,M14,,"Artropatía gotosa debida a defectos enzimáticos y a otros trastornos hereditarios, clasificados en otra parte",4,icdcode.info
 M141,M00-M99,M00-M25,M05-M14,M14,,Artropatía por cristales en otros trastornos metabólicos,4,icdcode.info
-M142,M00-M99,M00-M25,M05-M14,M14,,Artropatía diabética (E10–E14 con cuarto carácter común .6),4,icdcode.info
+M142,M00-M99,M00-M25,M05-M14,M14,,Artropatía diabética (E10-E14 con cuarto carácter común .6),4,icdcode.info
 M130,M00-M99,M00-M25,M05-M14,M13,,"Poliartritis, no especificada",4,icdcode.info
 M131,M00-M99,M00-M25,M05-M14,M13,,"Monoartritis, no clasificada en otra parte",4,icdcode.info
 M138,M00-M99,M00-M25,M05-M14,M13,,Otras artritis especificadas,4,icdcode.info
@@ -8306,19 +8306,19 @@ G501,G00-G99,G50-G59,G50,,,Dolor facial atípico,3,icdcode.info
 G508,G00-G99,G50-G59,G50,,,Otros trastornos del trigémino,3,icdcode.info
 G509,G00-G99,G50-G59,G50,,,"Trastorno del trigémino, no especificado",3,icdcode.info
 G630,G00-G99,G60-G64,G63,,,Polineuropatía en enfermedades infecciosas y parasitarias clasificadas en otra parte,3,icdcode.info
-G631,G00-G99,G60-G64,G63,,,Polineuropatía en enfermedad neoplásica (C00–D48),3,icdcode.info
-G632,G00-G99,G60-G64,G63,,,Polineuropatía diabética (E10–E14 con cuarto carácter común .4),3,icdcode.info
-G633,G00-G99,G60-G64,G63,,,"Polineuropatía en otras enfermedades endocrinas y metabólicas (E00–E07, E15–E16, E20–E34, E70–E89)",3,icdcode.info
-G634,G00-G99,G60-G64,G63,,,Polineuropatía en deficiencia nutricional (E40–E64),3,icdcode.info
-G635,G00-G99,G60-G64,G63,,,Polineuropatía en trastornos del tejido conectivo sistémico (M30–M35),3,icdcode.info
-G636,G00-G99,G60-G64,G63,,,"Polineuropatía en otros trastornos osteomusculares (M00–M25, M40–M96)",3,icdcode.info
+G631,G00-G99,G60-G64,G63,,,Polineuropatía en enfermedad neoplásica (C00-D48),3,icdcode.info
+G632,G00-G99,G60-G64,G63,,,Polineuropatía diabética (E10-E14 con cuarto carácter común .4),3,icdcode.info
+G633,G00-G99,G60-G64,G63,,,"Polineuropatía en otras enfermedades endocrinas y metabólicas (E00-E07, E15-E16, E20-E34, E70-E89)",3,icdcode.info
+G634,G00-G99,G60-G64,G63,,,Polineuropatía en deficiencia nutricional (E40-E64),3,icdcode.info
+G635,G00-G99,G60-G64,G63,,,Polineuropatía en trastornos del tejido conectivo sistémico (M30-M35),3,icdcode.info
+G636,G00-G99,G60-G64,G63,,,"Polineuropatía en otros trastornos osteomusculares (M00-M25, M40-M96)",3,icdcode.info
 G638,G00-G99,G60-G64,G63,,,Polineuropatía en otras enfermedades clasificadas en otra parte,3,icdcode.info
 G620,G00-G99,G60-G64,G62,,,Polineuropatía inducida por drogas,3,icdcode.info
 G621,G00-G99,G60-G64,G62,,,Polineuropatía alcohólica,3,icdcode.info
 G622,G00-G99,G60-G64,G62,,,Polineuropatía debida a otro agente tóxico,3,icdcode.info
 G628,G00-G99,G60-G64,G62,,,Otras polineuropatías especificadas,3,icdcode.info
 G629,G00-G99,G60-G64,G62,,,"Polineuropatía, no especificada",3,icdcode.info
-G610,G00-G99,G60-G64,G61,,,Síndrome de Guillain–Barré,3,icdcode.info
+G610,G00-G99,G60-G64,G61,,,Síndrome de Guillain-Barré,3,icdcode.info
 G611,G00-G99,G60-G64,G61,,,Neuropatía al suero,3,icdcode.info
 G618,G00-G99,G60-G64,G61,,,Otras polineuropatías inflamatorias,3,icdcode.info
 G619,G00-G99,G60-G64,G61,,,"Polineuropatía inflamatoria, no especificada",3,icdcode.info
@@ -8353,7 +8353,7 @@ D539,D50-D89,D50-D53,D53,,,"Anemia nutricional, no especificada",3,icdcode.info
 D519,D50-D89,D50-D53,D51,,,"Anemia por deficiencia de vitamina B12, sin otra especificación",3,icdcode.info
 D509,D50-D89,D50-D53,D50,,,Anemia por deficiencia de hierro sin otra especificación,3,icdcode.info
 D594,D50-D89,D55-D59,D59,,,Otras anemias hemolíticas no autoinmunes,3,icdcode.info
-D595,D50-D89,D55-D59,D59,,,Hemoglobinuria paroxística nocturna [Marchiafava–Micheli],3,icdcode.info
+D595,D50-D89,D55-D59,D59,,,Hemoglobinuria paroxística nocturna [Marchiafava-Micheli],3,icdcode.info
 D596,D50-D89,D55-D59,D59,,,Hemoglobinuria debida a hemólisis por otras causas externas,3,icdcode.info
 D598,D50-D89,D55-D59,D59,,,Otras anemias hemolíticas adquiridas,3,icdcode.info
 D599,D50-D89,D55-D59,D59,,,"Anemia hemolítica adquirida, sin otra especificación",3,icdcode.info
@@ -8400,14 +8400,14 @@ G951,G00-G99,G90-G99,G95,,,Mielopatías vasculares,3,icdcode.info
 G952,G00-G99,G90-G99,G95,,,"Compresión medular, no especificada",3,icdcode.info
 G958,G00-G99,G90-G99,G95,,,Otras enfermedades especificadas de la médula espinal,3,icdcode.info
 G959,G00-G99,G90-G99,G95,,,"Enfermedad de la médula espinal, no especificada",3,icdcode.info
-G940,G00-G99,G90-G99,G94,,,Hidrocéfalo en enfermedades infecciosas y parasitarias clasificadas en otra parte (A00–B99),3,icdcode.info
+G940,G00-G99,G90-G99,G94,,,Hidrocéfalo en enfermedades infecciosas y parasitarias clasificadas en otra parte (A00-B99),3,icdcode.info
 G930,G00-G99,G90-G99,G93,,,Quiste cerebral,3,icdcode.info
 G910,G00-G99,G90-G99,G91,,,Hidrocéfalo comunicante,3,icdcode.info
 G911,G00-G99,G90-G99,G91,,,Hidrocéfalo obstructivo,3,icdcode.info
 G912,G00-G99,G90-G99,G91,,,Hidrocéfalo de presión normal,3,icdcode.info
 G913,G00-G99,G90-G99,G91,,,"Hidrocéfalo postraumático, sin otra especificación",3,icdcode.info
 G900,G00-G99,G90-G99,G90,,,Neuropatía autónoma periférica idiopática,3,icdcode.info
-G901,G00-G99,G90-G99,G90,,,Disautonomía familiar [Síndrome de Riley–Day],3,icdcode.info
+G901,G00-G99,G90-G99,G90,,,Disautonomía familiar [Síndrome de Riley-Day],3,icdcode.info
 G902,G00-G99,G90-G99,G90,,,Síndrome de Horner,3,icdcode.info
 G903,G00-G99,G90-G99,G90,,,Degeneración de sistemas múltiples,3,icdcode.info
 G904,G00-G99,G90-G99,G90,,,Disreflexia autonómica,3,icdcode.info
@@ -8547,7 +8547,7 @@ Y96,V01-Y99,Y90-Y98,,,,Afección relacionada con el trabajo,2,icdcode.info
 Y97,V01-Y99,Y90-Y98,,,,Afección relacionada con la contaminación ambiental,2,icdcode.info
 M738,M00-M99,M60-M79,M70-M79,M73,,Otros trastornos de los tejidos blandos en enfermedades clasificadas en otra parte,4,icdcode.info
 M143,M00-M99,M00-M25,M05-M14,M14,,Dermatoartritis lipoide (E78.8),4,icdcode.info
-M144,M00-M99,M00-M25,M05-M14,M14,,Artropatía en la amiloidosis (E85.–),4,icdcode.info
+M144,M00-M99,M00-M25,M05-M14,M14,,Artropatía en la amiloidosis (E85.-),4,icdcode.info
 M145,M00-M99,M00-M25,M05-M14,M14,,"Artropatía en otros trastornos endocrinos, metabólicos y nutricionales",4,icdcode.info
 M146,M00-M99,M00-M25,M05-M14,M14,,Artropatía neuropática,4,icdcode.info
 M148,M00-M99,M00-M25,M05-M14,M14,,"Artropatía en otras enfermedades especificadas, clasificadas en otra parte",4,icdcode.info
@@ -8785,7 +8785,7 @@ P77,P00-P96,P75-P78,,,,Enterocolitis necrotizante del feto y del recién nacido,
 P78,P00-P96,P75-P78,,,,Otros trastornos perinatales del sistema digestivo,2,icdcode.info
 H060,H00-H59,H00-H06,H06,,,Trastornos del aparato lagrimal en enfermedades clasificadas en otra parte,3,icdcode.info
 H061,H00-H59,H00-H06,H06,,,Infección e infestación parasitarias de la órbita en enfermedades clasificadas en otra parte,3,icdcode.info
-H062,H00-H59,H00-H06,H06,,,Exoftalmia hipertiroidea (E05.–),3,icdcode.info
+H062,H00-H59,H00-H06,H06,,,Exoftalmia hipertiroidea (E05.-),3,icdcode.info
 H063,H00-H59,H00-H06,H06,,,Otros trastornos de la órbita en enfermedades clasificadas en otra parte,3,icdcode.info
 H050,H00-H59,H00-H06,H05,,,Inflamación aguda de la órbita,3,icdcode.info
 H051,H00-H59,H00-H06,H05,,,Trastornos inflamatorios crónicos de la órbita,3,icdcode.info
@@ -8851,7 +8851,7 @@ Q55,Q00-Q99,Q50-Q56,,,,Otras malformaciones congénitas de los órganos genitale
 Q56,Q00-Q99,Q50-Q56,,,,Sexo indeterminado y seudohermafroditismo,2,icdcode.info
 Q38,Q00-Q99,Q38-Q45,,,,"Otras malformaciones congénitas de la lengua, de la boca y de la faringe",2,icdcode.info
 Q39,Q00-Q99,Q38-Q45,,,,Malformaciones congénitas del esófago,2,icdcode.info
-G941,G00-G99,G90-G99,G94,,,Hidrocéfalo en enfermedad neoplásica (C00–D48),3,icdcode.info
+G941,G00-G99,G90-G99,G94,,,Hidrocéfalo en enfermedad neoplásica (C00-D48),3,icdcode.info
 G942,G00-G99,G90-G99,G94,,,Hidrocéfalo en otras enfermedades clasificadas en otra parte,3,icdcode.info
 G948,G00-G99,G90-G99,G94,,,Otros trastornos encefálicos especificados en enfermedades clasificadas en otra parte,3,icdcode.info
 G931,G00-G99,G90-G99,G93,,,"Lesión cerebral anóxica, no clasificada en otra parte",3,icdcode.info
@@ -8886,10 +8886,10 @@ A047,A00-B99,A00-A09,A04,,,Enterocolitis debida a Clostridium difficile,3,icdcod
 A048,A00-B99,A00-A09,A04,,,Otras infecciones intestinales bacterianas especificadas,3,icdcode.info
 A049,A00-B99,A00-A09,A04,,,"Infección intestinal bacteriana, no especificada",3,icdcode.info
 A039,A00-B99,A00-A09,A03,,,Shigelosis de tipo no especificado,3,icdcode.info
-H130,H00-H59,H10-H13,H13,,,Infección filárica de la conjuntiva (B74.–),3,icdcode.info
+H130,H00-H59,H10-H13,H13,,,Infección filárica de la conjuntiva (B74.-),3,icdcode.info
 H131,H00-H59,H10-H13,H13,,,Conjuntivitis en enfermedades infecciosas y parasitarias clasificadas en otra parte,3,icdcode.info
 H132,H00-H59,H10-H13,H13,,,Conjuntivitis en otras enfermedades clasificadas en otra parte,3,icdcode.info
-H133,H00-H59,H10-H13,H13,,,Penfigoide ocular (L12.–),3,icdcode.info
+H133,H00-H59,H10-H13,H13,,,Penfigoide ocular (L12.-),3,icdcode.info
 H138,H00-H59,H10-H13,H13,,,Otros trastornos de la conjuntiva en enfermedades clasificadas en otra parte,3,icdcode.info
 H110,H00-H59,H10-H13,H11,,,Pterigión,3,icdcode.info
 H111,H00-H59,H10-H13,H11,,,Degeneraciones y depósitos conjuntivales,3,icdcode.info
@@ -9492,7 +9492,7 @@ Q623,Q00-Q99,Q60-Q64,Q62,,,Otros defectos obstructivos de la pelvis renal y del 
 Q624,Q00-Q99,Q60-Q64,Q62,,,Agenesia del uréter,3,icdcode.info
 Q625,Q00-Q99,Q60-Q64,Q62,,,Duplicación del uréter,3,icdcode.info
 Q626,Q00-Q99,Q60-Q64,Q62,,,Mala posición del uréter,3,icdcode.info
-Q627,Q00-Q99,Q60-Q64,Q62,,,Reflujo vésico–urétero–renal congénito,3,icdcode.info
+Q627,Q00-Q99,Q60-Q64,Q62,,,Reflujo vésico-urétero-renal congénito,3,icdcode.info
 Q610,Q00-Q99,Q60-Q64,Q61,,,Quiste renal solitario congénito,3,icdcode.info
 Q611,Q00-Q99,Q60-Q64,Q61,,,"Riñón poliquístico, autosómico recesivo",3,icdcode.info
 Q612,Q00-Q99,Q60-Q64,Q61,,,"Riñón poliquístico, autosómico dominante",3,icdcode.info
@@ -9879,7 +9879,7 @@ Q771,Q00-Q99,Q65-Q79,Q77,,,Enanismo tanatofórico,3,icdcode.info
 Q772,Q00-Q99,Q65-Q79,Q77,,,Síndrome de costilla corta,3,icdcode.info
 Q773,Q00-Q99,Q65-Q79,Q77,,,Condrodisplasia punctata,3,icdcode.info
 Q760,Q00-Q99,Q65-Q79,Q76,,,Espina bífida oculta,3,icdcode.info
-Q761,Q00-Q99,Q65-Q79,Q76,,,Síndrome de Klippel–Feil,3,icdcode.info
+Q761,Q00-Q99,Q65-Q79,Q76,,,Síndrome de Klippel-Feil,3,icdcode.info
 Q762,Q00-Q99,Q65-Q79,Q76,,,Espondilolistesis congénita,3,icdcode.info
 Q763,Q00-Q99,Q65-Q79,Q76,,,Escoliosis congénita debida a malformación congénita ósea,3,icdcode.info
 Q764,Q00-Q99,Q65-Q79,Q76,,,"Otra malformacion congenita de la columna vertebral, no asociada con escoliosis",3,icdcode.info
@@ -10650,7 +10650,7 @@ Y80,V01-Y99,Y40-Y84,Y70-Y82,,,Aparatos de medicina física asociados con inciden
 Y81,V01-Y99,Y40-Y84,Y70-Y82,,,Dispositivos de cirugía general y plástica asociados con incidentes adversos,3,icdcode.info
 Y82,V01-Y99,Y40-Y84,Y70-Y82,,,"Otros dispositivos médicos, y los no especificados, asociados con incidentes adversos",3,icdcode.info
 Q795,Q00-Q99,Q65-Q79,Q79,,,Otras malformaciones congénitas de la pared abdominal,3,icdcode.info
-Q796,Q00-Q99,Q65-Q79,Q79,,,Síndrome de Ehlers–Danlos,3,icdcode.info
+Q796,Q00-Q99,Q65-Q79,Q79,,,Síndrome de Ehlers-Danlos,3,icdcode.info
 Q798,Q00-Q99,Q65-Q79,Q79,,,Otras malformaciones congénitas del sistema osteomuscular,3,icdcode.info
 Q799,Q00-Q99,Q65-Q79,Q79,,,"Malformación congénita del sistema osteomuscular, no especificada",3,icdcode.info
 C211,C00-D49,C00-C97,C00-C75,C15-C26,C21,Tumor maligno del conducto anal,5,icdcode.info
@@ -10747,7 +10747,7 @@ Y451,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de salicilatos,4,icdcode.info
 Y452,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de derivados del ácido propiónico,4,icdcode.info
 Y453,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de otras drogas antiinflamatorias no esteroides [DAINE],4,icdcode.info
 Y454,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de los antirreumáticos,4,icdcode.info
-Y455,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de los derivados del 4–aminofenol,4,icdcode.info
+Y455,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de los derivados del 4-aminofenol,4,icdcode.info
 Y458,V01-Y99,Y40-Y84,Y40-Y59,Y45,,Efectos adversos de otros analgésicos y antipiréticos,4,icdcode.info
 Y459,V01-Y99,Y40-Y84,Y40-Y59,Y45,,"Efectos adversos de drogas analgésicas, antipiréticas y antiinflamatorias no especificadas",4,icdcode.info
 Y440,V01-Y99,Y40-Y84,Y40-Y59,Y44,,Efectos adversos de preparaciones con hierro y otros preparados contra la anemia hipocrómica,4,icdcode.info
@@ -10964,7 +10964,7 @@ Y540,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de mineralocorticoides,4,icdc
 Y541,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de los bloqueadores de mineralocorticoides [antagonistas de la aldosterona],4,icdcode.info
 Y542,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de los inhibidores de la anhidrasa carbónica,4,icdcode.info
 Y543,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de los derivados de la benzotiadiazina,4,icdcode.info
-Y544,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de diuréticos de asa [“high-ceiling”],4,icdcode.info
+Y544,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de diuréticos de asa ["high-ceiling"],4,icdcode.info
 Y545,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de otros diuréticos,4,icdcode.info
 Y546,V01-Y99,Y40-Y84,Y40-Y59,Y54,,"Efectos adversos de agentes electrolíticos, calóricos y del equilibrio hídrico",4,icdcode.info
 Y547,V01-Y99,Y40-Y84,Y40-Y59,Y54,,Efectos adversos de agentes que afectan la calcificación,4,icdcode.info
