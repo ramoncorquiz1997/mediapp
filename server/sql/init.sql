@@ -146,6 +146,34 @@ INSERT INTO configuracion_consultorio (id)
 VALUES (1)
 ON CONFLICT (id) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS saas_owner_users (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS saas_configuracion (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  smtp_host TEXT,
+  smtp_port INTEGER,
+  smtp_secure BOOLEAN NOT NULL DEFAULT FALSE,
+  smtp_user TEXT,
+  smtp_password TEXT,
+  smtp_from_email TEXT,
+  leads_notify_email TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT saas_configuracion_singleton CHECK (id = 1)
+);
+
+INSERT INTO saas_configuracion (id)
+VALUES (1)
+ON CONFLICT (id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS antecedentes_medicos (
   id SERIAL PRIMARY KEY,
   paciente_id INTEGER NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
@@ -547,6 +575,18 @@ EXECUTE FUNCTION set_updated_at();
 DROP TRIGGER IF EXISTS usuarios_set_updated_at ON usuarios;
 CREATE TRIGGER usuarios_set_updated_at
 BEFORE UPDATE ON usuarios
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS saas_owner_users_set_updated_at ON saas_owner_users;
+CREATE TRIGGER saas_owner_users_set_updated_at
+BEFORE UPDATE ON saas_owner_users
+FOR EACH ROW
+EXECUTE FUNCTION set_updated_at();
+
+DROP TRIGGER IF EXISTS saas_configuracion_set_updated_at ON saas_configuracion;
+CREATE TRIGGER saas_configuracion_set_updated_at
+BEFORE UPDATE ON saas_configuracion
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
 

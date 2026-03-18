@@ -15,10 +15,21 @@ import PublicBookingView from "./views/PublicBookingView";
 import NewConsultationModal from "./modals/NewConsultationModal";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import OwnerConsolePage from "./pages/OwnerConsolePage";
 
 import { defaultNewConsultation } from "./data/defaults";
-import { apiFetch } from "./lib/api";
-import { clearSession, getStoredSession, isTokenExpired, saveSession } from "./lib/auth";
+import { apiFetch, ownerApiFetch } from "./lib/api";
+import {
+  clearOwnerSession,
+  clearSession,
+  getStoredOwnerSession,
+  getStoredSession,
+  isTokenExpired,
+  saveOwnerSession,
+  saveSession,
+} from "./lib/auth";
+
+const OWNER_CONSOLE_PATH = "/__saas-orbit-owner-8841";
 
 const buildLegacyExplorationText = (consultation) => {
   if (consultation.descripcion_fisica) return consultation.descripcion_fisica;
@@ -176,10 +187,33 @@ export default function App() {
   const patientPortalToken = patientPortalMatch?.[1] ? decodeURIComponent(patientPortalMatch[1]) : null;
   const publicAgendaMatch = pathname.match(/^\/agenda\/([^/]+)\/?$/);
   const publicAgendaSlug = publicAgendaMatch?.[1] ? decodeURIComponent(publicAgendaMatch[1]) : null;
+  const isOwnerConsoleRoute = pathname === OWNER_CONSOLE_PATH;
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [authError, setAuthError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [ownerReady, setOwnerReady] = useState(false);
+  const [ownerUser, setOwnerUser] = useState(null);
+  const [ownerAuthError, setOwnerAuthError] = useState("");
+  const [isOwnerLoggingIn, setIsOwnerLoggingIn] = useState(false);
+  const [ownerConfig, setOwnerConfig] = useState({
+    smtp_host: "",
+    smtp_port: 587,
+    smtp_secure: false,
+    smtp_user: "",
+    smtp_password: "",
+    smtp_from_email: "",
+    leads_notify_email: "",
+    smtp_password_configured: false,
+  });
+  const [ownerConfigLoading, setOwnerConfigLoading] = useState(false);
+  const [ownerConfigError, setOwnerConfigError] = useState("");
+  const [ownerConfigSuccessMessage, setOwnerConfigSuccessMessage] = useState("");
+  const [ownerDoctors, setOwnerDoctors] = useState([]);
+  const [ownerDoctorsLoading, setOwnerDoctorsLoading] = useState(false);
+  const [isCreatingOwnerDoctor, setIsCreatingOwnerDoctor] = useState(false);
+  const [createOwnerDoctorError, setCreateOwnerDoctorError] = useState("");
+  const [ownerDoctorSuccessMessage, setOwnerDoctorSuccessMessage] = useState("");
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showConsultationModal, setShowConsultationModal] = useState(false);
@@ -254,6 +288,26 @@ export default function App() {
     navigate("/login", { replace: true });
   };
 
+  const ownerLogout = async () => {
+    if (getStoredOwnerSession()?.token) {
+      try {
+        await ownerApiFetch("/api/owner/auth/logout", { method: "POST" });
+      } catch {
+        // Ignore owner logout network failures and clear local session anyway.
+      }
+    }
+
+    clearOwnerSession();
+    setOwnerUser(null);
+    setOwnerAuthError("");
+    setOwnerConfigError("");
+    setOwnerConfigSuccessMessage("");
+    setCreateOwnerDoctorError("");
+    setOwnerDoctorSuccessMessage("");
+    setOwnerDoctors([]);
+    navigate(OWNER_CONSOLE_PATH, { replace: true });
+  };
+
   useEffect(() => {
     const syncLocation = () => setRouteLocation(getBrowserLocation());
 
@@ -273,6 +327,15 @@ export default function App() {
 
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, []);
+
+  useEffect(() => {
+    const handleOwnerUnauthorized = () => {
+      ownerLogout();
+    };
+
+    window.addEventListener("owner:unauthorized", handleOwnerUnauthorized);
+    return () => window.removeEventListener("owner:unauthorized", handleOwnerUnauthorized);
   }, []);
 
   useEffect(() => {
@@ -304,6 +367,40 @@ export default function App() {
     restoreSession();
   }, []);
 
+  useEffect(() => {
+    const restoreOwnerSession = async () => {
+      if (!isOwnerConsoleRoute) {
+        setOwnerReady(true);
+        return;
+      }
+
+      const session = getStoredOwnerSession();
+      if (!session?.token || isTokenExpired(session.token)) {
+        clearOwnerSession();
+        setOwnerReady(true);
+        return;
+      }
+
+      try {
+        const response = await ownerApiFetch("/api/owner/auth/me");
+        if (!response.ok) {
+          throw new Error("Sesion owner no valida");
+        }
+
+        const data = await response.json();
+        saveOwnerSession({ token: session.token, owner: data.owner });
+        setOwnerUser(data.owner);
+      } catch {
+        clearOwnerSession();
+        setOwnerUser(null);
+      } finally {
+        setOwnerReady(true);
+      }
+    };
+
+    restoreOwnerSession();
+  }, [isOwnerConsoleRoute]);
+
   const login = async ({ email, password }) => {
     try {
       setIsLoggingIn(true);
@@ -331,6 +428,35 @@ export default function App() {
       setAuthError(error.message || "No se pudo iniciar sesion");
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const ownerLogin = async ({ email, password }) => {
+    try {
+      setIsOwnerLoggingIn(true);
+      setOwnerAuthError("");
+
+      const response = await fetch("/api/owner/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo iniciar sesion owner (${response.status})`);
+      }
+
+      saveOwnerSession(data);
+      setOwnerUser(data.owner);
+      navigate(OWNER_CONSOLE_PATH, { replace: true });
+    } catch (error) {
+      setOwnerAuthError(error.message || "No se pudo iniciar sesion owner");
+    } finally {
+      setIsOwnerLoggingIn(false);
     }
   };
 
@@ -373,6 +499,42 @@ export default function App() {
     }
   };
 
+  const loadOwnerConfig = async () => {
+    try {
+      setOwnerConfigLoading(true);
+      setOwnerConfigError("");
+      const response = await ownerApiFetch("/api/owner/config");
+      if (!response.ok) {
+        throw new Error(`No se pudo cargar configuracion owner (${response.status})`);
+      }
+
+      const data = await response.json();
+      setOwnerConfig((prev) => ({ ...prev, ...data }));
+    } catch (error) {
+      setOwnerConfigError(error.message || "No se pudo cargar configuracion owner");
+    } finally {
+      setOwnerConfigLoading(false);
+    }
+  };
+
+  const loadOwnerDoctors = async () => {
+    try {
+      setOwnerDoctorsLoading(true);
+      setCreateOwnerDoctorError("");
+      const response = await ownerApiFetch("/api/owner/doctors");
+      if (!response.ok) {
+        throw new Error(`No se pudo cargar medicos (${response.status})`);
+      }
+
+      const data = await response.json();
+      setOwnerDoctors(data);
+    } catch (error) {
+      setCreateOwnerDoctorError(error.message || "No se pudo cargar medicos");
+    } finally {
+      setOwnerDoctorsLoading(false);
+    }
+  };
+
   const loadConsultations = async (patientId) => {
     if (!patientId) {
       setConsultationHistory([]);
@@ -404,12 +566,18 @@ export default function App() {
   }, [authUser]);
 
   useEffect(() => {
+    if (!ownerUser || !isOwnerConsoleRoute) return;
+    loadOwnerConfig();
+    loadOwnerDoctors();
+  }, [ownerUser, isOwnerConsoleRoute]);
+
+  useEffect(() => {
     if (!authUser) return;
     loadConsultations(selectedPatient?.id);
   }, [selectedPatient, authUser]);
 
   useEffect(() => {
-    if (!authReady || patientPortalToken || publicAgendaSlug) return;
+    if (!authReady || patientPortalToken || publicAgendaSlug || isOwnerConsoleRoute) return;
 
     if (authUser && (pathname === "/" || pathname === "/login")) {
       navigate("/dashboard", { replace: true });
@@ -419,7 +587,7 @@ export default function App() {
     if (!authUser && pathname !== "/" && pathname !== "/login") {
       navigate("/login", { replace: true });
     }
-  }, [authReady, authUser, pathname, patientPortalToken, publicAgendaSlug]);
+  }, [authReady, authUser, pathname, patientPortalToken, publicAgendaSlug, isOwnerConsoleRoute]);
 
   const openPatientRecord = (patient, options = {}) => {
     apiFetch(`/api/pacientes/${patient.id}/open-record`, {
@@ -734,7 +902,94 @@ export default function App() {
     }
   };
 
+  const saveOwnerConfiguration = async (payload) => {
+    try {
+      setOwnerConfigLoading(true);
+      setOwnerConfigError("");
+      setOwnerConfigSuccessMessage("");
+
+      const response = await ownerApiFetch("/api/owner/config", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo guardar SMTP (${response.status})`);
+      }
+
+      setOwnerConfig((prev) => ({ ...prev, ...data }));
+      setOwnerConfigSuccessMessage("Configuracion SMTP guardada correctamente");
+      return true;
+    } catch (error) {
+      setOwnerConfigError(error.message || "No se pudo guardar configuracion SMTP");
+      return false;
+    } finally {
+      setOwnerConfigLoading(false);
+    }
+  };
+
+  const createOwnerDoctor = async (payload) => {
+    try {
+      setIsCreatingOwnerDoctor(true);
+      setCreateOwnerDoctorError("");
+      setOwnerDoctorSuccessMessage("");
+
+      const response = await ownerApiFetch("/api/owner/doctors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo crear medico (${response.status})`);
+      }
+
+      setOwnerDoctors((prev) => [data, ...prev]);
+      setOwnerDoctorSuccessMessage(`Medico creado: ${data.email}`);
+      return data;
+    } catch (error) {
+      setCreateOwnerDoctorError(error.message || "No se pudo crear medico");
+      return null;
+    } finally {
+      setIsCreatingOwnerDoctor(false);
+    }
+  };
+
   if (!authReady) {
+    if (isOwnerConsoleRoute) {
+      return (
+        <OwnerConsolePage
+          owner={ownerUser}
+          isReady={ownerReady}
+          isLoggingIn={isOwnerLoggingIn}
+          authError={ownerAuthError}
+          doctors={ownerDoctors}
+          doctorsLoading={ownerDoctorsLoading}
+          ownerConfig={ownerConfig}
+          configLoading={ownerConfigLoading}
+          onLogin={ownerLogin}
+          onLogout={ownerLogout}
+          onCreateDoctor={createOwnerDoctor}
+          isCreatingDoctor={isCreatingOwnerDoctor}
+          createDoctorError={createOwnerDoctorError}
+          doctorSuccessMessage={ownerDoctorSuccessMessage}
+          onSaveConfig={saveOwnerConfiguration}
+          isSavingConfig={ownerConfigLoading}
+          configError={ownerConfigError}
+          configSuccessMessage={ownerConfigSuccessMessage}
+        />
+      );
+    }
+
     if (patientPortalToken) {
       return <PatientPortalView token={patientPortalToken} />;
     }
@@ -756,6 +1011,31 @@ export default function App() {
 
   if (publicAgendaSlug) {
     return <PublicBookingView slug={publicAgendaSlug} />;
+  }
+
+  if (isOwnerConsoleRoute) {
+    return (
+      <OwnerConsolePage
+        owner={ownerUser}
+        isReady={ownerReady}
+        isLoggingIn={isOwnerLoggingIn}
+        authError={ownerAuthError}
+        doctors={ownerDoctors}
+        doctorsLoading={ownerDoctorsLoading}
+        ownerConfig={ownerConfig}
+        configLoading={ownerConfigLoading}
+        onLogin={ownerLogin}
+        onLogout={ownerLogout}
+        onCreateDoctor={createOwnerDoctor}
+        isCreatingDoctor={isCreatingOwnerDoctor}
+        createDoctorError={createOwnerDoctorError}
+        doctorSuccessMessage={ownerDoctorSuccessMessage}
+        onSaveConfig={saveOwnerConfiguration}
+        isSavingConfig={ownerConfigLoading}
+        configError={ownerConfigError}
+        configSuccessMessage={ownerConfigSuccessMessage}
+      />
+    );
   }
 
   if (!authUser) {

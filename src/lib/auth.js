@@ -1,4 +1,5 @@
 const STORAGE_KEY = "Paupediente_session";
+const OWNER_STORAGE_KEY = "MyCliniq_owner_session";
 
 export const getStoredSession = () => {
   try {
@@ -15,6 +16,23 @@ export const saveSession = (session) => {
 
 export const clearSession = () => {
   localStorage.removeItem(STORAGE_KEY);
+};
+
+export const getStoredOwnerSession = () => {
+  try {
+    const raw = localStorage.getItem(OWNER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const saveOwnerSession = (session) => {
+  localStorage.setItem(OWNER_STORAGE_KEY, JSON.stringify(session));
+};
+
+export const clearOwnerSession = () => {
+  localStorage.removeItem(OWNER_STORAGE_KEY);
 };
 
 const decodeBase64Url = (value) => {
@@ -43,6 +61,16 @@ export const getStoredToken = () => {
   if (!session?.token) return null;
   if (isTokenExpired(session.token)) {
     clearSession();
+    return null;
+  }
+  return session.token;
+};
+
+export const getStoredOwnerToken = () => {
+  const session = getStoredOwnerSession();
+  if (!session?.token) return null;
+  if (isTokenExpired(session.token)) {
+    clearOwnerSession();
     return null;
   }
   return session.token;

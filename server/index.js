@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import crypto from "crypto";
+import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 import { existsSync } from "fs";
 import path from "path";
@@ -48,6 +49,15 @@ const defaultClinicInfo = {
     6: { activo: false, inicio: "09:00", fin: "14:00" },
   },
   logo_data_url: null,
+};
+const defaultSaasConfig = {
+  smtp_host: "",
+  smtp_port: 587,
+  smtp_secure: false,
+  smtp_user: "",
+  smtp_password: "",
+  smtp_from_email: "",
+  leads_notify_email: "",
 };
 
 app.use(cors());
@@ -329,6 +339,81 @@ const getClinicConfig = async (db = pool) => {
   };
 };
 
+const normalizeSaasConfig = (value = {}) => ({
+  smtp_host: String(value.smtp_host || "").trim(),
+  smtp_port: Number(value.smtp_port) > 0 ? Number(value.smtp_port) : defaultSaasConfig.smtp_port,
+  smtp_secure: Boolean(value.smtp_secure),
+  smtp_user: String(value.smtp_user || "").trim(),
+  smtp_password: String(value.smtp_password || "").trim(),
+  smtp_from_email: String(value.smtp_from_email || "").trim(),
+  leads_notify_email: String(value.leads_notify_email || "").trim(),
+});
+
+const getSaasConfig = async (db = pool) => {
+  const result = await db.query(
+    `SELECT
+       id,
+       smtp_host,
+       smtp_port,
+       smtp_secure,
+       smtp_user,
+       smtp_password,
+       smtp_from_email,
+       leads_notify_email
+     FROM saas_configuracion
+     WHERE id = 1`
+  );
+
+  return normalizeSaasConfig({
+    ...defaultSaasConfig,
+    ...(result.rows[0] || {}),
+  });
+};
+
+const maskSaasConfig = (config) => ({
+  ...normalizeSaasConfig(config),
+  smtp_password: config?.smtp_password ? "********" : "",
+  smtp_password_configured: Boolean(String(config?.smtp_password || "").trim()),
+});
+
+const sendLeadNotificationEmail = async (lead, saasConfig) => {
+  const config = normalizeSaasConfig(saasConfig);
+
+  if (!config.smtp_host || !config.smtp_user || !config.smtp_password || !config.leads_notify_email) {
+    return { sent: false, skipped: true, reason: "smtp_not_configured" };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: config.smtp_host,
+    port: config.smtp_port,
+    secure: config.smtp_secure,
+    auth: {
+      user: config.smtp_user,
+      pass: config.smtp_password,
+    },
+  });
+
+  const fromAddress = config.smtp_from_email || config.smtp_user;
+
+  await transporter.sendMail({
+    from: fromAddress,
+    to: config.leads_notify_email,
+    replyTo: lead.email,
+    subject: `Nuevo lead demo: ${lead.nombre}`,
+    text: [
+      "Se recibio una nueva solicitud de demo.",
+      "",
+      `Nombre: ${lead.nombre}`,
+      `Email: ${lead.email}`,
+      `Telefono: ${lead.telefono || "Sin telefono"}`,
+      `Especialidad: ${lead.especialidad || "Sin especialidad"}`,
+      `Fecha: ${new Date(lead.fecha || new Date()).toLocaleString("es-MX")}`,
+    ].join("\n"),
+  });
+
+  return { sent: true, skipped: false };
+};
+
 const parseLogoBuffer = (logoDataUrl) => {
   const value = String(logoDataUrl || "");
   const match = value.match(/^data:image\/[a-zA-Z0-9.+-]+;base64,(.+)$/);
@@ -409,11 +494,21 @@ const getNextExternalIdFromDb = async (db = pool) => {
   return `PX-${String(nextNumber).padStart(4, "0")}`;
 };
 
-const requireAuth = asyncHandler(async (req, res, next) => {
+const readBearerToken = (req) => {
   const authHeader = req.headers.authorization || "";
   const [scheme, token] = authHeader.split(" ");
 
   if (scheme !== "Bearer" || !token) {
+    return null;
+  }
+
+  return token;
+};
+
+const requireAuth = asyncHandler(async (req, res, next) => {
+  const token = readBearerToken(req);
+
+  if (!token) {
     return res.status(401).json({
       error: "unauthorized",
       message: "Token requerido",
@@ -445,6 +540,52 @@ const requireAuth = asyncHandler(async (req, res, next) => {
   }
 
   req.user = userResult.rows[0];
+  next();
+});
+
+const requireOwnerAuth = asyncHandler(async (req, res, next) => {
+  const token = readBearerToken(req);
+
+  if (!token) {
+    return res.status(401).json({
+      error: "unauthorized",
+      message: "Token owner requerido",
+    });
+  }
+
+  let payload;
+
+  try {
+    payload = verifyJwt(token);
+  } catch {
+    return res.status(401).json({
+      error: "unauthorized",
+      message: "Token owner invalido",
+    });
+  }
+
+  if (payload.scope !== "saas_owner") {
+    return res.status(401).json({
+      error: "unauthorized",
+      message: "Token owner invalido",
+    });
+  }
+
+  const ownerResult = await pool.query(
+    `SELECT id, nombre, email, activo
+     FROM saas_owner_users
+     WHERE id = $1`,
+    [payload.sub]
+  );
+
+  if (ownerResult.rowCount === 0 || !ownerResult.rows[0].activo) {
+    return res.status(401).json({
+      error: "unauthorized",
+      message: "Owner no valido",
+    });
+  }
+
+  req.owner = ownerResult.rows[0];
   next();
 });
 
@@ -538,6 +679,149 @@ app.post("/api/auth/logout", requireAuth, asyncHandler(async (req, res) => {
   );
 
   res.json({ ok: true });
+}));
+
+app.post("/api/owner/auth/login", asyncHandler(async (req, res) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "");
+
+  const result = await pool.query(
+    `SELECT id, nombre, email, password_hash, activo
+     FROM saas_owner_users
+     WHERE LOWER(email) = $1`,
+    [email]
+  );
+
+  if (result.rowCount === 0 || !result.rows[0].activo || !verifyPassword(password, result.rows[0].password_hash)) {
+    return res.status(401).json({
+      error: "invalid_credentials",
+      message: "Credenciales owner incorrectas",
+    });
+  }
+
+  const owner = result.rows[0];
+  const token = signJwt(
+    {
+      sub: owner.id,
+      email: owner.email,
+      scope: "saas_owner",
+    },
+    60 * 60 * 12
+  );
+
+  res.json({
+    token,
+    owner: {
+      id: owner.id,
+      nombre: owner.nombre,
+      email: owner.email,
+    },
+  });
+}));
+
+app.get("/api/owner/auth/me", requireOwnerAuth, asyncHandler(async (req, res) => {
+  res.json({
+    owner: {
+      id: req.owner.id,
+      nombre: req.owner.nombre,
+      email: req.owner.email,
+    },
+  });
+}));
+
+app.post("/api/owner/auth/logout", requireOwnerAuth, asyncHandler(async (req, res) => {
+  res.json({ ok: true });
+}));
+
+app.get("/api/owner/config", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const config = await getSaasConfig(pool);
+
+  res.json(maskSaasConfig(config));
+}));
+
+app.put("/api/owner/config", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const currentConfig = await getSaasConfig(pool);
+  const incomingPassword = String(req.body?.smtp_password || "").trim();
+  const normalized = normalizeSaasConfig({
+    ...req.body,
+    smtp_password: incomingPassword ? incomingPassword : currentConfig.smtp_password,
+  });
+
+  const result = await pool.query(
+    `INSERT INTO saas_configuracion (
+      id, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_password, smtp_from_email, leads_notify_email
+    )
+    VALUES (1, $1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (id) DO UPDATE SET
+      smtp_host = EXCLUDED.smtp_host,
+      smtp_port = EXCLUDED.smtp_port,
+      smtp_secure = EXCLUDED.smtp_secure,
+      smtp_user = EXCLUDED.smtp_user,
+      smtp_password = EXCLUDED.smtp_password,
+      smtp_from_email = EXCLUDED.smtp_from_email,
+      leads_notify_email = EXCLUDED.leads_notify_email
+    RETURNING *`,
+    [
+      normalized.smtp_host || null,
+      normalized.smtp_port,
+      normalized.smtp_secure,
+      normalized.smtp_user || null,
+      normalized.smtp_password || null,
+      normalized.smtp_from_email || null,
+      normalized.leads_notify_email || null,
+    ]
+  );
+
+  res.json(maskSaasConfig(result.rows[0]));
+}));
+
+app.get("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const result = await pool.query(
+    `SELECT id, nombre, email, slug, rol, cedula_profesional, activo, created_at
+     FROM usuarios
+     WHERE rol IN ('admin', 'medico')
+     ORDER BY created_at DESC, id DESC`
+  );
+
+  res.json(result.rows);
+}));
+
+app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const nombre = String(req.body?.nombre || "").trim();
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "").trim();
+  const rol = ["admin", "medico"].includes(String(req.body?.rol || "")) ? String(req.body.rol) : "medico";
+  const cedula = String(req.body?.cedula_profesional || "").trim();
+  const requestedSlug = String(req.body?.slug || "").trim().toLowerCase();
+  const baseSlug = requestedSlug || email.split("@")[0] || `medico-${Date.now()}`;
+  const slug = baseSlug
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || `medico-${Date.now()}`;
+
+  if (!nombre || !email || !password) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Nombre, email y password son obligatorios",
+    });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "La password inicial debe tener al menos 8 caracteres",
+    });
+  }
+
+  const result = await pool.query(
+    `INSERT INTO usuarios (nombre, email, slug, password_hash, rol, cedula_profesional)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id, nombre, email, slug, rol, cedula_profesional, activo, created_at`,
+    [nombre, email, slug, hashPassword(password), rol, cedula || null]
+  );
+
+  res.status(201).json(result.rows[0]);
 }));
 
 app.get("/api/portal/:token", asyncHandler(async (req, res) => {
@@ -789,8 +1073,24 @@ app.post("/api/leads", asyncHandler(async (req, res) => {
     [nombre, email, telefono || null, especialidad || null]
   );
 
+  const lead = result.rows[0];
+  let emailStatus = { sent: false, skipped: true, reason: "smtp_not_configured" };
+
+  try {
+    const saasConfig = await getSaasConfig(pool);
+    emailStatus = await sendLeadNotificationEmail(lead, saasConfig);
+  } catch (notifyError) {
+    console.error("Lead email notification failed", notifyError);
+    emailStatus = {
+      sent: false,
+      skipped: false,
+      reason: "smtp_send_failed",
+    };
+  }
+
   res.status(201).json({
-    lead: result.rows[0],
+    lead,
+    email_notification: emailStatus,
     message: "Lead registrada correctamente",
   });
 }));
@@ -1338,6 +1638,7 @@ app.use("/api", (req, res, next) => {
   if (
     req.path.startsWith("/health") ||
     req.path.startsWith("/auth/") ||
+    req.path.startsWith("/owner/") ||
     req.path.startsWith("/portal/") ||
     req.path.startsWith("/agenda-publica/") ||
     req.path.startsWith("/leads")
