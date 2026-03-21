@@ -258,6 +258,10 @@ export default function App() {
   });
   const [clinicConfigError, setClinicConfigError] = useState("");
   const [isSavingClinicConfig, setIsSavingClinicConfig] = useState(false);
+  const [billingProfile, setBillingProfile] = useState(null);
+  const [billingProfileLoading, setBillingProfileLoading] = useState(false);
+  const [billingProfileError, setBillingProfileError] = useState("");
+  const [updatingOwnerDoctorId, setUpdatingOwnerDoctorId] = useState(null);
   const nextExternalId = getNextExternalId(patients);
 
   const navigate = (target, options = {}) => {
@@ -556,6 +560,25 @@ export default function App() {
     }
   };
 
+  const loadBillingProfile = async () => {
+    try {
+      setBillingProfileLoading(true);
+      setBillingProfileError("");
+      const response = await apiFetch("/api/billing/me");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo cargar facturacion (${response.status})`);
+      }
+
+      setBillingProfile(data);
+    } catch (error) {
+      setBillingProfileError(error.message || "No se pudo cargar la facturacion");
+    } finally {
+      setBillingProfileLoading(false);
+    }
+  };
+
   const updateOwnerLead = async (leadId, payload) => {
     try {
       setUpdatingOwnerLeadId(leadId);
@@ -580,6 +603,35 @@ export default function App() {
       return null;
     } finally {
       setUpdatingOwnerLeadId(null);
+    }
+  };
+
+  const updateOwnerDoctor = async (doctorId, payload) => {
+    try {
+      setUpdatingOwnerDoctorId(doctorId);
+      setCreateOwnerDoctorError("");
+
+      const response = await ownerApiFetch(`/api/owner/doctors/${doctorId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo actualizar medico (${response.status})`);
+      }
+
+      setOwnerDoctors((prev) => prev.map((doctor) => (doctor.id === doctorId ? data : doctor)));
+      return data;
+    } catch (error) {
+      setCreateOwnerDoctorError(error.message || "No se pudo actualizar el medico");
+      return null;
+    } finally {
+      setUpdatingOwnerDoctorId(null);
     }
   };
 
@@ -611,6 +663,12 @@ export default function App() {
     if (!authUser) return;
     loadPatients();
     loadClinicConfig();
+    if (["admin", "medico"].includes(authUser?.rol)) {
+      loadBillingProfile();
+    } else {
+      setBillingProfile(null);
+      setBillingProfileError("");
+    }
   }, [authUser]);
 
   useEffect(() => {
@@ -1055,6 +1113,7 @@ export default function App() {
           leads={ownerLeads}
           leadsLoading={ownerLeadsLoading}
           updatingLeadId={updatingOwnerLeadId}
+          updatingDoctorId={updatingOwnerDoctorId}
           ownerConfig={ownerConfig}
           configLoading={ownerConfigLoading}
           onLogin={ownerLogin}
@@ -1070,6 +1129,7 @@ export default function App() {
           configError={ownerConfigError}
           configSuccessMessage={ownerConfigSuccessMessage}
           onUpdateLead={updateOwnerLead}
+          onUpdateDoctor={updateOwnerDoctor}
         />
       );
     }
@@ -1124,6 +1184,8 @@ export default function App() {
         configError={ownerConfigError}
         configSuccessMessage={ownerConfigSuccessMessage}
         onUpdateLead={updateOwnerLead}
+        updatingDoctorId={updatingOwnerDoctorId}
+        onUpdateDoctor={updateOwnerDoctor}
       />
     );
   }
@@ -1208,6 +1270,9 @@ export default function App() {
             onSave={saveClinicConfiguration}
             isSaving={isSavingClinicConfig}
             error={clinicConfigError}
+            billingProfile={billingProfile}
+            billingProfileLoading={billingProfileLoading}
+            billingProfileError={billingProfileError}
           />
         ) : null}
       </main>

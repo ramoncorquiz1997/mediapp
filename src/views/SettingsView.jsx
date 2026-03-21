@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Save, Upload, Building2 } from "lucide-react";
+import { Save, Upload, Building2, CreditCard, ShieldCheck, AlertTriangle } from "lucide-react";
 
 const workingDays = [
   { key: 1, label: "Lunes" },
@@ -34,6 +34,9 @@ export default function SettingsView({
   onSave,
   isSaving,
   error,
+  billingProfile,
+  billingProfileLoading,
+  billingProfileError,
 }) {
   const fileInputRef = useRef(null);
 
@@ -98,6 +101,19 @@ export default function SettingsView({
     }));
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "Sin fecha";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
@@ -131,6 +147,76 @@ export default function SettingsView({
               {error}
             </div>
           ) : null}
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700">
+                <CreditCard size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-slate-800">Facturacion de la cuenta</p>
+                <p className="text-xs font-bold text-slate-500">
+                  Estado de la suscripcion SaaS y fechas importantes de cobro.
+                </p>
+              </div>
+            </div>
+
+            {billingProfileError ? (
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+                {billingProfileError}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase text-slate-500">Plan</p>
+                <p className="mt-2 text-lg font-black text-slate-900">
+                  {billingProfileLoading ? "Cargando..." : billingProfile?.billing_plan_code || "Sin plan asignado"}
+                </p>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  {billingProfile?.billing_amount
+                    ? `${billingProfile.billing_currency || "MXN"} ${Number(billingProfile.billing_amount).toFixed(2)} / ${billingProfile?.billing_cycle || "monthly"}`
+                    : "Todavia no hay una suscripcion activa"}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase text-slate-500">Suscripcion</p>
+                <p className="mt-2 text-lg font-black text-slate-900">
+                  {billingProfileLoading ? "Cargando..." : billingProfile?.subscription_status || "Sin iniciar"}
+                </p>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  Proxima fecha: {formatDateTime(billingProfile?.billing_current_period_end)}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase text-slate-500">Acceso</p>
+                <p className="mt-2 inline-flex items-center gap-2 text-lg font-black text-slate-900">
+                  {billingProfile?.access_summary?.effective_status === "active" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
+                  <span>{billingProfileLoading ? "Cargando..." : billingProfile?.access_summary?.effective_status || "Pendiente"}</span>
+                </p>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  {billingProfile?.access_summary?.reason || "Sin diagnostico de acceso"}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-[10px] font-black uppercase text-slate-500">Ultimo pago</p>
+                <p className="mt-2 text-lg font-black text-slate-900">
+                  {billingProfileLoading ? "Cargando..." : billingProfile?.billing_last_payment_status || "Sin registro"}
+                </p>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  {formatDateTime(billingProfile?.billing_last_payment_at)}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-cyan-100 bg-cyan-50 px-5 py-4 text-sm font-bold text-cyan-900">
+              La activacion en Stripe se conectara sobre este modulo. Por ahora aqui ya puedes ver el estado de cuenta,
+              la proxima fecha de pago y cualquier extension manual aplicada por administracion.
+            </div>
+          </section>
 
           <section className="space-y-4">
             <div>

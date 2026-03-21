@@ -88,10 +88,47 @@ CREATE TABLE IF NOT EXISTS usuarios (
   rol TEXT NOT NULL DEFAULT 'medico',
   cedula_profesional TEXT,
   foto_data_url TEXT,
+  verification_status TEXT NOT NULL DEFAULT 'approved',
+  verification_notes TEXT,
+  verification_checked_at TIMESTAMPTZ,
+  verification_checked_by_name TEXT,
+  subscription_status TEXT NOT NULL DEFAULT 'not_started',
+  billing_plan_code TEXT,
+  billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+  billing_amount NUMERIC(10, 2),
+  billing_currency TEXT NOT NULL DEFAULT 'MXN',
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  billing_current_period_start TIMESTAMPTZ,
+  billing_current_period_end TIMESTAMPTZ,
+  billing_trial_ends_at TIMESTAMPTZ,
+  billing_last_payment_at TIMESTAMPTZ,
+  billing_last_payment_status TEXT,
+  billing_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE,
+  manual_access_until TIMESTAMPTZ,
+  manual_billing_override BOOLEAN NOT NULL DEFAULT FALSE,
+  manual_override_reason TEXT,
+  access_status TEXT NOT NULL DEFAULT 'active',
+  saas_notes TEXT,
   activo BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT usuarios_rol_valido CHECK (rol IN ('admin', 'medico', 'asistente'))
+  CONSTRAINT usuarios_rol_valido CHECK (rol IN ('admin', 'medico', 'asistente')),
+  CONSTRAINT usuarios_verification_status_valido CHECK (
+    verification_status IN ('pending', 'approved', 'rejected')
+  ),
+  CONSTRAINT usuarios_subscription_status_valido CHECK (
+    subscription_status IN ('not_started', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete')
+  ),
+  CONSTRAINT usuarios_access_status_valido CHECK (
+    access_status IN ('pending_onboarding', 'pending_verification', 'pending_payment', 'active', 'limited', 'suspended', 'blocked')
+  ),
+  CONSTRAINT usuarios_billing_cycle_valido CHECK (billing_cycle IN ('monthly', 'quarterly', 'semiannual', 'annual', 'custom')),
+  CONSTRAINT usuarios_billing_last_payment_status_valido CHECK (
+    billing_last_payment_status IS NULL
+    OR billing_last_payment_status IN ('paid', 'pending', 'failed', 'refunded', 'waived', 'offline')
+  ),
+  CONSTRAINT usuarios_billing_currency_valido CHECK (char_length(TRIM(billing_currency)) >= 3)
 );
 
 ALTER TABLE usuarios
@@ -99,6 +136,119 @@ ADD COLUMN IF NOT EXISTS slug TEXT;
 
 ALTER TABLE usuarios
 ADD COLUMN IF NOT EXISTS foto_data_url TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'approved';
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS verification_notes TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS verification_checked_at TIMESTAMPTZ;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS verification_checked_by_name TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS subscription_status TEXT NOT NULL DEFAULT 'not_started';
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_plan_code TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_cycle TEXT NOT NULL DEFAULT 'monthly';
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_amount NUMERIC(10, 2);
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_currency TEXT NOT NULL DEFAULT 'MXN';
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_current_period_start TIMESTAMPTZ;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_current_period_end TIMESTAMPTZ;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_trial_ends_at TIMESTAMPTZ;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_last_payment_at TIMESTAMPTZ;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_last_payment_status TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS billing_cancel_at_period_end BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS manual_access_until TIMESTAMPTZ;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS manual_billing_override BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS manual_override_reason TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS access_status TEXT NOT NULL DEFAULT 'active';
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS saas_notes TEXT;
+
+ALTER TABLE usuarios
+DROP CONSTRAINT IF EXISTS usuarios_verification_status_valido;
+
+ALTER TABLE usuarios
+ADD CONSTRAINT usuarios_verification_status_valido CHECK (
+  verification_status IN ('pending', 'approved', 'rejected')
+);
+
+ALTER TABLE usuarios
+DROP CONSTRAINT IF EXISTS usuarios_subscription_status_valido;
+
+ALTER TABLE usuarios
+ADD CONSTRAINT usuarios_subscription_status_valido CHECK (
+  subscription_status IN ('not_started', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'incomplete')
+);
+
+ALTER TABLE usuarios
+DROP CONSTRAINT IF EXISTS usuarios_access_status_valido;
+
+ALTER TABLE usuarios
+ADD CONSTRAINT usuarios_access_status_valido CHECK (
+  access_status IN ('pending_onboarding', 'pending_verification', 'pending_payment', 'active', 'limited', 'suspended', 'blocked')
+);
+
+ALTER TABLE usuarios
+DROP CONSTRAINT IF EXISTS usuarios_billing_cycle_valido;
+
+ALTER TABLE usuarios
+ADD CONSTRAINT usuarios_billing_cycle_valido CHECK (
+  billing_cycle IN ('monthly', 'quarterly', 'semiannual', 'annual', 'custom')
+);
+
+ALTER TABLE usuarios
+DROP CONSTRAINT IF EXISTS usuarios_billing_last_payment_status_valido;
+
+ALTER TABLE usuarios
+ADD CONSTRAINT usuarios_billing_last_payment_status_valido CHECK (
+  billing_last_payment_status IS NULL
+  OR billing_last_payment_status IN ('paid', 'pending', 'failed', 'refunded', 'waived', 'offline')
+);
+
+ALTER TABLE usuarios
+DROP CONSTRAINT IF EXISTS usuarios_billing_currency_valido;
+
+ALTER TABLE usuarios
+ADD CONSTRAINT usuarios_billing_currency_valido CHECK (char_length(TRIM(billing_currency)) >= 3);
 
 UPDATE usuarios
 SET slug = CONCAT('medico-', id)

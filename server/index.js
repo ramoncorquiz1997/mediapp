@@ -76,6 +76,19 @@ const allowedMedicalProfessionTerms = [
   "CIRUJANO Y PARTERO",
   "DOCTOR EN MEDICINA",
 ];
+const verificationStatuses = ["pending", "approved", "rejected"];
+const subscriptionStatuses = ["not_started", "trialing", "active", "past_due", "canceled", "unpaid", "incomplete"];
+const accessStatuses = [
+  "pending_onboarding",
+  "pending_verification",
+  "pending_payment",
+  "active",
+  "limited",
+  "suspended",
+  "blocked",
+];
+const billingCycles = ["monthly", "quarterly", "semiannual", "annual", "custom"];
+const paymentStatuses = ["paid", "pending", "failed", "refunded", "waived", "offline"];
 
 app.use(cors());
 app.use(express.json({ limit: "6mb" }));
@@ -154,6 +167,120 @@ const buildFullName = (...parts) =>
     .map((part) => String(part ?? "").trim())
     .filter(Boolean)
     .join(" ");
+
+const parseOptionalAmount = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
+};
+
+const parseOptionalDateTime = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const normalizeDoctorPlatformProfile = (doctor) => ({
+  id: doctor.id,
+  nombre: doctor.nombre,
+  email: doctor.email,
+  slug: doctor.slug,
+  rol: doctor.rol,
+  cedula_profesional: doctor.cedula_profesional,
+  activo: doctor.activo,
+  created_at: doctor.created_at,
+  updated_at: doctor.updated_at,
+  verification_status: doctor.verification_status || "pending",
+  verification_notes: doctor.verification_notes || "",
+  verification_checked_at: doctor.verification_checked_at,
+  verification_checked_by_name: doctor.verification_checked_by_name || "",
+  subscription_status: doctor.subscription_status || "not_started",
+  billing_plan_code: doctor.billing_plan_code || "",
+  billing_cycle: doctor.billing_cycle || "monthly",
+  billing_amount: doctor.billing_amount === null || doctor.billing_amount === undefined ? null : Number(doctor.billing_amount),
+  billing_currency: doctor.billing_currency || "MXN",
+  stripe_customer_id: doctor.stripe_customer_id || "",
+  stripe_subscription_id: doctor.stripe_subscription_id || "",
+  billing_current_period_start: doctor.billing_current_period_start,
+  billing_current_period_end: doctor.billing_current_period_end,
+  billing_trial_ends_at: doctor.billing_trial_ends_at,
+  billing_last_payment_at: doctor.billing_last_payment_at,
+  billing_last_payment_status: doctor.billing_last_payment_status || "",
+  billing_cancel_at_period_end: Boolean(doctor.billing_cancel_at_period_end),
+  manual_access_until: doctor.manual_access_until,
+  manual_billing_override: Boolean(doctor.manual_billing_override),
+  manual_override_reason: doctor.manual_override_reason || "",
+  access_status: doctor.access_status || "pending_verification",
+  saas_notes: doctor.saas_notes || "",
+});
+
+const buildDoctorAccessSummary = (doctor) => {
+  const now = Date.now();
+  const manualAccessUntil = doctor.manual_access_until ? new Date(doctor.manual_access_until).getTime() : null;
+  const currentPeriodEnd = doctor.billing_current_period_end ? new Date(doctor.billing_current_period_end).getTime() : null;
+  const trialEndsAt = doctor.billing_trial_ends_at ? new Date(doctor.billing_trial_ends_at).getTime() : null;
+
+  if (!doctor.activo) {
+    return {
+      effective_status: "blocked",
+      reason: "Cuenta desactivada manualmente",
+    };
+  }
+
+  if (doctor.access_status === "blocked") {
+    return {
+      effective_status: "blocked",
+      reason: "Bloqueado manualmente por administracion",
+    };
+  }
+
+  if (doctor.verification_status !== "approved") {
+    return {
+      effective_status: doctor.access_status === "suspended" ? "suspended" : "pending_verification",
+      reason: "Credenciales medicas pendientes o rechazadas",
+    };
+  }
+
+  if (manualAccessUntil && manualAccessUntil >= now) {
+    return {
+      effective_status: "active",
+      reason: "Acceso extendido manualmente",
+    };
+  }
+
+  if (doctor.subscription_status === "active" && currentPeriodEnd && currentPeriodEnd >= now) {
+    return {
+      effective_status: doctor.access_status === "limited" ? "limited" : "active",
+      reason: "Suscripcion al corriente",
+    };
+  }
+
+  if (doctor.subscription_status === "trialing" && trialEndsAt && trialEndsAt >= now) {
+    return {
+      effective_status: "active",
+      reason: "Periodo de prueba vigente",
+    };
+  }
+
+  if (doctor.subscription_status === "past_due") {
+    return {
+      effective_status: doctor.access_status === "suspended" ? "suspended" : "limited",
+      reason: "Pago pendiente de regularizacion",
+    };
+  }
+
+  if (doctor.subscription_status === "not_started") {
+    return {
+      effective_status: "pending_payment",
+      reason: "Suscripcion aun no activada",
+    };
+  }
+
+  return {
+    effective_status: doctor.access_status === "suspended" ? "suspended" : "suspended",
+    reason: "Suscripcion vencida o sin acceso vigente",
+  };
+};
 
 const fetchSepLicenseData = async (cedula) => {
   const normalizedCedula = String(cedula ?? "").replace(/\D/g, "").trim();
@@ -630,7 +757,9 @@ const requireAuth = asyncHandler(async (req, res, next) => {
   }
 
   const userResult = await pool.query(
-    `SELECT id, nombre, email, rol, cedula_profesional, activo
+    `SELECT id, nombre, email, rol, cedula_profesional, activo,
+            verification_status, subscription_status, access_status,
+            billing_current_period_end, billing_trial_ends_at, manual_access_until
      FROM usuarios
      WHERE id = $1`,
     [payload.sub]
@@ -703,7 +832,9 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
   const normalizedEmail = String(email || "").trim().toLowerCase();
 
   const result = await pool.query(
-    `SELECT id, nombre, email, password_hash, rol, cedula_profesional, activo
+    `SELECT id, nombre, email, password_hash, rol, cedula_profesional, activo,
+            verification_status, subscription_status, access_status,
+            billing_current_period_end, billing_trial_ends_at, manual_access_until
      FROM usuarios
      WHERE email = $1`,
     [normalizedEmail]
@@ -764,12 +895,72 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
       email: user.email,
       rol: user.rol,
       cedula_profesional: user.cedula_profesional,
+      verification_status: user.verification_status,
+      subscription_status: user.subscription_status,
+      access_status: user.access_status,
+      billing_current_period_end: user.billing_current_period_end,
+      billing_trial_ends_at: user.billing_trial_ends_at,
+      manual_access_until: user.manual_access_until,
     },
   });
 }));
 
 app.get("/api/auth/me", requireAuth, asyncHandler(async (req, res) => {
   res.json({ user: req.user });
+}));
+
+app.get("/api/billing/me", requireDoctorAccess, asyncHandler(async (req, res) => {
+  const result = await pool.query(
+    `SELECT
+       id,
+       nombre,
+       email,
+       slug,
+       rol,
+       cedula_profesional,
+       activo,
+       created_at,
+       updated_at,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       billing_plan_code,
+       billing_cycle,
+       billing_amount,
+       billing_currency,
+       stripe_customer_id,
+       stripe_subscription_id,
+       billing_current_period_start,
+       billing_current_period_end,
+       billing_trial_ends_at,
+       billing_last_payment_at,
+       billing_last_payment_status,
+       billing_cancel_at_period_end,
+       manual_access_until,
+       manual_billing_override,
+       manual_override_reason,
+       access_status,
+       saas_notes
+     FROM usuarios
+     WHERE id = $1`,
+    [req.user.id]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Perfil de facturacion no encontrado",
+    });
+  }
+
+  const doctor = result.rows[0];
+
+  res.json({
+    ...normalizeDoctorPlatformProfile(doctor),
+    access_summary: buildDoctorAccessSummary(doctor),
+  });
 }));
 
 app.post("/api/auth/logout", requireAuth, asyncHandler(async (req, res) => {
@@ -881,13 +1072,47 @@ app.put("/api/owner/config", requireOwnerAuth, asyncHandler(async (req, res) => 
 
 app.get("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) => {
   const result = await pool.query(
-    `SELECT id, nombre, email, slug, rol, cedula_profesional, activo, created_at
+    `SELECT
+       id,
+       nombre,
+       email,
+       slug,
+       rol,
+       cedula_profesional,
+       activo,
+       created_at,
+       updated_at,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       billing_plan_code,
+       billing_cycle,
+       billing_amount,
+       billing_currency,
+       stripe_customer_id,
+       stripe_subscription_id,
+       billing_current_period_start,
+       billing_current_period_end,
+       billing_trial_ends_at,
+       billing_last_payment_at,
+       billing_last_payment_status,
+       billing_cancel_at_period_end,
+       manual_access_until,
+       manual_billing_override,
+       manual_override_reason,
+       access_status,
+       saas_notes
      FROM usuarios
      WHERE rol IN ('admin', 'medico')
      ORDER BY created_at DESC, id DESC`
   );
 
-  res.json(result.rows);
+  res.json(result.rows.map((doctor) => ({
+    ...normalizeDoctorPlatformProfile(doctor),
+    access_summary: buildDoctorAccessSummary(doctor),
+  })));
 }));
 
 app.post("/api/owner/doctors/validate-license", requireOwnerAuth, asyncHandler(async (req, res) => {
@@ -986,13 +1211,267 @@ app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =
   }
 
   const result = await pool.query(
-    `INSERT INTO usuarios (nombre, email, slug, password_hash, rol, cedula_profesional)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, nombre, email, slug, rol, cedula_profesional, activo, created_at`,
-    [nombre, email, slug, hashPassword(password), rol, cedula || null]
+    `INSERT INTO usuarios (
+       nombre,
+       email,
+       slug,
+       password_hash,
+       rol,
+       cedula_profesional,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       access_status
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, 'approved', 'Validado al crear medico desde owner console', NOW(), $7, 'not_started', 'pending_payment')
+     RETURNING
+       id,
+       nombre,
+       email,
+       slug,
+       rol,
+       cedula_profesional,
+       activo,
+       created_at,
+       updated_at,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       billing_plan_code,
+       billing_cycle,
+       billing_amount,
+       billing_currency,
+       stripe_customer_id,
+       stripe_subscription_id,
+       billing_current_period_start,
+       billing_current_period_end,
+       billing_trial_ends_at,
+       billing_last_payment_at,
+       billing_last_payment_status,
+       billing_cancel_at_period_end,
+       manual_access_until,
+       manual_billing_override,
+       manual_override_reason,
+       access_status,
+       saas_notes`,
+    [nombre, email, slug, hashPassword(password), rol, cedula || null, req.owner.nombre]
   );
 
-  res.status(201).json(result.rows[0]);
+  const createdDoctor = result.rows[0];
+
+  res.status(201).json({
+    ...normalizeDoctorPlatformProfile(createdDoctor),
+    access_summary: buildDoctorAccessSummary(createdDoctor),
+  });
+}));
+
+app.put("/api/owner/doctors/:id", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.id);
+
+  if (!Number.isInteger(doctorId) || doctorId <= 0) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Doctor invalido",
+    });
+  }
+
+  const currentResult = await pool.query(
+    `SELECT
+       id,
+       nombre,
+       email,
+       slug,
+       rol,
+       cedula_profesional,
+       activo,
+       created_at,
+       updated_at,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       billing_plan_code,
+       billing_cycle,
+       billing_amount,
+       billing_currency,
+       stripe_customer_id,
+       stripe_subscription_id,
+       billing_current_period_start,
+       billing_current_period_end,
+       billing_trial_ends_at,
+       billing_last_payment_at,
+       billing_last_payment_status,
+       billing_cancel_at_period_end,
+       manual_access_until,
+       manual_billing_override,
+       manual_override_reason,
+       access_status,
+       saas_notes
+     FROM usuarios
+     WHERE id = $1
+       AND rol IN ('admin', 'medico')`,
+    [doctorId]
+  );
+
+  if (currentResult.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Medico no encontrado",
+    });
+  }
+
+  const currentDoctor = currentResult.rows[0];
+  const verificationStatus = verificationStatuses.includes(String(req.body?.verification_status || ""))
+    ? String(req.body.verification_status)
+    : currentDoctor.verification_status;
+  const subscriptionStatus = subscriptionStatuses.includes(String(req.body?.subscription_status || ""))
+    ? String(req.body.subscription_status)
+    : currentDoctor.subscription_status;
+  const accessStatus = accessStatuses.includes(String(req.body?.access_status || ""))
+    ? String(req.body.access_status)
+    : currentDoctor.access_status;
+  const billingCycle = billingCycles.includes(String(req.body?.billing_cycle || ""))
+    ? String(req.body.billing_cycle)
+    : currentDoctor.billing_cycle;
+  const lastPaymentStatus = req.body?.billing_last_payment_status === ""
+    ? null
+    : paymentStatuses.includes(String(req.body?.billing_last_payment_status || ""))
+      ? String(req.body.billing_last_payment_status)
+      : currentDoctor.billing_last_payment_status;
+  const billingAmount = req.body?.billing_amount === ""
+    ? null
+    : parseOptionalAmount(req.body?.billing_amount) ?? currentDoctor.billing_amount;
+  const updatedDoctorResult = await pool.query(
+    `UPDATE usuarios
+     SET nombre = $1,
+         email = $2,
+         slug = $3,
+         rol = $4,
+         cedula_profesional = $5,
+         activo = $6,
+         verification_status = $7,
+         verification_notes = $8,
+         verification_checked_at = CASE WHEN $9 THEN NOW() ELSE verification_checked_at END,
+         verification_checked_by_name = CASE WHEN $9 THEN $10 ELSE verification_checked_by_name END,
+         subscription_status = $11,
+         billing_plan_code = $12,
+         billing_cycle = $13,
+         billing_amount = $14,
+         billing_currency = $15,
+         stripe_customer_id = $16,
+         stripe_subscription_id = $17,
+         billing_current_period_start = $18,
+         billing_current_period_end = $19,
+         billing_trial_ends_at = $20,
+         billing_last_payment_at = $21,
+         billing_last_payment_status = $22,
+         billing_cancel_at_period_end = $23,
+         manual_access_until = $24,
+         manual_billing_override = $25,
+         manual_override_reason = $26,
+         access_status = $27,
+         saas_notes = $28
+     WHERE id = $29
+     RETURNING
+       id,
+       nombre,
+       email,
+       slug,
+       rol,
+       cedula_profesional,
+       activo,
+       created_at,
+       updated_at,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       billing_plan_code,
+       billing_cycle,
+       billing_amount,
+       billing_currency,
+       stripe_customer_id,
+       stripe_subscription_id,
+       billing_current_period_start,
+       billing_current_period_end,
+       billing_trial_ends_at,
+       billing_last_payment_at,
+       billing_last_payment_status,
+       billing_cancel_at_period_end,
+       manual_access_until,
+       manual_billing_override,
+       manual_override_reason,
+       access_status,
+       saas_notes`,
+    [
+      String(req.body?.nombre ?? currentDoctor.nombre).trim() || currentDoctor.nombre,
+      String(req.body?.email ?? currentDoctor.email).trim().toLowerCase() || currentDoctor.email,
+      String(req.body?.slug ?? currentDoctor.slug ?? "").trim().toLowerCase() || currentDoctor.slug,
+      ["admin", "medico"].includes(String(req.body?.rol || "")) ? String(req.body.rol) : currentDoctor.rol,
+      String(req.body?.cedula_profesional ?? currentDoctor.cedula_profesional ?? "").trim() || null,
+      Boolean(req.body?.activo ?? currentDoctor.activo),
+      verificationStatus,
+      String(req.body?.verification_notes ?? currentDoctor.verification_notes ?? "").trim() || null,
+      verificationStatus !== currentDoctor.verification_status,
+      req.owner.nombre,
+      subscriptionStatus,
+      String(req.body?.billing_plan_code ?? currentDoctor.billing_plan_code ?? "").trim() || null,
+      billingCycle,
+      billingAmount,
+      String(req.body?.billing_currency ?? currentDoctor.billing_currency ?? "MXN").trim().toUpperCase() || "MXN",
+      String(req.body?.stripe_customer_id ?? currentDoctor.stripe_customer_id ?? "").trim() || null,
+      String(req.body?.stripe_subscription_id ?? currentDoctor.stripe_subscription_id ?? "").trim() || null,
+      req.body?.billing_current_period_start === ""
+        ? null
+        : parseOptionalDateTime(req.body?.billing_current_period_start) ?? currentDoctor.billing_current_period_start,
+      req.body?.billing_current_period_end === ""
+        ? null
+        : parseOptionalDateTime(req.body?.billing_current_period_end) ?? currentDoctor.billing_current_period_end,
+      req.body?.billing_trial_ends_at === ""
+        ? null
+        : parseOptionalDateTime(req.body?.billing_trial_ends_at) ?? currentDoctor.billing_trial_ends_at,
+      req.body?.billing_last_payment_at === ""
+        ? null
+        : parseOptionalDateTime(req.body?.billing_last_payment_at) ?? currentDoctor.billing_last_payment_at,
+      lastPaymentStatus,
+      Boolean(req.body?.billing_cancel_at_period_end ?? currentDoctor.billing_cancel_at_period_end),
+      req.body?.manual_access_until === ""
+        ? null
+        : parseOptionalDateTime(req.body?.manual_access_until) ?? currentDoctor.manual_access_until,
+      Boolean(req.body?.manual_billing_override ?? currentDoctor.manual_billing_override),
+      String(req.body?.manual_override_reason ?? currentDoctor.manual_override_reason ?? "").trim() || null,
+      accessStatus,
+      String(req.body?.saas_notes ?? currentDoctor.saas_notes ?? "").trim() || null,
+      doctorId,
+    ]
+  );
+
+  const updatedDoctor = updatedDoctorResult.rows[0];
+
+  await writeAuditLog(
+    pool,
+    { id: null, nombre: req.owner.nombre },
+    "update",
+    "owner_doctor_account",
+    doctorId,
+    {
+      verification_status: updatedDoctor.verification_status,
+      subscription_status: updatedDoctor.subscription_status,
+      access_status: updatedDoctor.access_status,
+      active: updatedDoctor.activo,
+    }
+  );
+
+  res.json({
+    ...normalizeDoctorPlatformProfile(updatedDoctor),
+    access_summary: buildDoctorAccessSummary(updatedDoctor),
+  });
 }));
 
 app.get("/api/portal/:token", asyncHandler(async (req, res) => {

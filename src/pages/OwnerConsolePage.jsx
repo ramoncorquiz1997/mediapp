@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { BadgeCheck, EyeOff, Mail, Plus, Save, SearchCheck, Shield, UserPlus, Users } from "lucide-react";
+import {
+  BadgeCheck,
+  CreditCard,
+  EyeOff,
+  Mail,
+  Plus,
+  Save,
+  SearchCheck,
+  Shield,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
 const defaultOwnerLogin = {
   email: "",
@@ -33,6 +44,101 @@ const leadStatusOptions = [
   { value: "cerrado", label: "Cerrado" },
 ];
 
+const verificationStatusOptions = [
+  { value: "pending", label: "Pendiente" },
+  { value: "approved", label: "Aprobado" },
+  { value: "rejected", label: "Rechazado" },
+];
+
+const subscriptionStatusOptions = [
+  { value: "not_started", label: "Sin iniciar" },
+  { value: "trialing", label: "Trial" },
+  { value: "active", label: "Activa" },
+  { value: "past_due", label: "Pago vencido" },
+  { value: "canceled", label: "Cancelada" },
+  { value: "unpaid", label: "Impaga" },
+  { value: "incomplete", label: "Incompleta" },
+];
+
+const accessStatusOptions = [
+  { value: "pending_onboarding", label: "Onboarding" },
+  { value: "pending_verification", label: "Por verificar" },
+  { value: "pending_payment", label: "Pendiente de pago" },
+  { value: "active", label: "Activo" },
+  { value: "limited", label: "Limitado" },
+  { value: "suspended", label: "Suspendido" },
+  { value: "blocked", label: "Bloqueado" },
+];
+
+const billingCycleOptions = [
+  { value: "monthly", label: "Mensual" },
+  { value: "quarterly", label: "Trimestral" },
+  { value: "semiannual", label: "Semestral" },
+  { value: "annual", label: "Anual" },
+  { value: "custom", label: "Personalizado" },
+];
+
+const paymentStatusOptions = [
+  { value: "", label: "Sin registro" },
+  { value: "paid", label: "Pagado" },
+  { value: "pending", label: "Pendiente" },
+  { value: "failed", label: "Fallido" },
+  { value: "refunded", label: "Reembolsado" },
+  { value: "waived", label: "Bonificado" },
+  { value: "offline", label: "Offline" },
+];
+
+const toDateTimeLocal = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+};
+
+const formatDateTime = (value) => {
+  if (!value) return "Sin fecha";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("es-MX", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const createDoctorDraft = (doctor) => ({
+  nombre: doctor.nombre || "",
+  email: doctor.email || "",
+  slug: doctor.slug || "",
+  rol: doctor.rol || "medico",
+  cedula_profesional: doctor.cedula_profesional || "",
+  activo: Boolean(doctor.activo),
+  verification_status: doctor.verification_status || "pending",
+  verification_notes: doctor.verification_notes || "",
+  subscription_status: doctor.subscription_status || "not_started",
+  billing_plan_code: doctor.billing_plan_code || "",
+  billing_cycle: doctor.billing_cycle || "monthly",
+  billing_amount: doctor.billing_amount ?? "",
+  billing_currency: doctor.billing_currency || "MXN",
+  stripe_customer_id: doctor.stripe_customer_id || "",
+  stripe_subscription_id: doctor.stripe_subscription_id || "",
+  billing_current_period_start: toDateTimeLocal(doctor.billing_current_period_start),
+  billing_current_period_end: toDateTimeLocal(doctor.billing_current_period_end),
+  billing_trial_ends_at: toDateTimeLocal(doctor.billing_trial_ends_at),
+  billing_last_payment_at: toDateTimeLocal(doctor.billing_last_payment_at),
+  billing_last_payment_status: doctor.billing_last_payment_status || "",
+  billing_cancel_at_period_end: Boolean(doctor.billing_cancel_at_period_end),
+  manual_access_until: toDateTimeLocal(doctor.manual_access_until),
+  manual_billing_override: Boolean(doctor.manual_billing_override),
+  manual_override_reason: doctor.manual_override_reason || "",
+  access_status: doctor.access_status || "pending_payment",
+  saas_notes: doctor.saas_notes || "",
+});
+
 export default function OwnerConsolePage({
   owner,
   isReady,
@@ -43,6 +149,7 @@ export default function OwnerConsolePage({
   leads,
   leadsLoading,
   updatingLeadId,
+  updatingDoctorId,
   ownerConfig,
   configLoading,
   onLogin,
@@ -58,11 +165,13 @@ export default function OwnerConsolePage({
   configError,
   configSuccessMessage,
   onUpdateLead,
+  onUpdateDoctor,
 }) {
   const [loginForm, setLoginForm] = useState(defaultOwnerLogin);
   const [doctorForm, setDoctorForm] = useState(defaultDoctorForm);
   const [smtpForm, setSmtpForm] = useState(defaultSmtpForm);
   const [leadDrafts, setLeadDrafts] = useState({});
+  const [doctorDrafts, setDoctorDrafts] = useState({});
   const [doctorLicenseValidation, setDoctorLicenseValidation] = useState(null);
   const [doctorLicenseMessage, setDoctorLicenseMessage] = useState("");
 
@@ -87,6 +196,12 @@ export default function OwnerConsolePage({
       )
     );
   }, [leads]);
+
+  useEffect(() => {
+    setDoctorDrafts(
+      Object.fromEntries((doctors || []).map((doctor) => [doctor.id, createDoctorDraft(doctor)]))
+    );
+  }, [doctors]);
 
   const submitLogin = async (e) => {
     e.preventDefault();
@@ -133,23 +248,16 @@ export default function OwnerConsolePage({
     setSmtpForm((prev) => ({ ...prev, smtp_password: "" }));
   };
 
-  const formatLeadDate = (value) => {
-    if (!value) return "Sin fecha";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString("es-MX", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const saveLead = async (leadId) => {
     const draft = leadDrafts[leadId];
     if (!draft) return;
     await onUpdateLead(leadId, draft);
+  };
+
+  const saveDoctor = async (doctorId) => {
+    const draft = doctorDrafts[doctorId];
+    if (!draft) return;
+    await onUpdateDoctor(doctorId, draft);
   };
 
   const handleDoctorCedulaChange = (value) => {
@@ -229,7 +337,7 @@ export default function OwnerConsolePage({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 text-slate-900">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -250,7 +358,7 @@ export default function OwnerConsolePage({
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-cyan-50 p-3 text-cyan-700">
@@ -258,9 +366,7 @@ export default function OwnerConsolePage({
               </div>
               <div>
                 <h2 className="text-xl font-black text-slate-900">SMTP y leads</h2>
-                <p className="text-sm font-bold text-slate-500">
-                  Configura el correo que recibira las solicitudes de demo.
-                </p>
+                <p className="text-sm font-bold text-slate-500">Configura el correo que recibira las solicitudes de demo.</p>
               </div>
             </div>
 
@@ -278,38 +384,38 @@ export default function OwnerConsolePage({
               ) : null}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">SMTP host</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">SMTP host</span>
                   <input
                     value={smtpForm.smtp_host || ""}
                     onChange={(e) => setSmtpForm((prev) => ({ ...prev, smtp_host: e.target.value }))}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="smtp.gmail.com"
                   />
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">SMTP port</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">SMTP port</span>
                   <input
                     type="number"
                     value={smtpForm.smtp_port || 587}
                     onChange={(e) => setSmtpForm((prev) => ({ ...prev, smtp_port: Number(e.target.value) }))}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
                   />
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Usuario SMTP</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Usuario SMTP</span>
                   <input
                     value={smtpForm.smtp_user || ""}
                     onChange={(e) => setSmtpForm((prev) => ({ ...prev, smtp_user: e.target.value }))}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="tucorreo@gmail.com"
                   />
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Password SMTP</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Password SMTP</span>
                   <input
                     type="password"
                     value={smtpForm.smtp_password || ""}
@@ -317,10 +423,10 @@ export default function OwnerConsolePage({
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder={smtpForm.smtp_password_configured ? "Dejar vacio para conservar actual" : "Nueva password SMTP"}
                   />
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Correo remitente</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Correo remitente</span>
                   <input
                     type="email"
                     value={smtpForm.smtp_from_email || ""}
@@ -328,10 +434,10 @@ export default function OwnerConsolePage({
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="noreply@mycliniq.lat"
                   />
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Correo receptor de leads</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Correo receptor de leads</span>
                   <input
                     type="email"
                     value={smtpForm.leads_notify_email || ""}
@@ -339,7 +445,7 @@ export default function OwnerConsolePage({
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="ventas@mycliniq.lat"
                   />
-                </div>
+                </label>
               </div>
 
               <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
@@ -387,38 +493,38 @@ export default function OwnerConsolePage({
                   </div>
                 ) : null}
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Nombre</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Nombre</span>
                   <input
                     value={doctorForm.nombre}
                     onChange={(e) => setDoctorForm((prev) => ({ ...prev, nombre: e.target.value }))}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
                   />
-                </div>
+                </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Correo</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Correo</span>
                   <input
                     type="email"
                     value={doctorForm.email}
                     onChange={(e) => setDoctorForm((prev) => ({ ...prev, email: e.target.value }))}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
                   />
-                </div>
+                </label>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500">Password inicial</label>
+                  <label className="space-y-1.5">
+                    <span className="text-[10px] font-black uppercase text-slate-500">Password inicial</span>
                     <input
                       type="password"
                       value={doctorForm.password}
                       onChange={(e) => setDoctorForm((prev) => ({ ...prev, password: e.target.value }))}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
                     />
-                  </div>
+                  </label>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-500">Rol</label>
+                  <label className="space-y-1.5">
+                    <span className="text-[10px] font-black uppercase text-slate-500">Rol</span>
                     <select
                       value={doctorForm.rol}
                       onChange={(e) => setDoctorForm((prev) => ({ ...prev, rol: e.target.value }))}
@@ -427,82 +533,75 @@ export default function OwnerConsolePage({
                       <option value="medico">Medico</option>
                       <option value="admin">Admin</option>
                     </select>
-                  </div>
+                  </label>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</label>
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto]">
+                  <label className="space-y-1.5">
+                    <span className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</span>
                     <input
                       value={doctorForm.cedula_profesional}
                       onChange={(e) => handleDoctorCedulaChange(e.target.value)}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                      inputMode="numeric"
-                      maxLength={8}
                     />
-                    <button
-                      type="button"
-                      onClick={validateDoctorLicense}
-                      disabled={isValidatingDoctorLicense || doctorForm.cedula_profesional.trim().length < 7}
-                      className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-black text-teal-700 transition-colors hover:bg-teal-100 disabled:opacity-60"
-                    >
-                      <SearchCheck size={16} />
-                      <span>{isValidatingDoctorLicense ? "Validando..." : "Validar cédula"}</span>
-                    </button>
-                  </div>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={validateDoctorLicense}
+                    disabled={isValidatingDoctorLicense || doctorForm.cedula_profesional.trim().length < 7}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-5 py-3 text-sm font-black text-teal-700 transition-colors hover:bg-teal-100 disabled:opacity-60"
+                  >
+                    <SearchCheck size={16} />
+                    <span>{isValidatingDoctorLicense ? "Validando..." : "Validar cedula"}</span>
+                  </button>
                 </div>
 
                 {doctorLicenseMessage ? (
                   <div
-                    className={`rounded-2xl px-4 py-3 text-sm font-bold ${
-                      doctorLicenseValidation?.valid && doctorLicenseValidation?.isMedicalDoctor
-                        ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
-                        : "border border-amber-100 bg-amber-50 text-amber-700"
+                    className={`rounded-2xl border px-4 py-3 text-sm font-bold ${
+                      doctorLicenseValidation?.valid
+                        ? doctorLicenseValidation?.isMedicalDoctor
+                          ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                          : "border-amber-100 bg-amber-50 text-amber-700"
+                        : "border-red-100 bg-red-50 text-red-600"
                     }`}
                   >
-                    {doctorLicenseMessage}
+                    <p>{doctorLicenseMessage}</p>
+                    {doctorLicenseValidation?.valid ? (
+                      <div className="mt-3 flex items-start gap-3">
+                        <div
+                          className={`rounded-2xl p-2 ${
+                            doctorLicenseValidation.isMedicalDoctor
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          <BadgeCheck size={18} />
+                        </div>
+                        <div className="space-y-1 text-sm font-bold text-slate-600">
+                          <p className="text-slate-900">{doctorLicenseValidation.fullName || "Sin nombre SEP"}</p>
+                          <p>{doctorLicenseValidation.profession || "Profesion no disponible"}</p>
+                          <p>
+                            {doctorLicenseValidation.institution || "Institucion no disponible"}
+                            {doctorLicenseValidation.institutionState
+                              ? ` • ${doctorLicenseValidation.institutionState}`
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
 
-                {doctorLicenseValidation?.valid ? (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`rounded-2xl p-2 ${
-                          doctorLicenseValidation.isMedicalDoctor
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}
-                      >
-                        <BadgeCheck size={18} />
-                      </div>
-                      <div className="space-y-1 text-sm font-bold text-slate-600">
-                        <p className="text-slate-900">{doctorLicenseValidation.fullName || "Sin nombre SEP"}</p>
-                        <p>{doctorLicenseValidation.profession || "Profesion no disponible"}</p>
-                        <p>
-                          {doctorLicenseValidation.institution || "Institucion no disponible"}
-                          {doctorLicenseValidation.institutionState
-                            ? ` • ${doctorLicenseValidation.institutionState}`
-                            : ""}
-                        </p>
-                        <p className={doctorLicenseValidation.isMedicalDoctor ? "text-emerald-700" : "text-amber-700"}>
-                          {doctorLicenseValidation.isMedicalDoctor
-                            ? "Profesion medica permitida"
-                            : "La cedula existe, pero no pasa como medico permitido"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Slug opcional</label>
+                <label className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Slug opcional</span>
                   <input
                     value={doctorForm.slug}
                     onChange={(e) => setDoctorForm((prev) => ({ ...prev, slug: e.target.value }))}
                     className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
                   />
-                </div>
+                </label>
 
                 <button
                   type="submit"
@@ -523,48 +622,12 @@ export default function OwnerConsolePage({
 
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
-                  <Users size={20} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black text-slate-900">Medicos registrados</h2>
-                  <p className="text-sm font-bold text-slate-500">Vista rapida de usuarios operativos.</p>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3">
-                {doctorsLoading ? (
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
-                    Cargando medicos...
-                  </div>
-                ) : doctors.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
-                    Aun no hay medicos registrados.
-                  </div>
-                ) : (
-                  doctors.map((doctor) => (
-                    <div key={doctor.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                      <p className="text-sm font-black text-slate-800">{doctor.nombre}</p>
-                      <p className="mt-1 text-xs font-bold text-slate-500">
-                        {doctor.email} • {doctor.rol} • {doctor.cedula_profesional || "Sin cedula"} •{" "}
-                        {doctor.activo ? "Activo" : "Inactivo"}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-amber-50 p-3 text-amber-700">
                   <Mail size={20} />
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-slate-900">Leads recibidos</h2>
-                  <p className="text-sm font-bold text-slate-500">
-                    Solicitudes de demo guardadas aunque falle el correo.
-                  </p>
+                  <p className="text-sm font-bold text-slate-500">Solicitudes de demo guardadas aunque falle el correo.</p>
                 </div>
               </div>
 
@@ -584,12 +647,12 @@ export default function OwnerConsolePage({
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <p className="text-sm font-black text-slate-800">{lead.nombre}</p>
-                            <p className="mt-1 text-xs font-bold text-slate-500 break-all">
+                            <p className="mt-1 break-all text-xs font-bold text-slate-500">
                               {lead.email} • {lead.telefono || "Sin telefono"} • {lead.especialidad || "Sin especialidad"}
                             </p>
                           </div>
                           <span className="shrink-0 rounded-2xl bg-white px-3 py-2 text-[11px] font-black text-slate-500">
-                            {formatLeadDate(lead.fecha || lead.created_at)}
+                            {formatDateTime(lead.fecha || lead.created_at)}
                           </span>
                         </div>
 
@@ -626,14 +689,14 @@ export default function OwnerConsolePage({
                               }))
                             }
                             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-amber-400"
-                            placeholder="Notas de seguimiento..."
+                            placeholder="Notas internas"
                           />
 
                           <button
                             type="button"
                             onClick={() => saveLead(lead.id)}
                             disabled={updatingLeadId === lead.id}
-                            className="rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
+                            className="rounded-2xl bg-amber-500 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
                           >
                             {updatingLeadId === lead.id ? "Guardando..." : "Guardar"}
                           </button>
@@ -646,6 +709,493 @@ export default function OwnerConsolePage({
             </div>
           </section>
         </div>
+
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
+                <Users size={20} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900">Medicos registrados</h2>
+                <p className="text-sm font-bold text-slate-500">
+                  Panel completo para verificar credenciales, suscripcion y acceso del SaaS.
+                </p>
+              </div>
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-bold text-cyan-800">
+              <CreditCard size={16} />
+              <span>Aqui ya puedes manejar vencimiento, acceso y datos de Stripe manualmente</span>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-4">
+            {doctorsLoading ? (
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+                Cargando medicos...
+              </div>
+            ) : doctors.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+                Aun no hay medicos registrados.
+              </div>
+            ) : (
+              doctors.map((doctor) => {
+                const draft = doctorDrafts[doctor.id] || createDoctorDraft(doctor);
+                const isSavingDoctor = updatingDoctorId === doctor.id;
+
+                return (
+                  <div key={doctor.id} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <p className="text-lg font-black text-slate-900">{doctor.nombre}</p>
+                        <p className="mt-1 text-sm font-bold text-slate-500">
+                          {doctor.email} • {doctor.rol} • {doctor.cedula_profesional || "Sin cedula"}
+                        </p>
+                        <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
+                          Acceso efectivo: {doctor.access_summary?.effective_status || "sin calcular"}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          {doctor.access_summary?.reason || "Sin resumen operativo"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-white bg-white px-4 py-3 text-sm font-bold text-slate-600">
+                        Alta: {formatDateTime(doctor.created_at)}
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-3">
+                      <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
+                        <p className="text-sm font-black text-slate-900">Cuenta</p>
+
+                        <label className="space-y-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-500">Nombre</span>
+                          <input
+                            value={draft.nombre}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, nombre: e.target.value },
+                              }))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                          />
+                        </label>
+
+                        <label className="space-y-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-500">Correo</span>
+                          <input
+                            type="email"
+                            value={draft.email}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, email: e.target.value },
+                              }))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                          />
+                        </label>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Slug</span>
+                            <input
+                              value={draft.slug}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, slug: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Cedula</span>
+                            <input
+                              value={draft.cedula_profesional}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, cedula_profesional: e.target.value.replace(/\D/g, "").slice(0, 8) },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+                        </div>
+
+                        <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(draft.activo)}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, activo: e.target.checked },
+                              }))
+                            }
+                          />
+                          Cuenta habilitada
+                        </label>
+                      </div>
+
+                      <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
+                        <p className="text-sm font-black text-slate-900">Verificacion y acceso</p>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Verificacion</span>
+                            <select
+                              value={draft.verification_status}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, verification_status: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            >
+                              {verificationStatusOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Acceso</span>
+                            <select
+                              value={draft.access_status}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, access_status: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            >
+                              {accessStatusOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <label className="space-y-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-500">Notas de verificacion</span>
+                          <textarea
+                            value={draft.verification_notes}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, verification_notes: e.target.value },
+                              }))
+                            }
+                            rows={3}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                          />
+                        </label>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Acceso manual hasta</span>
+                            <input
+                              type="datetime-local"
+                              value={draft.manual_access_until}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, manual_access_until: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Motivo override</span>
+                            <input
+                              value={draft.manual_override_reason}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, manual_override_reason: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                              placeholder="Cortesia, validacion manual, soporte..."
+                            />
+                          </label>
+                        </div>
+
+                        <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(draft.manual_billing_override)}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, manual_billing_override: e.target.checked },
+                              }))
+                            }
+                          />
+                          Override manual habilitado
+                        </label>
+                      </div>
+
+                      <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
+                        <p className="text-sm font-black text-slate-900">Facturacion</p>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Suscripcion</span>
+                            <select
+                              value={draft.subscription_status}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, subscription_status: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            >
+                              {subscriptionStatusOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Ultimo pago</span>
+                            <select
+                              value={draft.billing_last_payment_status}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_last_payment_status: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            >
+                              {paymentStatusOptions.map((option) => (
+                                <option key={option.value || "empty"} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Plan</span>
+                            <input
+                              value={draft.billing_plan_code}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_plan_code: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                              placeholder="pro-mensual"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Monto</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={draft.billing_amount}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_amount: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Ciclo</span>
+                            <select
+                              value={draft.billing_cycle}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_cycle: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            >
+                              {billingCycleOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Inicio de periodo</span>
+                            <input
+                              type="datetime-local"
+                              value={draft.billing_current_period_start}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_current_period_start: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Fin de periodo</span>
+                            <input
+                              type="datetime-local"
+                              value={draft.billing_current_period_end}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_current_period_end: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Trial hasta</span>
+                            <input
+                              type="datetime-local"
+                              value={draft.billing_trial_ends_at}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_trial_ends_at: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Fecha ultimo pago</span>
+                            <input
+                              type="datetime-local"
+                              value={draft.billing_last_payment_at}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, billing_last_payment_at: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Stripe customer</span>
+                            <input
+                              value={draft.stripe_customer_id}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, stripe_customer_id: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                              placeholder="cus_..."
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Stripe subscription</span>
+                            <input
+                              value={draft.stripe_subscription_id}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, stripe_subscription_id: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                              placeholder="sub_..."
+                            />
+                          </label>
+                        </div>
+
+                        <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(draft.billing_cancel_at_period_end)}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, billing_cancel_at_period_end: e.target.checked },
+                              }))
+                            }
+                          />
+                          Cancelar al terminar el periodo
+                        </label>
+                      </div>
+                    </div>
+
+                    <label className="mt-4 block space-y-1.5">
+                      <span className="text-[10px] font-black uppercase text-slate-500">Notas internas SaaS</span>
+                      <textarea
+                        value={draft.saas_notes}
+                        onChange={(e) =>
+                          setDoctorDrafts((prev) => ({
+                            ...prev,
+                            [doctor.id]: { ...draft, saas_notes: e.target.value },
+                          }))
+                        }
+                        rows={3}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                        placeholder="Notas de soporte, acuerdos comerciales, incidencias..."
+                      />
+                    </label>
+
+                    <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="text-xs font-bold text-slate-500">
+                        Verificacion revisada: {doctor.verification_checked_by_name || "Sin registro"} •{" "}
+                        {formatDateTime(doctor.verification_checked_at)}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => saveDoctor(doctor.id)}
+                        disabled={isSavingDoctor}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-cyan-700 disabled:opacity-60"
+                      >
+                        <Save size={16} />
+                        <span>{isSavingDoctor ? "Guardando..." : "Guardar cambios del medico"}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );
