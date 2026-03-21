@@ -10,6 +10,7 @@ export async function apiFetch(input, init = {}) {
 
   const response = await fetch(input, {
     ...init,
+    cache: init.cache || "no-store",
     headers,
   });
 
@@ -31,6 +32,7 @@ export async function ownerApiFetch(input, init = {}) {
 
   const response = await fetch(input, {
     ...init,
+    cache: init.cache || "no-store",
     headers,
   });
 

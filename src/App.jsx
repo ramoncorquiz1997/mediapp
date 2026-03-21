@@ -672,6 +672,12 @@ export default function App() {
   }, [authUser]);
 
   useEffect(() => {
+    if (!authUser || activeTab !== "configuracion") return;
+    if (!["admin", "medico"].includes(authUser?.rol)) return;
+    loadBillingProfile();
+  }, [activeTab, authUser]);
+
+  useEffect(() => {
     if (!ownerUser || !isOwnerConsoleRoute) return;
     loadOwnerConfig();
     loadOwnerDoctors();
