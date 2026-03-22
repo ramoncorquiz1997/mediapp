@@ -28,6 +28,35 @@ const defaultWorkingSchedule = {
   6: { activo: false, inicio: "09:00", fin: "14:00" },
 };
 
+const subscriptionStatusLabels = {
+  not_started: "Sin iniciar",
+  trialing: "En prueba",
+  active: "Activa",
+  past_due: "Pago vencido",
+  canceled: "Cancelada",
+  unpaid: "Impaga",
+  incomplete: "Incompleta",
+};
+
+const accessStatusLabels = {
+  pending_onboarding: "Onboarding",
+  pending_verification: "Por verificar",
+  pending_payment: "Pendiente",
+  active: "Activo",
+  limited: "Limitado",
+  suspended: "Suspendido",
+  blocked: "Bloqueado",
+};
+
+const paymentStatusLabels = {
+  paid: "Pagado",
+  pending: "Pendiente",
+  failed: "Fallido",
+  refunded: "Reembolsado",
+  waived: "Bonificado",
+  offline: "Offline",
+};
+
 export default function SettingsView({
   clinicConfig,
   setClinicConfig,
@@ -115,6 +144,10 @@ export default function SettingsView({
     });
   };
 
+  const getSubscriptionStatusLabel = (value) => subscriptionStatusLabels[value] || value || "Sin iniciar";
+  const getAccessStatusLabel = (value) => accessStatusLabels[value] || value || "Pendiente";
+  const getPaymentStatusLabel = (value) => paymentStatusLabels[value] || value || "Sin registro";
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
@@ -197,7 +230,7 @@ export default function SettingsView({
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                     <p className="text-[10px] font-black uppercase text-slate-500">Suscripcion</p>
                     <p className="mt-2 text-lg font-black text-slate-900">
-                      {billingProfileLoading ? "Cargando..." : billingProfile?.subscription_status || "Sin iniciar"}
+                      {billingProfileLoading ? "Cargando..." : getSubscriptionStatusLabel(billingProfile?.subscription_status)}
                     </p>
                     <p className="mt-1 text-xs font-bold text-slate-500">
                       Proxima fecha: {formatDateTime(billingProfile?.billing_current_period_end)}
@@ -208,7 +241,7 @@ export default function SettingsView({
                     <p className="text-[10px] font-black uppercase text-slate-500">Acceso</p>
                     <p className="mt-2 inline-flex items-center gap-2 text-lg font-black text-slate-900">
                       {billingProfile?.access_summary?.effective_status === "active" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-                      <span>{billingProfileLoading ? "Cargando..." : billingProfile?.access_summary?.effective_status || "Pendiente"}</span>
+                      <span>{billingProfileLoading ? "Cargando..." : getAccessStatusLabel(billingProfile?.access_summary?.effective_status)}</span>
                     </p>
                     <p className="mt-1 text-xs font-bold text-slate-500">
                       {billingProfile?.access_summary?.reason || "Sin diagnostico de acceso"}
@@ -218,7 +251,7 @@ export default function SettingsView({
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
                     <p className="text-[10px] font-black uppercase text-slate-500">Ultimo pago</p>
                     <p className="mt-2 text-lg font-black text-slate-900">
-                      {billingProfileLoading ? "Cargando..." : billingProfile?.billing_last_payment_status || "Sin registro"}
+                      {billingProfileLoading ? "Cargando..." : getPaymentStatusLabel(billingProfile?.billing_last_payment_status)}
                     </p>
                     <p className="mt-1 text-xs font-bold text-slate-500">
                       {formatDateTime(billingProfile?.billing_last_payment_at)}
