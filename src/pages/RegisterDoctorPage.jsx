@@ -1,9 +1,18 @@
 import React, { useState } from "react";
 import { Activity, ArrowLeft, FileCheck2, Lock, Mail, MapPin, Phone, ShieldCheck, Stethoscope, UserRound } from "lucide-react";
 
+const countryCodeOptions = [
+  { value: "+52", label: "MX +52" },
+  { value: "+1", label: "US/CA +1" },
+  { value: "+57", label: "CO +57" },
+  { value: "+54", label: "AR +54" },
+  { value: "+34", label: "ES +34" },
+];
+
 const defaultForm = {
   nombre: "",
   email: "",
+  telefono_codigo_pais: "+52",
   telefono: "",
   cedula_profesional: "",
   especialidad: "",
@@ -84,14 +93,36 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
 
             <label className="space-y-1.5">
               <span className="text-[10px] font-black uppercase text-slate-500">Telefono</span>
-              <div className="relative">
+              <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3">
+                <select
+                  value={form.telefono_codigo_pais}
+                  onChange={(e) => setForm((prev) => ({ ...prev, telefono_codigo_pais: e.target.value }))}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-black text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  {countryCodeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
                   value={form.telefono}
-                  onChange={(e) => setForm((prev) => ({ ...prev, telefono: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, telefono: e.target.value.replace(/\D/g, "").slice(0, 10) }))
+                  }
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="6641234567"
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
                 />
+                </div>
               </div>
+              <p className="text-xs font-bold text-slate-400">
+                Captura solo 10 digitos. Guardaremos el numero con el codigo de pais seleccionado.
+              </p>
             </label>
 
             <label className="space-y-1.5">

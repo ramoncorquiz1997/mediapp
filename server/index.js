@@ -169,6 +169,13 @@ const normalizePhone = (value) =>
     .replace(/\D/g, "")
     .trim();
 
+const allowedCountryPhoneCodes = ["+52", "+1", "+57", "+54", "+34"];
+
+const normalizeCountryPhoneCode = (value) => {
+  const digits = String(value ?? "").replace(/\D/g, "").trim();
+  return digits ? `+${digits}` : "";
+};
+
 const normalizeSearchText = (value) =>
   String(value ?? "")
     .normalize("NFD")
@@ -1300,7 +1307,9 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
   const nombre = String(req.body?.nombre || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "").trim();
-  const telefono = normalizePhone(req.body?.telefono || "");
+  const countryPhoneCode = normalizeCountryPhoneCode(req.body?.telefono_codigo_pais || "+52");
+  const phoneDigits = normalizePhone(req.body?.telefono || "");
+  const telefono = countryPhoneCode && phoneDigits ? `${countryPhoneCode} ${phoneDigits}` : "";
   const cedula = String(req.body?.cedula_profesional || "").trim();
   const especialidad = String(req.body?.especialidad || "").trim();
   const ciudadEstado = String(req.body?.ciudad_estado || "").trim();
@@ -1317,6 +1326,20 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
     return res.status(400).json({
       error: "validation_error",
       message: "Nombre, correo, telefono, cedula, especialidad, ciudad y password son obligatorios",
+    });
+  }
+
+  if (!allowedCountryPhoneCodes.includes(countryPhoneCode)) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Selecciona un codigo de pais valido para el telefono",
+    });
+  }
+
+  if (phoneDigits.length !== 10) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "El telefono debe incluir exactamente 10 digitos",
     });
   }
 
@@ -1340,29 +1363,24 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
        password_hash,
        rol,
        cedula_profesional,
-       telefono,
-       ciudad_estado,
-       onboarding_clinic_name,
-       onboarding_notes,
-       verification_requested_at,
        verification_status,
        verification_notes,
        subscription_status,
        access_status,
        saas_notes
      )
-     VALUES ($1, $2, $3, $4, 'medico', $5, $6, $7, $8, $9, NOW(), 'pending', $10, 'not_started', 'pending_verification', $11)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, $8, 'medico', $9, 'pending', $10, 'not_started', 'pending_verification', $11)
      RETURNING id, nombre, email, telefono, ciudad_estado, onboarding_clinic_name, verification_status, verification_requested_at`,
     [
       nombre,
       email,
-      slug,
-      hashPassword(password),
-      cedula,
       telefono,
       ciudadEstado,
       clinicName || null,
       onboardingNotes || null,
+      slug,
+      hashPassword(password),
+      cedula,
       "Solicitud recibida. Pendiente de revision manual por administracion.",
       especialidad || null,
     ]
