@@ -1327,22 +1327,6 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
     });
   }
 
-  const licenseValidation = await fetchSepLicenseData(cedula);
-
-  if (!licenseValidation.valid) {
-    return res.status(400).json({
-      error: "license_validation_failed",
-      message: licenseValidation.message || "No se pudo validar la cedula en SEP",
-    });
-  }
-
-  if (!licenseValidation.isMedicalDoctor) {
-    return res.status(400).json({
-      error: "license_not_medical",
-      message: "La cedula existe, pero no corresponde a una profesion medica permitida",
-    });
-  }
-
   const result = await pool.query(
     `INSERT INTO usuarios (
        nombre,
@@ -1379,7 +1363,7 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
       ciudadEstado,
       clinicName || null,
       onboardingNotes || null,
-      `Solicitud recibida. Profesion SEP: ${licenseValidation.profession || especialidad}`,
+      "Solicitud recibida. Pendiente de revision manual por administracion.",
       especialidad || null,
     ]
   );
@@ -1396,6 +1380,7 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
       especialidad,
       ciudad_estado: ciudadEstado,
       clinic_name: clinicName,
+      cedula_profesional: cedula,
     },
   });
 
