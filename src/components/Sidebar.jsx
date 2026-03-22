@@ -1,6 +1,6 @@
 import React from "react";
 import soloLogoMycliniq from "../assets/imagenes/solo_logo_mycliniq.png";
-import { LogOut } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 
 const SidebarItem = ({ active, icon: Icon, label, onClick }) => (
   <button
@@ -16,10 +16,37 @@ const SidebarItem = ({ active, icon: Icon, label, onClick }) => (
   </button>
 );
 
-export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout }) {
+export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout, isMobileOpen, onCloseMobile }) {
+  const handleSelect = (tabId) => {
+    setActiveTab(tabId);
+    onCloseMobile?.();
+  };
+
   return (
-    <aside className="w-72 hidden md:flex flex-col p-6 bg-slate-950 text-white border-r border-slate-900">
+    <>
+      <div
+        className={`fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm transition-opacity md:hidden ${
+          isMobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        onClick={onCloseMobile}
+      />
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-[88vw] max-w-72 p-4 text-white transition-transform duration-300 md:static md:z-auto md:w-72 md:max-w-none md:translate-x-0 md:p-6 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        } bg-slate-950 border-r border-slate-900 md:flex md:flex-col`}
+      >
       <div className="h-full rounded-[28px] bg-[linear-gradient(180deg,#0f172a_0%,#111827_100%)] border border-white/10 p-6 shadow-2xl shadow-slate-950/30 flex flex-col">
+        <div className="mb-8 flex items-start justify-between md:hidden">
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="ml-auto inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 text-slate-300"
+            aria-label="Cerrar menu"
+          >
+            <X size={18} />
+          </button>
+        </div>
         <div className="flex items-center space-x-3 mb-10">
           <img
             src={soloLogoMycliniq}
@@ -38,7 +65,7 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
               active={activeTab === it.id}
               icon={it.icon}
               label={it.label}
-              onClick={() => setActiveTab(it.id)}
+              onClick={() => handleSelect(it.id)}
             />
           ))}
         </nav>
@@ -56,7 +83,10 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
 
           <button
             type="button"
-            onClick={onLogout}
+            onClick={() => {
+              onCloseMobile?.();
+              onLogout();
+            }}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white text-slate-700 font-black hover:bg-slate-100 transition-colors"
           >
             <LogOut size={18} />
@@ -64,6 +94,7 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

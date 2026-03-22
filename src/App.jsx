@@ -219,6 +219,7 @@ export default function App() {
   const [ownerDoctorsLoading, setOwnerDoctorsLoading] = useState(false);
   const [ownerLeads, setOwnerLeads] = useState([]);
   const [ownerLeadsLoading, setOwnerLeadsLoading] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [updatingOwnerLeadId, setUpdatingOwnerLeadId] = useState(null);
   const [isCreatingOwnerDoctor, setIsCreatingOwnerDoctor] = useState(false);
   const [isValidatingOwnerDoctorLicense, setIsValidatingOwnerDoctorLicense] = useState(false);
@@ -1359,10 +1360,12 @@ export default function App() {
         items={sidebarItems}
         user={authUser}
         onLogout={logout}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)]">
-        <Topbar title={activeTab} />
+        <Topbar title={activeTab} onMenuToggle={() => setIsMobileSidebarOpen(true)} />
 
         {activeTab === "dashboard" && <DashboardView currentUser={authUser} />}
 
