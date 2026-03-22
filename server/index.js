@@ -453,6 +453,96 @@ const getBillingHistoryForUser = async (db, userId, limit = 25) => {
   }));
 };
 
+const getLatestBillingEventForSubscription = async (db, userId, subscriptionId) => {
+  if (!userId || !subscriptionId) return null;
+
+  const result = await db.query(
+    `SELECT
+       id,
+       event_type,
+       event_status,
+       stripe_subscription_id,
+       payload,
+       occurred_at
+     FROM subscription_billing_events
+     WHERE usuario_id = $1
+       AND stripe_subscription_id = $2
+     ORDER BY occurred_at DESC, id DESC
+     LIMIT 1`,
+    [userId, subscriptionId]
+  );
+
+  return result.rowCount ? result.rows[0] : null;
+};
+
+const classifySubscriptionBusinessEvent = (subscription, previousEvent) => {
+  const status = String(subscription?.status || "").trim();
+  const previousPayload = previousEvent?.payload || {};
+  const previousCancelAtPeriodEnd = Boolean(previousPayload?.cancel_at_period_end);
+  const currentCancelAtPeriodEnd = Boolean(subscription?.cancel_at_period_end);
+  const trialEnd = Number(subscription?.trial_end || 0);
+  const currentPeriodEnd = Number(subscription?.current_period_end || 0);
+
+  if (status === "trialing" && !previousEvent) {
+    return {
+      eventType: "trial_started",
+      eventStatus: "trialing",
+    };
+  }
+
+  if (!previousCancelAtPeriodEnd && currentCancelAtPeriodEnd) {
+    return {
+      eventType: "cancellation_scheduled",
+      eventStatus: status || "scheduled",
+    };
+  }
+
+  if (previousCancelAtPeriodEnd && !currentCancelAtPeriodEnd) {
+    return {
+      eventType: "cancellation_removed",
+      eventStatus: status || "active",
+    };
+  }
+
+  if (previousEvent?.event_type === "cancellation_scheduled" && !currentCancelAtPeriodEnd && ["trialing", "active"].includes(status)) {
+    return {
+      eventType: "subscription_reactivated",
+      eventStatus: status,
+    };
+  }
+
+  if (status === "canceled") {
+    return {
+      eventType: "subscription_deleted",
+      eventStatus: "canceled",
+    };
+  }
+
+  if (status === "trialing" && trialEnd && currentPeriodEnd && previousPayload?.current_period_end !== currentPeriodEnd) {
+    return {
+      eventType: "trial_updated",
+      eventStatus: "trialing",
+    };
+  }
+
+  return {
+    eventType: "subscription_updated",
+    eventStatus: status || null,
+  };
+};
+
+const shouldSkipBillingEventInsert = (previousEvent, nextEventType, nextEventStatus, payload) => {
+  if (!previousEvent) return false;
+
+  const previousPayload = previousEvent.payload || {};
+  const sameType = previousEvent.event_type === nextEventType;
+  const sameStatus = String(previousEvent.event_status || "") === String(nextEventStatus || "");
+  const sameCancelAtPeriodEnd = Boolean(previousPayload.cancel_at_period_end) === Boolean(payload.cancel_at_period_end);
+  const samePeriodEnd = String(previousPayload.current_period_end || "") === String(payload.current_period_end || "");
+
+  return sameType && sameStatus && sameCancelAtPeriodEnd && samePeriodEnd;
+};
+
 const normalizeDoctorPlatformProfile = (doctor) => ({
   id: doctor.id,
   nombre: doctor.nombre,
@@ -1871,11 +1961,16 @@ app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
 
     if (doctor) {
       await syncDoctorStripeSubscription(pool, doctor.id, subscription);
+      const previousEvent = await getLatestBillingEventForSubscription(pool, doctor.id, subscription.id);
+      const classified = classifySubscriptionBusinessEvent(subscription, previousEvent);
+      const serializedSubscription = serializeStripeObject(subscription);
+
+      if (!shouldSkipBillingEventInsert(previousEvent, classified.eventType, classified.eventStatus, serializedSubscription)) {
       await createBillingHistoryEntry(pool, {
         userId: doctor.id,
         source: "stripe",
-        eventType: event.type === "customer.subscription.deleted" ? "subscription_deleted" : "subscription_updated",
-        eventStatus: subscription.status || null,
+        eventType: classified.eventType,
+        eventStatus: classified.eventStatus,
         stripeEventId: event.id,
         stripeCustomerId: subscription.customer,
         stripeSubscriptionId: subscription.id,
@@ -1890,8 +1985,9 @@ app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
           ? new Date(subscription.current_period_end * 1000).toISOString()
           : null,
         occurredAt: new Date((event.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
-        payload: serializeStripeObject(subscription),
+        payload: serializedSubscription,
       });
+      }
     }
   }
 

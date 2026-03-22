@@ -71,8 +71,24 @@ const billingEventLabels = {
   billing_portal_created: "Portal de facturacion abierto",
   invoice_paid: "Factura pagada",
   invoice_payment_failed: "Pago fallido",
+  trial_started: "Trial iniciado",
+  trial_updated: "Trial actualizado",
+  cancellation_scheduled: "Cancelacion programada",
+  cancellation_removed: "Cancelacion removida",
+  subscription_reactivated: "Suscripcion reactivada",
   subscription_updated: "Suscripcion actualizada",
   subscription_deleted: "Suscripcion cancelada",
+};
+
+const billingEventStatusLabels = {
+  active: "Activa",
+  trialing: "En prueba",
+  paid: "Pagado",
+  failed: "Fallido",
+  canceled: "Cancelada",
+  ready: "Listo",
+  pending: "Pendiente",
+  scheduled: "Programada",
 };
 
 export default function SettingsView({
@@ -170,6 +186,7 @@ export default function SettingsView({
   const getPaymentStatusLabel = (value) => paymentStatusLabels[value] || value || "Sin registro";
   const getBillingCycleLabel = (value) => billingCycleLabels[value] || value || "mensual";
   const getBillingEventLabel = (value) => billingEventLabels[value] || value || "Evento";
+  const getBillingEventStatusLabel = (value) => billingEventStatusLabels[value] || value || "";
   const hasStripeCustomer = Boolean(billingProfile?.stripe_customer_id);
   const hasActiveSubscription = ["active", "trialing"].includes(String(billingProfile?.subscription_status || ""));
   const billingHistory = billingProfile?.billing_history || [];
@@ -325,7 +342,8 @@ export default function SettingsView({
                       billingHistory.slice(0, 6).map((item) => (
                         <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
                           <p className="text-sm font-black text-slate-800">
-                            {getBillingEventLabel(item.event_type)} {item.event_status ? `• ${item.event_status}` : ""}
+                            {getBillingEventLabel(item.event_type)}
+                            {item.event_status ? ` • ${getBillingEventStatusLabel(item.event_status)}` : ""}
                           </p>
                           <p className="mt-1 text-xs font-bold text-slate-500">{formatDateTime(item.occurred_at)}</p>
                         </div>
