@@ -265,10 +265,6 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
         <RevealSection id="hero" className="pt-32 sm:pt-36">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-teal-700">
-                <ShieldCheck size={14} />
-                <span>NOM-004 y agenda en un solo flujo</span>
-              </div>
               <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
                 El expediente clinico digital para tu consultorio
               </h1>
