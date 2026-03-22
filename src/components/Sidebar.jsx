@@ -1,5 +1,6 @@
 import React from "react";
-import { Activity, LogOut } from "lucide-react";
+import soloLogoMycliniq from "../assets/imagenes/solo_logo_mycliniq.png";
+import { LogOut } from "lucide-react";
 
 const SidebarItem = ({ active, icon: Icon, label, onClick }) => (
   <button
@@ -20,11 +21,13 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
     <aside className="w-72 hidden md:flex flex-col p-6 bg-slate-950 text-white border-r border-slate-900">
       <div className="h-full rounded-[28px] bg-[linear-gradient(180deg,#0f172a_0%,#111827_100%)] border border-white/10 p-6 shadow-2xl shadow-slate-950/30 flex flex-col">
         <div className="flex items-center space-x-3 mb-10">
-          <div className="bg-teal-500 p-2.5 rounded-2xl text-white shadow-lg shadow-teal-950/30">
-            <Activity size={26} />
-          </div>
+          <img
+            src={soloLogoMycliniq}
+            alt="MyCliniq"
+            className="h-[58px] w-[58px] shrink-0 object-contain drop-shadow-[0_12px_24px_rgba(45,212,191,0.25)]"
+          />
           <div>
-            <h1 className="text-2xl font-black tracking-tight italic text-white">MyCliniq</h1>
+            <h1 className="brand-wordmark text-[2.15rem] font-black leading-none tracking-[-0.05em] text-white">MyCliniq</h1>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Consultorio digital</p>
           </div>
         </div>

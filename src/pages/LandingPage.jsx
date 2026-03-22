@@ -188,7 +188,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               className="h-[68px] w-[68px] object-contain drop-shadow-[0_12px_24px_rgba(45,212,191,0.28)] sm:h-[74px] sm:w-[74px]"
             />
             <div>
-              <p className="text-[2.2rem] font-black leading-none tracking-[-0.05em] text-slate-900 sm:text-[2.45rem]">MyCliniq</p>
+              <p className="brand-wordmark text-[2.2rem] font-black leading-none tracking-[-0.05em] text-slate-900 sm:text-[2.45rem]">MyCliniq</p>
             </div>
           </button>
 
@@ -310,7 +310,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-300">Dashboard clinico</p>
-                      <p className="mt-2 text-2xl font-black">MyCliniq</p>
+                      <p className="brand-wordmark mt-2 text-2xl font-black">MyCliniq</p>
                     </div>
                     <div className="rounded-2xl bg-white/10 px-4 py-3 text-right">
                       <p className="text-xs font-black uppercase text-slate-300">Citas hoy</p>
@@ -621,7 +621,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
           <div className="flex items-center gap-4">
             <img src={soloLogoMycliniq} alt="MyCliniq" className="h-14 w-14 object-contain drop-shadow-[0_10px_18px_rgba(45,212,191,0.24)]" />
             <div>
-              <p className="text-[1.9rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</p>
+              <p className="brand-wordmark text-[1.9rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</p>
             </div>
           </div>
 

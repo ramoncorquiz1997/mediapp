@@ -36,7 +36,7 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
               className="h-[60px] w-[60px] object-contain drop-shadow-[0_10px_18px_rgba(45,212,191,0.24)]"
             />
             <div>
-              <h1 className="text-[2.05rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</h1>
+              <h1 className="brand-wordmark text-[2.05rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</h1>
               <p className="text-sm font-bold text-slate-500">Acceso exclusivo para medicos</p>
             </div>
           </div>
