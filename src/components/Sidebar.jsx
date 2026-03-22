@@ -28,7 +28,6 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
           />
           <div>
             <h1 className="brand-wordmark text-[2.15rem] font-black leading-none tracking-[-0.05em] text-white">MyCliniq</h1>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Consultorio digital</p>
           </div>
         </div>
 

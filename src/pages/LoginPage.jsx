@@ -37,7 +37,6 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
             />
             <div>
               <h1 className="brand-wordmark text-[2.05rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</h1>
-              <p className="text-sm font-bold text-slate-500">Acceso exclusivo para medicos</p>
             </div>
           </div>
         </div>
