@@ -3421,9 +3421,9 @@ app.get("/api/pacientes/:id/datos", asyncHandler(async (req, res) => {
       `SELECT a.id, a.tipo, a.descripcion, a.created_at, a.updated_at
        FROM antecedentes_medicos a
        INNER JOIN pacientes p ON p.id = a.paciente_id
-       WHERE paciente_id = $1
+       WHERE a.paciente_id = $1
          AND p.medico_user_id = $2
-         AND dado_de_baja = FALSE
+         AND a.dado_de_baja = FALSE
        ORDER BY a.created_at DESC, a.id DESC`,
       [id, req.user.id]
     ),
@@ -3506,7 +3506,7 @@ app.get("/api/pacientes/:id/antecedentes", asyncHandler(async (req, res) => {
      INNER JOIN pacientes p ON p.id = a.paciente_id
      WHERE a.paciente_id = $1
        AND p.medico_user_id = $2
-       AND dado_de_baja = FALSE
+       AND a.dado_de_baja = FALSE
      ORDER BY a.created_at DESC, a.id DESC`,
     [id, req.user.id]
   );

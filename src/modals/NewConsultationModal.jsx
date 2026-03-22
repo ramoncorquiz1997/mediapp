@@ -78,6 +78,17 @@ export default function NewConsultationModal({
     duranteCantidad: "",
     duranteUnidad: "Dias",
   });
+
+  React.useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
   const [studyForm, setStudyForm] = React.useState({
     nombre: "",
     tipo: "Laboratorio",
@@ -474,8 +485,8 @@ export default function NewConsultationModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto overflow-x-hidden">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="animate-in zoom-in-95 duration-200 flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-teal-100 text-teal-600 rounded-lg">

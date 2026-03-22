@@ -296,6 +296,17 @@ function AppointmentModal({
     };
   }, [open, initialAppointment?.id, initialAppointment?.cuestionario_id, questionnaireLogged]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const isEditing = Boolean(initialAppointment?.id);
@@ -340,13 +351,13 @@ function AppointmentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-3 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         className={`w-full ${
           hasQuestionnaire ? "max-w-5xl" : "max-w-2xl"
-        } bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden`}
+        } max-h-[92vh] overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-2xl flex flex-col`}
       >
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-slate-100 p-5 sm:p-6 shrink-0">
           <div className="flex flex-wrap items-center gap-3">
             <div className="p-2 rounded-2xl bg-teal-100 text-teal-600">
               {isEditing ? <Pencil size={18} /> : <Plus size={18} />}
@@ -372,7 +383,7 @@ function AppointmentModal({
           </button>
         </div>
 
-        <div className={`p-6 ${hasQuestionnaire ? "grid grid-cols-1 xl:grid-cols-12 gap-6" : "space-y-5"}`}>
+        <div className={`flex-1 overflow-y-auto p-5 sm:p-6 ${hasQuestionnaire ? "grid grid-cols-1 gap-6 xl:grid-cols-12" : "space-y-5"}`}>
           <div className={hasQuestionnaire ? "xl:col-span-7" : ""}>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             <div className="md:col-span-12 space-y-1.5">
@@ -515,7 +526,8 @@ function AppointmentModal({
           ) : null}
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <div className="border-t border-slate-100 bg-slate-50 p-5 sm:p-6 shrink-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             {isEditing ? (
               <button
@@ -529,10 +541,10 @@ function AppointmentModal({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               onClick={onClose}
-              className="px-6 py-3 rounded-2xl font-black text-slate-500 hover:text-slate-700"
+              className="w-full rounded-2xl px-6 py-3 font-black text-slate-500 hover:text-slate-700 sm:w-auto"
               disabled={isSaving}
             >
               Cerrar
@@ -540,11 +552,12 @@ function AppointmentModal({
             <button
               onClick={submit}
               disabled={isSaving}
-              className="px-8 py-3 rounded-2xl font-black bg-teal-600 text-white shadow-xl shadow-teal-200 hover:bg-teal-700 transition-all flex items-center gap-2 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-teal-600 px-8 py-3 font-black text-white shadow-xl shadow-teal-200 transition-all hover:bg-teal-700 disabled:opacity-60 sm:w-auto"
             >
               <CheckCircle2 size={18} />
               {isSaving ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar cita"}
             </button>
+          </div>
           </div>
         </div>
       </div>
