@@ -10,6 +10,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS pacientes (
   id SERIAL PRIMARY KEY,
+  medico_user_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
   external_id TEXT UNIQUE,
   portal_token UUID NOT NULL DEFAULT gen_random_uuid(),
   nombre TEXT NOT NULL,
@@ -38,6 +39,9 @@ CREATE TABLE IF NOT EXISTS pacientes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE pacientes
+ADD COLUMN IF NOT EXISTS medico_user_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE;
 
 ALTER TABLE pacientes
 ADD COLUMN IF NOT EXISTS consentimiento_datos_personales BOOLEAN NOT NULL DEFAULT FALSE;
@@ -366,6 +370,7 @@ ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 CREATE TABLE IF NOT EXISTS citas (
   id SERIAL PRIMARY KEY,
+  medico_user_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
   paciente_id INTEGER REFERENCES pacientes(id) ON DELETE SET NULL,
   paciente_nombre TEXT NOT NULL,
   motivo TEXT,
@@ -379,6 +384,16 @@ CREATE TABLE IF NOT EXISTS citas (
   CONSTRAINT citas_duracion_positiva CHECK (duracion > 0),
   CONSTRAINT citas_estado_valido CHECK (estado IN ('Confirmado', 'En espera', 'En consulta', 'Cancelado', 'Completado', 'No asistio'))
 );
+
+ALTER TABLE citas
+ADD COLUMN IF NOT EXISTS medico_user_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE;
+
+UPDATE citas c
+SET medico_user_id = p.medico_user_id
+FROM pacientes p
+WHERE c.medico_user_id IS NULL
+  AND c.paciente_id = p.id
+  AND p.medico_user_id IS NOT NULL;
 
 ALTER TABLE citas
 DROP CONSTRAINT IF EXISTS citas_estado_valido;
@@ -788,10 +803,12 @@ CREATE TABLE IF NOT EXISTS solicitudes_arco (
 CREATE INDEX IF NOT EXISTS idx_pacientes_nombre ON pacientes(nombre);
 CREATE INDEX IF NOT EXISTS idx_pacientes_external_id ON pacientes(external_id);
 CREATE INDEX IF NOT EXISTS idx_pacientes_curp ON pacientes(curp);
+CREATE INDEX IF NOT EXISTS idx_pacientes_medico_user_id ON pacientes(medico_user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_slug ON usuarios(slug);
 CREATE INDEX IF NOT EXISTS idx_citas_start ON citas(start);
 CREATE INDEX IF NOT EXISTS idx_citas_paciente_id ON citas(paciente_id);
+CREATE INDEX IF NOT EXISTS idx_citas_medico_user_id ON citas(medico_user_id, start DESC);
 CREATE INDEX IF NOT EXISTS idx_consultas_paciente_fecha ON consultas(paciente_id, fecha DESC);
 CREATE INDEX IF NOT EXISTS idx_consultas_medico_user_id ON consultas(medico_user_id);
 CREATE INDEX IF NOT EXISTS idx_consultas_cie10_codigo ON consultas(cie10_codigo);

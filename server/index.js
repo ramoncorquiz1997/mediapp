@@ -1094,15 +1094,37 @@ const generatePublicAvailability = (appointments, workingSchedule = defaultClini
   return slots;
 };
 
-const getNextExternalIdFromDb = async (db = pool) => {
+const getNextExternalIdFromDb = async (db = pool, doctorUserId = null) => {
+  const params = [];
+  const whereConditions = [`external_id ~ '^PX-([0-9]+)$'`];
+
+  if (doctorUserId) {
+    params.push(doctorUserId);
+    whereConditions.push(`medico_user_id = $${params.length}`);
+  }
+
   const result = await db.query(
     `SELECT COALESCE(MAX((regexp_match(external_id, '^PX-([0-9]+)$'))[1]::int), 1000) AS max_number
      FROM pacientes
-     WHERE external_id ~ '^PX-([0-9]+)$'`
+     WHERE ${whereConditions.join(" AND ")}`,
+    params
   );
 
   const nextNumber = Number(result.rows[0]?.max_number || 1000) + 1;
   return `PX-${String(nextNumber).padStart(4, "0")}`;
+};
+
+const getDoctorPatientById = async (db, patientId, doctorUserId) => db.query(
+  `SELECT *
+   FROM pacientes
+   WHERE id = $1
+     AND medico_user_id = $2`,
+  [patientId, doctorUserId]
+);
+
+const ensureDoctorOwnsPatient = async (db, patientId, doctorUserId) => {
+  const result = await getDoctorPatientById(db, patientId, doctorUserId);
+  return result.rows[0] || null;
 };
 
 const readBearerToken = (req) => {
@@ -2927,9 +2949,10 @@ app.get("/api/agenda-publica/:slug", asyncHandler(async (req, res) => {
   const appointmentsResult = await pool.query(
     `SELECT id, start, duracion, estado
      FROM citas
-     WHERE start >= $1
+     WHERE medico_user_id = $1
+       AND start >= $2
      ORDER BY start ASC`,
-    [new Date().toISOString()]
+    [doctor.id, new Date().toISOString()]
   );
 
   res.json({
@@ -2996,9 +3019,10 @@ app.get("/api/agenda-publica/:slug/paciente", asyncHandler(async (req, res) => {
        email
      FROM pacientes
      WHERE curp = $1
+       AND medico_user_id = $2
      ORDER BY id DESC
      LIMIT 1`,
-    [normalizedCurp]
+    [normalizedCurp, doctorResult.rows[0].id]
   );
 
   res.json({
@@ -3071,11 +3095,12 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
   const conflictsResult = await pool.query(
     `SELECT id
      FROM citas
-     WHERE estado NOT IN ('Cancelado', 'No asistio')
-       AND start < $2
-       AND (start + make_interval(mins => duracion)) > $1
+     WHERE medico_user_id = $1
+       AND estado NOT IN ('Cancelado', 'No asistio')
+       AND start < $3
+       AND (start + make_interval(mins => duracion)) > $2
      LIMIT 1`,
-    [slotStart.toISOString(), slotEnd.toISOString()]
+    [doctorResult.rows[0].id, slotStart.toISOString(), slotEnd.toISOString()]
   );
 
   if (conflictsResult.rowCount > 0) {
@@ -3089,9 +3114,10 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
     `SELECT *
      FROM pacientes
      WHERE curp = $1
+       AND medico_user_id = $2
      ORDER BY id DESC
      LIMIT 1`,
-    [normalizedCurp]
+    [normalizedCurp, doctorResult.rows[0].id]
   );
 
   let patient = existingPatientResult.rows[0] || null;
@@ -3103,10 +3129,11 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
       });
     }
 
-    const nextExternalId = await getNextExternalIdFromDb(pool);
+    const nextExternalId = await getNextExternalIdFromDb(pool, doctorResult.rows[0].id);
     const calculatedAge = calculateAge(fecha_nacimiento);
     const createdPatientResult = await pool.query(
       `INSERT INTO pacientes (
+         medico_user_id,
          external_id,
          nombre,
          curp,
@@ -3120,9 +3147,10 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
          aviso_privacidad_version,
          aviso_privacidad_aceptado_at
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, FALSE, NULL, NULL, NULL)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, FALSE, NULL, NULL, NULL)
        RETURNING *`,
       [
+        doctorResult.rows[0].id,
         nextExternalId,
         normalizedName,
         normalizedCurp,
@@ -3137,10 +3165,11 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
   }
 
   const appointmentResult = await pool.query(
-    `INSERT INTO citas (paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion)
-     VALUES ($1, $2, $3, $4, 'En espera', $5, 60)
+    `INSERT INTO citas (medico_user_id, paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion)
+     VALUES ($1, $2, $3, $4, $5, 'En espera', $6, 60)
      RETURNING *`,
     [
+      doctorResult.rows[0].id,
       patient.id,
       patient.nombre || normalizedName,
       normalizedReason,
@@ -3311,7 +3340,14 @@ app.put("/api/configuracion-consultorio", requireDoctorAccess, asyncHandler(asyn
 }));
 
 app.get("/api/pacientes", asyncHandler(async (req, res) => {
-  const result = await pool.query("SELECT * FROM pacientes ORDER BY id DESC LIMIT 100");
+  const result = await pool.query(
+    `SELECT *
+     FROM pacientes
+     WHERE medico_user_id = $1
+     ORDER BY id DESC
+     LIMIT 100`,
+    [req.user.id]
+  );
 
   await writeAuditLog(
     pool,
@@ -3355,53 +3391,65 @@ app.get("/api/pacientes/:id/datos", asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const [patientResult, antecedentesResult, consultasResult, solicitudesResult] = await Promise.all([
-    pool.query("SELECT * FROM pacientes WHERE id = $1", [id]),
     pool.query(
-      `SELECT id, tipo, descripcion, created_at, updated_at
-       FROM antecedentes_medicos
+      `SELECT *
+       FROM pacientes
+       WHERE id = $1
+         AND medico_user_id = $2`,
+      [id, req.user.id]
+    ),
+    pool.query(
+      `SELECT a.id, a.tipo, a.descripcion, a.created_at, a.updated_at
+       FROM antecedentes_medicos a
+       INNER JOIN pacientes p ON p.id = a.paciente_id
        WHERE paciente_id = $1
+         AND p.medico_user_id = $2
          AND dado_de_baja = FALSE
-       ORDER BY created_at DESC, id DESC`,
-      [id]
+       ORDER BY a.created_at DESC, a.id DESC`,
+      [id, req.user.id]
     ),
       pool.query(
         `SELECT
-           id,
-           fecha,
-           motivo,
-           diagnostico,
-           cie10_codigo,
-           cie10_descripcion,
-           pronostico,
-           interrogatorio_aparatos_sistemas,
-           firma_hash,
-           firma_timestamp,
-           descripcion_fisica,
-           habitus_exterior,
-           exploracion_cabeza,
-           exploracion_cuello,
-           exploracion_torax,
-           exploracion_abdomen,
-           exploracion_extremidades,
-           exploracion_genitales,
-           plan_tratamiento,
-           signos,
-           notas,
-           created_at,
-           updated_at,
-           medico_nombre,
-           medico_cedula
-         FROM consultas
-         WHERE paciente_id = $1
-         ORDER BY fecha DESC`,
-      [id]
+           c.id,
+           c.fecha,
+           c.motivo,
+           c.diagnostico,
+           c.cie10_codigo,
+           c.cie10_descripcion,
+           c.pronostico,
+           c.interrogatorio_aparatos_sistemas,
+           c.firma_hash,
+           c.firma_timestamp,
+           c.descripcion_fisica,
+           c.habitus_exterior,
+           c.exploracion_cabeza,
+           c.exploracion_cuello,
+           c.exploracion_torax,
+           c.exploracion_abdomen,
+           c.exploracion_extremidades,
+           c.exploracion_genitales,
+           c.plan_tratamiento,
+           c.signos,
+           c.notas,
+           c.created_at,
+           c.updated_at,
+           c.medico_nombre,
+           c.medico_cedula
+         FROM consultas c
+         INNER JOIN pacientes p ON p.id = c.paciente_id
+         WHERE c.paciente_id = $1
+           AND p.medico_user_id = $2
+         ORDER BY c.fecha DESC`,
+      [id, req.user.id]
     ),
     pool.query(
-      `SELECT id, tipo, descripcion, estado, fecha_solicitud, fecha_respuesta
-       FROM solicitudes_arco
-       WHERE paciente_id = $1
-       ORDER BY fecha_solicitud DESC, id DESC`,
-      [id]
+      `SELECT s.id, s.tipo, s.descripcion, s.estado, s.fecha_solicitud, s.fecha_respuesta
+       FROM solicitudes_arco s
+       INNER JOIN pacientes p ON p.id = s.paciente_id
+       WHERE s.paciente_id = $1
+         AND p.medico_user_id = $2
+       ORDER BY s.fecha_solicitud DESC, s.id DESC`,
+      [id, req.user.id]
     ),
   ]);
 
@@ -3434,12 +3482,14 @@ app.get("/api/pacientes/:id/datos", asyncHandler(async (req, res) => {
 app.get("/api/pacientes/:id/antecedentes", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const result = await pool.query(
-    `SELECT id, paciente_id, tipo, descripcion, created_at, updated_at
-     FROM antecedentes_medicos
-     WHERE paciente_id = $1
+    `SELECT a.id, a.paciente_id, a.tipo, a.descripcion, a.created_at, a.updated_at
+     FROM antecedentes_medicos a
+     INNER JOIN pacientes p ON p.id = a.paciente_id
+     WHERE a.paciente_id = $1
+       AND p.medico_user_id = $2
        AND dado_de_baja = FALSE
-     ORDER BY created_at DESC, id DESC`,
-    [id]
+     ORDER BY a.created_at DESC, a.id DESC`,
+    [id, req.user.id]
   );
 
   await writeAuditLog(
@@ -3462,9 +3512,17 @@ app.post("/api/pacientes/:id/open-record", asyncHandler(async (req, res) => {
   const patientResult = await pool.query(
     `SELECT nombre, external_id
      FROM pacientes
-     WHERE id = $1`,
-    [id]
+     WHERE id = $1
+       AND medico_user_id = $2`,
+    [id, req.user.id]
   );
+
+  if (patientResult.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Paciente no encontrado",
+    });
+  }
 
   const patient = patientResult.rows[0] || null;
 
@@ -3499,6 +3557,14 @@ app.post("/api/pacientes/:id/antecedentes", asyncHandler(async (req, res) => {
     return res.status(400).json({
       error: "validation_error",
       message: "Tipo de antecedente no valido",
+    });
+  }
+
+  const patient = await ensureDoctorOwnsPatient(pool, id, req.user.id);
+  if (!patient) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Paciente no encontrado",
     });
   }
 
@@ -3543,14 +3609,17 @@ app.put("/api/antecedentes/:id", asyncHandler(async (req, res) => {
   }
 
   const result = await pool.query(
-    `UPDATE antecedentes_medicos
+    `UPDATE antecedentes_medicos a
      SET
        tipo = $1,
        descripcion = $2
-     WHERE id = $3
-       AND dado_de_baja = FALSE
-     RETURNING id, paciente_id, tipo, descripcion, created_at, updated_at`,
-    [String(tipo).trim(), String(descripcion).trim(), id]
+     FROM pacientes p
+     WHERE a.id = $3
+       AND a.dado_de_baja = FALSE
+       AND p.id = a.paciente_id
+       AND p.medico_user_id = $4
+     RETURNING a.id, a.paciente_id, a.tipo, a.descripcion, a.created_at, a.updated_at`,
+    [String(tipo).trim(), String(descripcion).trim(), id, req.user.id]
   );
 
   if (result.rowCount === 0) {
@@ -3578,14 +3647,17 @@ app.put("/api/antecedentes/:id", asyncHandler(async (req, res) => {
 app.delete("/api/antecedentes/:id", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const result = await pool.query(
-    `UPDATE antecedentes_medicos
+    `UPDATE antecedentes_medicos a
      SET
        dado_de_baja = TRUE,
        fecha_baja = NOW()
-     WHERE id = $1
-       AND dado_de_baja = FALSE
-     RETURNING id, paciente_id, tipo, descripcion`,
-    [id]
+     FROM pacientes p
+     WHERE a.id = $1
+       AND a.dado_de_baja = FALSE
+       AND p.id = a.paciente_id
+       AND p.medico_user_id = $2
+     RETURNING a.id, a.paciente_id, a.tipo, a.descripcion`,
+    [id, req.user.id]
   );
 
   if (result.rowCount === 0) {
@@ -3662,16 +3734,17 @@ app.post("/api/pacientes", asyncHandler(async (req, res) => {
 
   const result = await pool.query(
     `INSERT INTO pacientes (
-      external_id, portal_token, nombre, curp, edad, fecha_nacimiento, tipo_sangre, sexo,
+      medico_user_id, external_id, portal_token, nombre, curp, edad, fecha_nacimiento, tipo_sangre, sexo,
       telefono, email, direccion, contacto_emergencia_nombre,
       contacto_emergencia_telefono, alergias_resumen,
       consentimiento_datos_personales, consentimiento_at,
       aviso_privacidad_version, aviso_privacidad_aceptado_at, ultima_visita,
       fecha_minima_conservacion
     )
-     VALUES ($1, COALESCE($2::uuid, gen_random_uuid()), $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+     VALUES ($1, $2, COALESCE($3::uuid, gen_random_uuid()), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
      RETURNING *`,
     [
+      req.user.id,
       external_id,
       portal_token ?? null,
       nombre,
@@ -3765,6 +3838,7 @@ app.put("/api/pacientes/:id", asyncHandler(async (req, res) => {
        motivo_baja = $17,
        fecha_minima_conservacion = $18
      WHERE id = $19
+       AND medico_user_id = $20
      RETURNING *`,
     [
       nombre,
@@ -3786,6 +3860,7 @@ app.put("/api/pacientes/:id", asyncHandler(async (req, res) => {
       motivo_baja ?? null,
       fechaMinimaConservacion,
       id,
+      req.user.id,
     ]
   );
 
@@ -3854,6 +3929,7 @@ app.put("/api/pacientes/:id/rectificar", asyncHandler(async (req, res) => {
        contacto_emergencia_telefono = COALESCE($11, contacto_emergencia_telefono),
        alergias_resumen = COALESCE($12, alergias_resumen)
      WHERE id = $13
+       AND medico_user_id = $14
      RETURNING *`,
     [
       nombre ?? null,
@@ -3869,6 +3945,7 @@ app.put("/api/pacientes/:id/rectificar", asyncHandler(async (req, res) => {
       contacto_emergencia_telefono ?? null,
       alergias_resumen ?? null,
       id,
+      req.user.id,
     ]
   );
 
@@ -3918,8 +3995,9 @@ app.post("/api/pacientes/:id/cancelacion", asyncHandler(async (req, res) => {
        motivo_baja = COALESCE($1, motivo_baja),
        activo = FALSE
      WHERE id = $2
+       AND medico_user_id = $3
      RETURNING *`,
-    [String(descripcion || "Solicitud ARCO de cancelacion").trim(), id]
+    [String(descripcion || "Solicitud ARCO de cancelacion").trim(), id, req.user.id]
   );
 
   if (patientResult.rowCount === 0) {
@@ -3960,7 +4038,13 @@ app.post("/api/pacientes/:id/oposicion", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { descripcion } = req.body;
 
-  const patientResult = await pool.query("SELECT * FROM pacientes WHERE id = $1", [id]);
+  const patientResult = await pool.query(
+    `SELECT *
+     FROM pacientes
+     WHERE id = $1
+       AND medico_user_id = $2`,
+    [id, req.user.id]
+  );
   if (patientResult.rowCount === 0) {
     return res.status(404).json({
       error: "not_found",
@@ -4007,8 +4091,9 @@ app.delete("/api/pacientes/:id", asyncHandler(async (req, res) => {
        motivo_baja = $2,
        activo = FALSE
      WHERE id = $3
+       AND medico_user_id = $4
      RETURNING *`,
-    [now, String(motivo_baja || "").trim() || null, id]
+    [now, String(motivo_baja || "").trim() || null, id, req.user.id]
   );
 
   if (result.rowCount === 0) {
@@ -4039,12 +4124,12 @@ app.delete("/api/pacientes/:id", asyncHandler(async (req, res) => {
 
 app.get("/api/consultas", asyncHandler(async (req, res) => {
   const patientId = req.query.paciente_id;
-  const params = [];
-  let whereClause = "";
+  const params = [req.user.id];
+  let whereClause = "WHERE p.medico_user_id = $1";
 
   if (patientId) {
     params.push(patientId);
-    whereClause = "WHERE c.paciente_id = $1";
+    whereClause += ` AND c.paciente_id = $${params.length}`;
   }
 
   const result = await pool.query(
@@ -4123,8 +4208,9 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
   const patientResult = await pool.query(
     `SELECT *
      FROM pacientes
-     WHERE id = $1`,
-    [id]
+     WHERE id = $1
+       AND medico_user_id = $2`,
+    [id, req.user.id]
   );
 
   if (patientResult.rowCount === 0) {
@@ -4378,8 +4464,9 @@ app.get("/api/consultas/:id/receta-pdf", asyncHandler(async (req, res) => {
        ) AS recetas
      FROM consultas c
      INNER JOIN pacientes p ON p.id = c.paciente_id
-     WHERE c.id = $1`,
-    [id]
+     WHERE c.id = $1
+       AND p.medico_user_id = $2`,
+    [id, req.user.id]
   );
 
   if (consultationResult.rowCount === 0) {
@@ -4587,10 +4674,18 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
     const patientLookup = await client.query(
       `SELECT nombre, sexo, edad, fecha_nacimiento, external_id
        FROM pacientes
-       WHERE id = $1`,
-      [paciente_id]
+       WHERE id = $1
+         AND medico_user_id = $2`,
+      [paciente_id, req.user.id]
     );
     const patient = patientLookup.rows[0] || null;
+    if (!patient) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        error: "not_found",
+        message: "Paciente no encontrado",
+      });
+    }
     const patientAgeSnapshot = patient?.edad ?? calculateAge(patient?.fecha_nacimiento) ?? null;
     const signatureTimestamp = new Date().toISOString();
     const physicalDescription = descripcion_fisica || habitus_exterior || null;
@@ -4745,16 +4840,18 @@ app.post("/api/consultas", asyncHandler(async (req, res) => {
        SET
          ultima_visita = $1,
          fecha_minima_conservacion = $2
-       WHERE id = $3`,
-      [fecha, calculateMinimumRetentionDate(fecha), paciente_id]
+       WHERE id = $3
+         AND medico_user_id = $4`,
+      [fecha, calculateMinimumRetentionDate(fecha), paciente_id, req.user.id]
     );
 
     if (cita_id) {
       await client.query(
         `UPDATE citas
          SET estado = 'Completado'
-         WHERE id = $1`,
-        [cita_id]
+         WHERE id = $1
+           AND medico_user_id = $2`,
+        [cita_id, req.user.id]
       );
     }
 
@@ -4824,10 +4921,18 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
     const patientLookup = await client.query(
       `SELECT nombre, external_id
        FROM pacientes
-       WHERE id = $1`,
-      [paciente_id]
+       WHERE id = $1
+         AND medico_user_id = $2`,
+      [paciente_id, req.user.id]
     );
     const patient = patientLookup.rows[0] || null;
+    if (!patient) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        error: "not_found",
+        message: "Paciente no encontrado",
+      });
+    }
     const signatureTimestamp = new Date().toISOString();
     const physicalDescription = descripcion_fisica || habitus_exterior || null;
     const signatureHash = generateConsultationSignature({
@@ -4874,6 +4979,7 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
          firma_hash = $21,
          firma_timestamp = $22
        WHERE id = $23
+         AND medico_user_id = $24
        RETURNING *`,
       [
         paciente_id,
@@ -4899,6 +5005,7 @@ app.put("/api/consultas/:id", asyncHandler(async (req, res) => {
         signatureHash,
         signatureTimestamp,
         id,
+        req.user.id,
       ]
     );
 
@@ -5093,6 +5200,7 @@ app.put("/api/estudios/:id", asyncHandler(async (req, res) => {
      WHERE e.id = $6
        AND c.id = e.consulta_id
        AND p.id = c.paciente_id
+       AND p.medico_user_id = $7
      RETURNING
        e.id,
        e.consulta_id,
@@ -5115,6 +5223,7 @@ app.put("/api/estudios/:id", asyncHandler(async (req, res) => {
       String(problema_clinico || "").trim(),
       String(fecha_estudio || "").trim(),
       id,
+      req.user.id,
     ]
   );
 
@@ -5179,8 +5288,10 @@ app.get("/api/citas", asyncHandler(async (req, res) => {
        ORDER BY fecha DESC, id DESC
        LIMIT 1
      ) linked ON TRUE
+     WHERE COALESCE(c.medico_user_id, p.medico_user_id) = $1
      ORDER BY c.start ASC
-     LIMIT 200`
+     LIMIT 200`,
+    [req.user.id]
   );
 
   await writeAuditLog(
@@ -5207,8 +5318,10 @@ app.post("/api/citas/:id/review-questionnaire", asyncHandler(async (req, res) =>
        qp.updated_at AS cuestionario_actualizado_at
      FROM citas c
      INNER JOIN cuestionarios_previos qp ON qp.cita_id = c.id
-     WHERE c.id = $1`,
-    [id]
+     LEFT JOIN pacientes p ON p.id = c.paciente_id
+     WHERE c.id = $1
+       AND COALESCE(c.medico_user_id, p.medico_user_id) = $2`,
+    [id, req.user.id]
   );
 
   if (result.rowCount === 0) {
@@ -5288,10 +5401,18 @@ app.get("/api/audit-log", requireDoctorAccess, asyncHandler(async (req, res) => 
 
 app.post("/api/citas", asyncHandler(async (req, res) => {
   const { paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion } = req.body;
+  const patient = await ensureDoctorOwnsPatient(pool, paciente_id, req.user.id);
+  if (!patient) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Paciente no encontrado",
+    });
+  }
+
   const result = await pool.query(
-    `INSERT INTO citas (paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion)
-     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion]
+    `INSERT INTO citas (medico_user_id, paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [req.user.id, paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion]
   );
 
   await writeAuditLog(
@@ -5315,20 +5436,30 @@ app.put("/api/citas/:id", asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion, notas } = req.body;
 
+  const patient = await ensureDoctorOwnsPatient(pool, paciente_id, req.user.id);
+  if (!patient) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Paciente no encontrado",
+    });
+  }
+
   const result = await pool.query(
     `UPDATE citas
      SET
-       paciente_id = $1,
-       paciente_nombre = $2,
-       motivo = $3,
-       tipo = $4,
-       estado = $5,
-       start = $6,
-       duracion = $7,
-       notas = $8
-     WHERE id = $9
+       medico_user_id = COALESCE(medico_user_id, $1),
+       paciente_id = $2,
+       paciente_nombre = $3,
+       motivo = $4,
+       tipo = $5,
+       estado = $6,
+       start = $7,
+       duracion = $8,
+       notas = $9
+     WHERE id = $10
+       AND medico_user_id = $1
      RETURNING *`,
-    [paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion, notas ?? null, id]
+    [req.user.id, paciente_id, paciente_nombre, motivo, tipo, estado, start, duracion, notas ?? null, id]
   );
 
   if (result.rowCount === 0) {

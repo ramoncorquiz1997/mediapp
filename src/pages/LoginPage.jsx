@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Activity, ArrowLeft, Lock, Mail, ShieldCheck } from "lucide-react";
 
-export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
+export default function LoginPage({ onLogin, isLoading, error, notice, onNavigate }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -73,6 +73,12 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
           {error ? (
             <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
               {error}
+            </div>
+          ) : null}
+
+          {notice ? (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+              {notice}
             </div>
           ) : null}
 

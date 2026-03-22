@@ -193,6 +193,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [authError, setAuthError] = useState("");
+  const [authNotice, setAuthNotice] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegisteringDoctor, setIsRegisteringDoctor] = useState(false);
   const [doctorRegistrationError, setDoctorRegistrationError] = useState("");
@@ -421,6 +422,7 @@ export default function App() {
     try {
       setIsLoggingIn(true);
       setAuthError("");
+      setAuthNotice("");
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -470,6 +472,10 @@ export default function App() {
       setDoctorRegistrationSuccessMessage(
         data.message || "Recibimos tu solicitud. Te avisaremos en cuanto tu cuenta este verificada."
       );
+      setAuthNotice(
+        data.message || "Recibimos tu solicitud. Tu cuenta quedo en revision y te avisaremos cuando este aprobada."
+      );
+      navigate("/login", { replace: true });
       return true;
     } catch (error) {
       setDoctorRegistrationError(error.message || "No se pudo enviar la solicitud");
@@ -1342,7 +1348,7 @@ export default function App() {
       return <LandingPage onNavigate={navigate} initialHash={hash} />;
     }
 
-    return <LoginPage onLogin={login} isLoading={isLoggingIn} error={authError} onNavigate={navigate} />;
+    return <LoginPage onLogin={login} isLoading={isLoggingIn} error={authError} notice={authNotice} onNavigate={navigate} />;
   }
 
   return (
