@@ -23,8 +23,8 @@ const getUserLabel = (entry) => getSafeText(entry.usuario_nombre, "Sistema");
 
 const getEntityLabel = (entity) => {
   if (entity === "consulta" || entity === "consultas") return "consulta";
-  if (entity === "expediente_clinico") return "expediente clinico";
-  if (entity === "antecedentes_medicos") return "antecedentes medicos";
+  if (entity === "expediente_clinico") return "expediente clínico";
+  if (entity === "antecedentes_medicos") return "antecedentes médicos";
   if (entity === "cita") return "cita";
   if (entity === "paciente") return "paciente";
   if (entity === "expediente_pdf") return "expediente PDF";
@@ -64,41 +64,41 @@ export const getActivityMessage = (entry) => {
   const detail = entry.detalle || {};
   const userName = getUserLabel(entry);
   const patientName = getPatientLabel(detail);
-  const diagnosis = getSafeText(detail.diagnostico, "sin diagnostico registrado");
+  const diagnosis = getSafeText(detail.diagnostico, "sin diagnóstico registrado");
   const motive = getSafeText(detail.motivo, "sin motivo especificado");
   const status = getSafeText(detail.estado, "sin estado especificado");
   const studyName = getSafeText(detail.estudio, "estudio no especificado");
 
-  if (entry.accion === "login_success") return `${userName} inicio sesion correctamente`;
-  if (entry.accion === "login_failed") return `Se detecto un intento fallido de inicio de sesion`;
-  if (entry.accion === "logout") return `${userName} cerro sesion`;
+  if (entry.accion === "login_success") return `${userName} inició sesión correctamente`;
+  if (entry.accion === "login_failed") return `Se detectó un intento fallido de inicio de sesión`;
+  if (entry.accion === "logout") return `${userName} cerró sesión`;
 
   if (entry.entidad === "expediente_clinico") {
-    return `${userName} reviso el expediente clinico de ${patientName}`;
+    return `${userName} revisó el expediente clínico de ${patientName}`;
   }
 
   if (entry.entidad === "consulta" && entry.accion === "create") {
-    return `${userName} registro una consulta para ${patientName} con diagnostico ${diagnosis}`;
+    return `${userName} registró una consulta para ${patientName} con diagnóstico ${diagnosis}`;
   }
 
   if (entry.entidad === "consulta" && entry.accion === "update") {
-    return `${userName} actualizo la consulta de ${patientName} con diagnostico ${diagnosis}`;
+    return `${userName} actualizó la consulta de ${patientName} con diagnóstico ${diagnosis}`;
   }
 
   if (entry.entidad === "estudio" && entry.accion === "update") {
-    return `${userName} actualizo el estudio ${studyName} de ${patientName} a estado ${status}`;
+    return `${userName} actualizó el estudio ${studyName} de ${patientName} a estado ${status}`;
   }
 
   if (entry.entidad === "cita" && entry.accion === "create") {
-    return `${userName} agendo una cita para ${patientName} con motivo ${motive}`;
+    return `${userName} agendó una cita para ${patientName} con motivo ${motive}`;
   }
 
   if (entry.entidad === "cita" && entry.accion === "update") {
-    return `${userName} actualizo la cita de ${patientName} a estado ${status}`;
+    return `${userName} actualizó la cita de ${patientName} a estado ${status}`;
   }
 
   if (entry.entidad === "paciente" && entry.accion === "create") {
-    return `${userName} registro al paciente ${patientName}`;
+    return `${userName} registró al paciente ${patientName}`;
   }
 
   if (entry.entidad === "paciente" && entry.accion === "update" && detail.dado_de_baja) {
@@ -106,38 +106,38 @@ export const getActivityMessage = (entry) => {
   }
 
   if (entry.entidad === "paciente" && entry.accion === "update") {
-    return `${userName} actualizo el perfil de ${patientName}`;
+    return `${userName} actualizó el perfil de ${patientName}`;
   }
 
   if (entry.entidad === "expediente_pdf") {
-    return `${userName} descargo el expediente PDF de ${patientName}`;
+    return `${userName} descargó el expediente PDF de ${patientName}`;
   }
 
   if (entry.entidad === "receta_pdf") {
-    return `${userName} descargo la receta PDF de ${patientName}`;
+    return `${userName} descargó la receta PDF de ${patientName}`;
   }
 
   if (entry.entidad === "consultas" && entry.accion === "read") {
-    return `${userName} reviso el historial clinico de ${patientName}`;
+    return `${userName} revisó el historial clínico de ${patientName}`;
   }
 
   if (entry.accion === "read") {
-    return `${userName} reviso ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
+    return `${userName} revisó ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
   }
 
   if (entry.accion === "create") {
-    return `${userName} registro ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
+    return `${userName} registró ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
   }
 
   if (entry.accion === "update") {
-    return `${userName} actualizo ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
+    return `${userName} actualizó ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
   }
 
   if (entry.accion === "delete") {
-    return `${userName} elimino ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
+    return `${userName} eliminó ${getEntityLabel(entry.entidad)}${entry.entidad_id ? ` #${entry.entidad_id}` : ""}`;
   }
 
-  return `${userName} realizo una accion en ${getEntityLabel(entry.entidad)}`;
+  return `${userName} realizó una acción en ${getEntityLabel(entry.entidad)}`;
 };
 
 export const getActivityAccent = (entry) => {
@@ -161,11 +161,11 @@ export const getActivityTypeLabel = (entry) => {
 export const getActivityActionLabel = (entry) => {
   if (entry.accion === "create") return "Registro";
   if (entry.accion === "read") return "Consulta";
-  if (entry.accion === "update") return "Actualizacion";
-  if (entry.accion === "delete") return "Eliminacion";
-  if (entry.accion === "login_success") return "Inicio de sesion";
+  if (entry.accion === "update") return "Actualización";
+  if (entry.accion === "delete") return "Eliminación";
+  if (entry.accion === "login_success") return "Inicio de sesión";
   if (entry.accion === "login_failed") return "Intento fallido";
-  if (entry.accion === "logout") return "Cierre de sesion";
+  if (entry.accion === "logout") return "Cierre de sesión";
   return getSafeText(entry.accion, "Evento");
 };
 

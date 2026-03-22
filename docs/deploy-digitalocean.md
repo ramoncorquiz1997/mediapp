@@ -1,8 +1,8 @@
 # Deploy en DigitalOcean para `cliniq.lat`
 
-Esta app ya esta preparada para quedar asi en el Droplet:
+Esta app ya está preparada para quedar así en el Droplet:
 
-- `nginx` del servidor sirve el frontend estatico desde `dist/`
+- `nginx` del servidor sirve el frontend estático desde `dist/`
 - `nginx` proxea `/api` al backend Node en `127.0.0.1:4000`
 - `docker compose` corre:
   - `db`
@@ -149,7 +149,7 @@ Solo local:
 ## 13. Pruebas finales
 
 - `https://cliniq.lat/` debe mostrar el landing
-- `https://cliniq.lat/login` debe abrir login medico
+- `https://cliniq.lat/login` debe abrir login médico
 - `https://cliniq.lat/agenda/dra-paulina` debe abrir agenda publica
 - `https://cliniq.lat/api/health` debe responder ok
 

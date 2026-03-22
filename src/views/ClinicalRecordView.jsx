@@ -670,7 +670,7 @@ export default function ClinicalRecordView({
 
   const copyPatientPortalLink = async () => {
     if (!patientPortalUrl) {
-      setPortalFeedback("Este paciente aun no tiene link de portal disponible");
+      setPortalFeedback("Este paciente aún no tiene link de portal disponible");
       return;
     }
 
@@ -684,17 +684,17 @@ export default function ClinicalRecordView({
 
   const sendPortalLinkByWhatsApp = () => {
     if (!patientPortalUrl) {
-      setPortalFeedback("Este paciente aun no tiene link de portal disponible");
+      setPortalFeedback("Este paciente aún no tiene link de portal disponible");
       return;
     }
 
     const phone = normalizeWhatsAppPhone(patient?.telefono);
     if (!phone) {
-      setPortalFeedback("Este paciente no tiene telefono registrado");
+      setPortalFeedback("Este paciente no tiene teléfono registrado");
       return;
     }
 
-    const message = `Hola, aqui esta tu link de acceso a tu expediente: ${patientPortalUrl}`;
+    const message = `Hola, aquí está tu link de acceso a tu expediente: ${patientPortalUrl}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   };
 
@@ -736,7 +736,7 @@ export default function ClinicalRecordView({
                     label="Enviar por WhatsApp"
                     onClick={sendPortalLinkByWhatsApp}
                     disabled={!normalizeWhatsAppPhone(patient?.telefono)}
-                    title={!normalizeWhatsAppPhone(patient?.telefono) ? "Falta telefono del paciente" : "Enviar link por WhatsApp"}
+                    title={!normalizeWhatsAppPhone(patient?.telefono) ? "Falta teléfono del paciente" : "Enviar link por WhatsApp"}
                     variant="neutral"
                   />
                   <RecordActionButton
@@ -782,7 +782,7 @@ export default function ClinicalRecordView({
                   <p className="text-slate-700 font-bold text-lg">{patient.tipo_sangre || "N/D"}</p>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Ultima visita</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Última visita</p>
                   <p className="text-slate-700 font-bold text-lg">{formatLastVisit(patient.ultima_visita)}</p>
                 </div>
                 <div className="bg-red-50 p-4 rounded-2xl">
@@ -804,7 +804,7 @@ export default function ClinicalRecordView({
                     Fecha: {formatLastVisit(patient.fecha_baja)} | Motivo: {patient.motivo_baja || "Sin motivo registrado"}
                   </p>
                   <p className="text-xs font-bold text-red-500 mt-2">
-                    Conservacion minima hasta: {formatLastVisit(patient.fecha_minima_conservacion)}
+                    Conservación mínima hasta: {formatLastVisit(patient.fecha_minima_conservacion)}
                   </p>
                 </div>
               ) : null}
@@ -814,7 +814,7 @@ export default function ClinicalRecordView({
                   <div className="flex items-center gap-2">
                     <AlertTriangle size={16} className="text-amber-600" />
                     <p className="text-[10px] font-black uppercase text-amber-600">
-                      Estudios pendientes de revision
+                      Estudios pendientes de revisión
                     </p>
                   </div>
                   <p className="text-sm font-bold text-amber-800 mt-2">
@@ -828,7 +828,7 @@ export default function ClinicalRecordView({
                 <div className="rounded-2xl border border-slate-100 bg-white p-4 flex items-start gap-3">
                   <Phone size={16} className="text-teal-600 mt-0.5" />
                   <div>
-                    <p className="text-[10px] font-black uppercase text-slate-400">Telefono</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400">Teléfono</p>
                     <p className="text-sm font-bold text-slate-700">{patient.telefono || "Sin registro"}</p>
                   </div>
                 </div>
@@ -1127,11 +1127,11 @@ export default function ClinicalRecordView({
                               <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{entry.motivo || "Consulta general"}</span>
                             </div>
                             <h5 className="text-lg font-bold text-slate-800">{diagnosisText}</h5>
-                            <p className="text-xs text-slate-500 font-bold flex items-center gap-2"><Stethoscope size={14} className="text-teal-600" />{entry.medico_nombre || "Medico sin registrar"}</p>
+                            <p className="text-xs text-slate-500 font-bold flex items-center gap-2"><Stethoscope size={14} className="text-teal-600" />{entry.medico_nombre || "Médico sin registrar"}</p>
                             {entry.updated_at && entry.created_at && entry.updated_at !== entry.created_at ? <p className="text-[11px] font-black text-amber-600">Editado el {formatDateTime(entry.updated_at)}</p> : null}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="hidden md:inline-flex px-3 py-2 rounded-2xl bg-slate-50 text-slate-500 text-xs font-black">Tension arterial (TA): {entry.signos?.ta || "N/A"}</span>
+                            <span className="hidden md:inline-flex px-3 py-2 rounded-2xl bg-slate-50 text-slate-500 text-xs font-black">Tensión arterial (TA): {entry.signos?.ta || "N/A"}</span>
                             <span className="hidden md:inline-flex px-3 py-2 rounded-2xl bg-slate-50 text-slate-500 text-xs font-black">Peso: {entry.signos?.peso || "N/A"}</span>
                             <div className="p-2 rounded-2xl bg-slate-50 text-teal-700">{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
                           </div>
@@ -1155,8 +1155,8 @@ export default function ClinicalRecordView({
                                 <p>Sexo: {snapshotSex}</p>
                               </div>
                             </ConsultationSection>
-                            <ConsultationSection title="Signos vitales"><div className="space-y-2 text-sm font-bold text-slate-700"><p>Tension arterial (TA): {entry.signos?.ta || "N/A"}</p><p>Peso: {entry.signos?.peso || "N/A"}</p><p>Temperatura (Temp): {entry.signos?.temp || "N/A"}</p><p>Talla: {entry.signos?.talla || "N/A"}</p><p>Glucosa: {entry.signos?.glucosa || "N/A"}</p><p>Frecuencia cardiaca (FC): {entry.signos?.frecuenciaCardiaca || "N/A"}</p><p>Frecuencia respiratoria (FR): {entry.signos?.frecuenciaRespiratoria || "N/A"}</p></div></ConsultationSection>
-                            <ConsultationSection title="Exploracion fisica">
+                            <ConsultationSection title="Signos vitales"><div className="space-y-2 text-sm font-bold text-slate-700"><p>Tensión arterial (TA): {entry.signos?.ta || "N/A"}</p><p>Peso: {entry.signos?.peso || "N/A"}</p><p>Temperatura (Temp): {entry.signos?.temp || "N/A"}</p><p>Talla: {entry.signos?.talla || "N/A"}</p><p>Glucosa: {entry.signos?.glucosa || "N/A"}</p><p>Frecuencia cardiaca (FC): {entry.signos?.frecuenciaCardiaca || "N/A"}</p><p>Frecuencia respiratoria (FR): {entry.signos?.frecuenciaRespiratoria || "N/A"}</p></div></ConsultationSection>
+                            <ConsultationSection title="Exploración física">
                               {entry.descripcion_fisica ? (
                                 <p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.descripcion_fisica}</p>
                               ) : explorationSections.length ? (
@@ -1169,10 +1169,10 @@ export default function ClinicalRecordView({
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">Sin exploracion registrada</p>
+                                <p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">Sin exploración registrada</p>
                               )}
                             </ConsultationSection>
-                            <ConsultationSection title="Diagnostico CIE-10"><p className="text-sm text-slate-700 font-bold">{diagnosisText}</p></ConsultationSection>
+                            <ConsultationSection title="Diagnóstico CIE-10"><p className="text-sm text-slate-700 font-bold">{diagnosisText}</p></ConsultationSection>
                           </div>
 
                           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -1181,7 +1181,7 @@ export default function ClinicalRecordView({
                           </div>
 
                           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                            <ConsultationSection title="Pronostico"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.pronostico || "Sin pronostico registrado"}</p></ConsultationSection>
+                            <ConsultationSection title="Pronóstico"><p className="text-sm text-slate-700 font-bold whitespace-pre-wrap">{entry.pronostico || "Sin pronóstico registrado"}</p></ConsultationSection>
                           </div>
 
                           <div className="grid grid-cols-1 xl:grid-cols-1 gap-4">
@@ -1191,8 +1191,8 @@ export default function ClinicalRecordView({
                           <ConsultationSection title="Receta">
                             {(entry.recetas ?? []).length ? entry.recetas.map((item) => (
                               <div key={item.id} className="rounded-2xl bg-white border border-slate-100 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
-                                <div><p className="text-sm font-black text-slate-800">{item.medicamento} {item.dosis || ""}</p><p className="text-xs font-bold text-slate-500 mt-1">Via: {item.via_administracion || "Sin via especificada"} | {item.frecuencia_cantidad ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}` : "Sin pauta"}</p></div>
-                                <span className="text-xs font-black px-3 py-2 rounded-2xl bg-teal-50 text-teal-700">{item.duracion_cantidad ? `${item.duracion_cantidad} ${String(item.duracion_unidad || "").toLowerCase()}` : "Duracion sin definir"}</span>
+                                <div><p className="text-sm font-black text-slate-800">{item.medicamento} {item.dosis || ""}</p><p className="text-xs font-bold text-slate-500 mt-1">Vía: {item.via_administracion || "Sin vía especificada"} | {item.frecuencia_cantidad ? `Cada ${item.frecuencia_cantidad} ${String(item.frecuencia_unidad || "").toLowerCase()}` : "Sin pauta"}</p></div>
+                                <span className="text-xs font-black px-3 py-2 rounded-2xl bg-teal-50 text-teal-700">{item.duracion_cantidad ? `${item.duracion_cantidad} ${String(item.duracion_unidad || "").toLowerCase()}` : "Duración sin definir"}</span>
                               </div>
                             )) : <div className="rounded-2xl bg-white border border-slate-100 px-4 py-3 text-sm font-bold text-slate-500">Sin medicamentos registrados.</div>}
                           </ConsultationSection>
@@ -1206,7 +1206,7 @@ export default function ClinicalRecordView({
                                     <p className="text-xs font-bold text-slate-500 mt-1">{study.tipo || "Sin tipo"}</p>
                                     {study.problema_clinico ? (
                                       <p className="text-xs font-bold text-slate-500 mt-1">
-                                        Problema clinico: {study.problema_clinico}
+                                        Problema clínico: {study.problema_clinico}
                                       </p>
                                     ) : null}
                                     {study.fecha_estudio ? (
@@ -1216,12 +1216,12 @@ export default function ClinicalRecordView({
                                     ) : null}
                                     {(study.medico_solicita_nombre || study.medico_solicita_cedula) ? (
                                       <p className="text-xs font-bold text-slate-500 mt-1">
-                                        Solicita: {study.medico_solicita_nombre || "Sin medico"} | Cedula: {study.medico_solicita_cedula || "Sin registro"}
+                                        Solicita: {study.medico_solicita_nombre || "Sin médico"} | Cédula: {study.medico_solicita_cedula || "Sin registro"}
                                       </p>
                                     ) : null}
                                   </div>
                                   <span className={`text-xs font-black px-3 py-2 rounded-2xl ${
-                                    study.estado === "Revisado por el medico"
+                                    study.estado === "Revisado por el médico"
                                       ? "bg-emerald-50 text-emerald-700"
                                       : study.estado === "Entregado por el paciente"
                                       ? "bg-amber-50 text-amber-700"
@@ -1241,7 +1241,7 @@ export default function ClinicalRecordView({
                                     >
                                       <option>Solicitado</option>
                                       <option>Entregado por el paciente</option>
-                                      <option>Revisado por el medico</option>
+                                      <option>Revisado por el médico</option>
                                     </select>
                                   </div>
                                   <div className="md:col-span-7 space-y-1.5">
@@ -1257,12 +1257,12 @@ export default function ClinicalRecordView({
 
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                                   <div className="md:col-span-6 space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase text-slate-400">Problema clinico</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-400">Problema clínico</label>
                                     <input
                                       value={getStudyDraft(study).problema_clinico}
                                       onChange={(e) => updateStudyDraft(study.id, { problema_clinico: e.target.value })}
                                       className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700"
-                                      placeholder="Motivo por el que se solicito el estudio"
+                                      placeholder="Motivo por el que se solicitó el estudio"
                                     />
                                   </div>
                                   <div className="md:col-span-6 space-y-1.5">
@@ -1277,21 +1277,21 @@ export default function ClinicalRecordView({
                                 </div>
 
                                 <div className="space-y-1.5">
-                                  <label className="text-[10px] font-black uppercase text-slate-400">Interpretacion del medico</label>
+                                  <label className="text-[10px] font-black uppercase text-slate-400">Interpretación del médico</label>
                                   <textarea
                                     value={getStudyDraft(study).interpretacion}
                                     onChange={(e) => updateStudyDraft(study.id, { interpretacion: e.target.value })}
                                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-slate-700 min-h-24 resize-none"
-                                    placeholder="Interpretacion clinica del estudio..."
+                                    placeholder="Interpretación clínica del estudio..."
                                   />
                                 </div>
 
                                 <div className="flex items-center justify-between gap-3">
                                   <p className="text-xs font-bold text-slate-500">
                                     {study.resultado
-                                      ? `Ultimo resultado: ${study.resultado}`
+                                      ? `Último resultado: ${study.resultado}`
                                       : study.interpretacion
-                                      ? `Interpretacion: ${study.interpretacion}`
+                                      ? `Interpretación: ${study.interpretacion}`
                                       : "Sin resultado registrado"}
                                   </p>
                                   <button
@@ -1312,7 +1312,7 @@ export default function ClinicalRecordView({
 
                           <div className="rounded-2xl border border-teal-100 bg-teal-50/70 px-4 py-3">
                             <p className="text-sm font-black text-teal-800">
-                              Firmado digitalmente por Dr. {entry.medico_nombre || "Sin medico"}, Cedula {entry.medico_cedula || "Sin registro"} el{" "}
+                              Firmado digitalmente por Dr. {entry.medico_nombre || "Sin médico"}, Cédula {entry.medico_cedula || "Sin registro"} el{" "}
                               {formatDateTime(entry.firma_timestamp || entry.updated_at || entry.fecha)}
                             </p>
                             {entry.firma_hash ? (

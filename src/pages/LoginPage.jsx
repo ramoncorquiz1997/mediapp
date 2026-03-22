@@ -26,7 +26,7 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-teal-700">
             <ShieldCheck size={14} />
-            <span>Portal medico</span>
+            <span>Portal médico</span>
           </div>
 
           <div className="mt-5 flex items-center gap-4">
@@ -58,7 +58,7 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase text-slate-500">Contrasena</label>
+            <label className="text-[10px] font-black uppercase text-slate-500">Contraseña</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
@@ -89,11 +89,11 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
             disabled={isLoading}
             className="w-full rounded-2xl bg-teal-600 px-6 py-3 font-black text-white shadow-xl shadow-teal-200 transition-all hover:bg-teal-700 disabled:opacity-60"
           >
-            {isLoading ? "Entrando..." : "Entrar al portal medico"}
+            {isLoading ? "Entrando..." : "Entrar al portal médico"}
           </button>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-600">
-            Si aun no tienes cuenta, puedes enviar tu solicitud y revisaremos tus datos medicos antes de activar el acceso.
+            Si aún no tienes cuenta, puedes enviar tu solicitud y revisaremos tus datos médicos antes de activar el acceso.
           </div>
 
           <button

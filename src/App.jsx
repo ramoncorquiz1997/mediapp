@@ -368,7 +368,7 @@ export default function App() {
       try {
         const response = await apiFetch("/api/auth/me");
         if (!response.ok) {
-          throw new Error("Sesion no valida");
+          throw new Error("Sesión no válida");
         }
 
         const data = await response.json();
@@ -402,7 +402,7 @@ export default function App() {
       try {
         const response = await ownerApiFetch("/api/owner/auth/me");
         if (!response.ok) {
-          throw new Error("Sesion owner no valida");
+          throw new Error("Sesión owner no válida");
         }
 
         const data = await response.json();
@@ -436,7 +436,7 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `No se pudo iniciar sesion (${response.status})`);
+        throw new Error(data.message || `No se pudo iniciar sesión (${response.status})`);
       }
 
       saveSession(data);
@@ -444,7 +444,7 @@ export default function App() {
       setActiveTab("dashboard");
       navigate("/dashboard", { replace: true });
     } catch (error) {
-      setAuthError(error.message || "No se pudo iniciar sesion");
+      setAuthError(error.message || "No se pudo iniciar sesión");
     } finally {
       setIsLoggingIn(false);
     }
@@ -502,14 +502,14 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `No se pudo iniciar sesion owner (${response.status})`);
+        throw new Error(data.message || `No se pudo iniciar sesión owner (${response.status})`);
       }
 
       saveOwnerSession(data);
       setOwnerUser(data.owner);
       navigate(OWNER_CONSOLE_PATH, { replace: true });
     } catch (error) {
-      setOwnerAuthError(error.message || "No se pudo iniciar sesion owner");
+      setOwnerAuthError(error.message || "No se pudo iniciar sesión owner");
     } finally {
       setIsOwnerLoggingIn(false);
     }
@@ -1089,7 +1089,7 @@ export default function App() {
         ? `Alergias conocidas: ${appointment.cuestionario_alergias_conocidas}`
         : "",
       appointment.cuestionario_cambios_desde_ultima_visita
-        ? `Cambios desde la ultima visita: ${appointment.cuestionario_cambios_desde_ultima_visita}`
+        ? `Cambios desde la última visita: ${appointment.cuestionario_cambios_desde_ultima_visita}`
         : "",
     ]
       .filter(Boolean)
@@ -1283,7 +1283,7 @@ export default function App() {
 
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-sm font-black text-slate-500">Preparando sesion...</div>
+        <div className="text-sm font-black text-slate-500">Preparando sesión...</div>
       </div>
     );
   }

@@ -18,11 +18,11 @@ import {
 } from "lucide-react";
 
 const features = [
-  { icon: FileText, title: "Expediente digital", description: "Historial clinico completo con cumplimiento NOM-004." },
+  { icon: FileText, title: "Expediente digital", description: "Historial clínico completo con cumplimiento NOM-004." },
   { icon: CalendarDays, title: "Agenda inteligente", description: "Citas online, recordatorios y control de asistencia." },
-  { icon: Printer, title: "Recetas medicas", description: "Genera e imprime recetas profesionales en segundos." },
+  { icon: Printer, title: "Recetas médicas", description: "Genera e imprime recetas profesionales en segundos." },
   { icon: MonitorSmartphone, title: "Portal del paciente", description: "Tus pacientes ven sus citas y medicamentos desde su celular." },
-  { icon: ClipboardList, title: "CIE-10 integrado", description: "Diagnosticos codificados segun la norma mexicana." },
+  { icon: ClipboardList, title: "CIE-10 integrado", description: "Diagnósticos codificados según la norma mexicana." },
   { icon: ShieldCheck, title: "Seguro y confidencial", description: "Datos protegidos bajo LFPDPPP 2025." },
 ];
 
@@ -30,33 +30,33 @@ const testimonials = [
   {
     initials: "CM",
     name: "Dr. Carlos Mendoza",
-    specialty: "Medico General",
-    text: "MyCliniq nos ahorro horas a la semana. El expediente y la agenda ya viven en el mismo lugar y eso se siente desde el primer dia.",
+    specialty: "Médico General",
+    text: "MyCliniq nos ahorró horas a la semana. El expediente y la agenda ya viven en el mismo lugar y eso se siente desde el primer día.",
   },
   {
     initials: "LR",
-    name: "Dra. Laura Rios",
+    name: "Dra. Laura Ríos",
     specialty: "Medicina Familiar",
-    text: "Lo que mas me gusto fue tener notas clinicas ordenadas y recetas presentables sin depender de formatos sueltos.",
+    text: "Lo que más me gustó fue tener notas clínicas ordenadas y recetas presentables sin depender de formatos sueltos.",
   },
   {
     initials: "JP",
     name: "Dr. Jorge Paredes",
-    specialty: "Medico Internista",
-    text: "El portal del paciente bajo mucho la friccion en seguimiento. Ahora mis pacientes revisan sus medicamentos y citas desde el celular.",
+    specialty: "Médico Internista",
+    text: "El portal del paciente bajó mucho la fricción en seguimiento. Ahora mis pacientes revisan sus medicamentos y citas desde el celular.",
   },
 ];
 
 const faqs = [
   {
-    question: "MyCliniq cumple con la NOM-004?",
+    question: "¿MyCliniq cumple con la NOM-004?",
     answer:
-      "Si, MyCliniq esta disenado para cumplir con los requisitos de la NOM-004-SSA3-2012 incluyendo historia clinica, notas de evolucion, consentimiento informado y conservacion de expedientes por minimo 5 anos.",
+      "Sí, MyCliniq está diseñado para cumplir con los requisitos de la NOM-004-SSA3-2012 incluyendo historia clínica, notas de evolución, consentimiento informado y conservación de expedientes por mínimo 5 años.",
   },
-  { question: "Necesito instalar algo?", answer: "No. MyCliniq funciona directo desde tu navegador, en computadora, tablet o celular." },
-  { question: "Mis datos estan seguros?", answer: "Si. Toda la informacion esta cifrada y protegida bajo la LFPDPPP 2025." },
-  { question: "Puedo cancelar cuando quiera?", answer: "Si. No hay contratos ni penalizaciones. Puedes cancelar en cualquier momento." },
-  { question: "Tienen soporte tecnico?", answer: "Si. Incluimos soporte por WhatsApp y email sin costo adicional." },
+  { question: "¿Necesito instalar algo?", answer: "No. MyCliniq funciona directo desde tu navegador, en computadora, tablet o celular." },
+  { question: "¿Mis datos están seguros?", answer: "Sí. Toda la información está cifrada y protegida bajo la LFPDPPP 2025." },
+  { question: "¿Puedo cancelar cuando quiera?", answer: "Sí. No hay contratos ni penalizaciones. Puedes cancelar en cualquier momento." },
+  { question: "¿Tienen soporte técnico?", answer: "Sí. Incluimos soporte por WhatsApp y email sin costo adicional." },
 ];
 
 function RevealSection({ children, className = "", id }) {
@@ -254,7 +254,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 </button>
               ))}
               <button type="button" onClick={() => onNavigate("/login")} className="rounded-2xl bg-teal-600 px-4 py-3 text-left text-sm font-black text-white">
-                Soy medico
+                Soy médico
               </button>
             </div>
           </div>
@@ -266,10 +266,10 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
           <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
             <div className="max-w-2xl">
               <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                El expediente clinico digital para tu consultorio
+                El expediente clínico digital para tu consultorio
               </h1>
               <p className="mt-6 max-w-xl text-lg font-bold leading-8 text-slate-600">
-                Gestiona pacientes, agenda citas y genera notas medicas que cumplen la NOM-004.
+                Gestiona pacientes, agenda citas y genera notas médicas que cumplen la NOM-004.
                 Todo en un solo lugar.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -294,7 +294,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 onClick={() => onNavigate("/login")}
                 className="mt-4 inline-flex items-center gap-2 text-sm font-black text-slate-500 hover:text-teal-700 transition-colors"
               >
-                <span>Eres medico? Inicia sesion aqui</span>
+                <span>¿Eres médico? Inicia sesión aquí</span>
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -305,7 +305,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 <div className="rounded-[1.5rem] bg-slate-900 p-5 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-300">Dashboard clinico</p>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-300">Dashboard clínico</p>
                       <p className="brand-wordmark mt-2 text-2xl font-black">MyCliniq</p>
                     </div>
                     <div className="rounded-2xl bg-white/10 px-4 py-3 text-right">
@@ -322,14 +322,14 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                     <div className="rounded-2xl bg-teal-500/20 p-4 border border-teal-400/20">
                       <p className="text-xs font-black uppercase text-teal-200">Cumplimiento</p>
                       <p className="mt-2 text-xl font-black">NOM-004</p>
-                      <p className="mt-2 text-sm font-bold text-teal-100">Notas, consentimiento, CIE-10 y auditoria.</p>
+                      <p className="mt-2 text-sm font-bold text-teal-100">Notas, consentimiento, CIE-10 y auditoría.</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-5 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
                   <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Proximas citas</p>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Próximas citas</p>
                     <div className="mt-4 space-y-3">
                       {[
                         ["09:00", "Ana Garcia", "Seguimiento"],
@@ -349,9 +349,9 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
 
                   <div className="rounded-[1.5rem] border border-teal-100 bg-teal-50 p-5">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-600">Portal del paciente</p>
-                    <p className="mt-3 text-2xl font-black text-slate-900">Acceso privado unicamente por enlace seguro.</p>
+                    <p className="mt-3 text-2xl font-black text-slate-900">Acceso privado únicamente por enlace seguro.</p>
                     <p className="mt-3 text-sm font-bold leading-7 text-slate-600">
-                      Tus pacientes consultan citas, medicamentos y cuestionarios desde su celular usando el enlace con token que comparte el medico.
+                      Tus pacientes consultan citas, medicamentos y cuestionarios desde su celular usando el enlace con token que comparte el médico.
                     </p>
                   </div>
                 </div>
@@ -367,9 +367,9 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-200">
                   <UserRound size={24} />
                 </div>
-                <h2 className="mt-5 text-3xl font-black tracking-tight text-slate-950">Eres paciente?</h2>
+                <h2 className="mt-5 text-3xl font-black tracking-tight text-slate-950">¿Eres paciente?</h2>
                 <p className="mt-3 max-w-xl text-base font-bold leading-8 text-slate-600">
-                  Tu expediente no se consulta con CURP ni con inicio de sesion publico. El acceso solo funciona con el enlace privado con token que te comparte tu medico.
+                  Tu expediente no se consulta con CURP ni con inicio de sesión público. El acceso solo funciona con el enlace privado con token que te comparte tu médico.
                 </p>
               </div>
 
@@ -378,7 +378,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
                   <p className="text-lg font-black text-slate-900">Necesitas el link directo del doctor</p>
                   <p className="mt-3 text-sm font-bold leading-7 text-slate-600">
-                    Si todavia no lo tienes, solicitalo a tu medico por WhatsApp o durante tu consulta. Ese enlace es la unica forma valida de abrir tu expediente.
+                    Si todavía no lo tienes, solicítalo a tu médico por WhatsApp o durante tu consulta. Ese enlace es la única forma válida de abrir tu expediente.
                   </p>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               Todo lo que necesitas para tu consultorio
             </h2>
             <p className="mt-4 text-base font-bold leading-8 text-slate-600">
-              Desde la primera cita hasta el seguimiento clinico, MyCliniq conecta agenda, expediente, recetas y portal del paciente en un solo flujo.
+              Desde la primera cita hasta el seguimiento clínico, MyCliniq conecta agenda, expediente, recetas y portal del paciente en un solo flujo.
             </p>
           </div>
 
@@ -427,7 +427,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
           <div className="mx-auto mt-10 max-w-2xl">
             <div className="overflow-hidden rounded-[2rem] border border-teal-100 bg-white shadow-2xl shadow-teal-100/60">
               <div className="bg-slate-950 px-8 py-8 text-white">
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-teal-300">Plan unico</p>
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-teal-300">Plan único</p>
                 <h3 className="mt-3 text-3xl font-black">Todo incluido</h3>
                 <div className="mt-5 flex items-end justify-center gap-2 text-center">
                   <span className="text-5xl font-black text-white">$499</span>
@@ -439,10 +439,10 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
               <div className="p-8">
                 <ul className="space-y-4">
                   {[
-                    "Expediente clinico digital ilimitado",
+                    "Expediente clínico digital ilimitado",
                     "Agenda con citas online",
                     "Portal del paciente",
-                    "Recetas e impresion de notas",
+                    "Recetas e impresión de notas",
                     "Cumplimiento NOM-004 y NOM-024",
                     "Soporte incluido",
                   ].map((item) => (

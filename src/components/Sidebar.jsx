@@ -42,7 +42,7 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
             type="button"
             onClick={onCloseMobile}
             className="ml-auto inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-2 text-slate-300"
-            aria-label="Cerrar menu"
+            aria-label="Cerrar menú"
           >
             <X size={18} />
           </button>
@@ -74,10 +74,10 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
           <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-4">
             <p className="text-sm font-black text-white">{user?.nombre || "Usuario"}</p>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-300 mt-1">
-              {user?.rol || "sesion"}
+              {user?.rol || "sesión"}
             </p>
             <p className="text-xs font-bold text-slate-400 mt-2">
-              Cedula: {user?.cedula_profesional || "Sin registro"}
+              Cédula: {user?.cedula_profesional || "Sin registro"}
             </p>
           </div>
 
@@ -90,7 +90,7 @@ export default function Sidebar({ activeTab, setActiveTab, items, user, onLogout
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white text-slate-700 font-black hover:bg-slate-100 transition-colors"
           >
             <LogOut size={18} />
-            <span>Cerrar sesion</span>
+            <span>Cerrar sesión</span>
           </button>
         </div>
       </div>

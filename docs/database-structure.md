@@ -1,12 +1,12 @@
 # Estructura recomendada de base de datos
 
-La app ya pide tres dominios principales: pacientes, agenda y expediente clinico. Para no pelearte luego con el crecimiento, la base deberia quedar asi:
+La app ya pide tres dominios principales: pacientes, agenda y expediente clínico. Para no pelearte luego con el crecimiento, la base debería quedar así:
 
 ## Tablas principales
 
 ### `pacientes`
 - Un registro por paciente.
-- Guarda identificador externo (`external_id`), nombre, fecha de nacimiento, sexo, tipo de sangre, telefono y contacto de emergencia.
+- Guarda identificador externo (`external_id`), nombre, fecha de nacimiento, sexo, tipo de sangre, teléfono y contacto de emergencia.
 - Aqui tambien cabe un resumen rapido como `alergias_resumen` y `notas`.
 
 ### `antecedentes_medicos`
@@ -16,13 +16,13 @@ La app ya pide tres dominios principales: pacientes, agenda y expediente clinico
 
 ### `citas`
 - Agenda del consultorio.
-- Relacion opcional con paciente para soportar citas nuevas o pacientes aun no registrados.
+- Relación opcional con paciente para soportar citas nuevas o pacientes aún no registrados.
 - Guarda fecha/hora de inicio, duracion, estado y motivo.
 
 ### `consultas`
-- Nota medica principal.
+- Nota médica principal.
 - Relacion obligatoria con paciente y opcional con cita.
-- Guarda motivo, padecimiento actual, exploracion fisica, diagnostico, plan y un `signos` en JSONB para no frenarte mientras el frontend evoluciona.
+- Guarda motivo, padecimiento actual, exploración física, diagnóstico, plan y un `signos` en JSONB para no frenarte mientras el frontend evoluciona.
 
 ### `recetas`
 - Uno a muchos desde `consultas`.
@@ -62,4 +62,4 @@ mediapp/
   docker-compose.yml
 ```
 
-Eso ya es un monorepo pequeno y suficiente para esta etapa. No necesitas separar repositorio de frontend y backend todavia.
+Eso ya es un monorepo pequeño y suficiente para esta etapa. No necesitas separar repositorio de frontend y backend todavía.

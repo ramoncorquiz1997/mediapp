@@ -91,19 +91,19 @@ const paymentStatusOptions = [
 ];
 
 const billingEventLabels = {
-  verification_requested: "Solicitud de verificacion",
+  verification_requested: "Solicitud de verificación",
   checkout_session_created: "Checkout iniciado",
   checkout_completed: "Checkout completado",
-  billing_portal_created: "Portal de facturacion abierto",
+  billing_portal_created: "Portal de facturación abierto",
   invoice_paid: "Factura pagada",
   invoice_payment_failed: "Pago fallido",
   trial_started: "Trial iniciado",
   trial_updated: "Trial actualizado",
-  cancellation_scheduled: "Cancelacion programada",
-  cancellation_removed: "Cancelacion removida",
-  subscription_reactivated: "Suscripcion reactivada",
-  subscription_updated: "Suscripcion actualizada",
-  subscription_deleted: "Suscripcion cancelada",
+  cancellation_scheduled: "Cancelación programada",
+  cancellation_removed: "Cancelación removida",
+  subscription_reactivated: "Suscripción reactivada",
+  subscription_updated: "Suscripción actualizada",
+  subscription_deleted: "Suscripción cancelada",
 };
 
 const billingEventStatusLabels = {

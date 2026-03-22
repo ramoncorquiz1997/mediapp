@@ -43,7 +43,7 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
             className="inline-flex items-center gap-2 text-sm font-black text-slate-500 transition-colors hover:text-teal-700"
           >
             <ArrowLeft size={16} />
-            <span>Volver al acceso medico</span>
+            <span>Volver al acceso médico</span>
           </button>
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-teal-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-teal-700">
@@ -56,7 +56,7 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
               <Activity size={28} />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">Crear cuenta medica</h1>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">Crear cuenta médica</h1>
               <p className="text-sm font-bold text-slate-500">
                 Revisamos manualmente cada solicitud antes de activar el acceso al portal.
               </p>
@@ -92,7 +92,7 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[10px] font-black uppercase text-slate-500">Telefono</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Teléfono</span>
               <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3">
                 <select
                   value={form.telefono_codigo_pais}
@@ -121,12 +121,12 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
                 </div>
               </div>
               <p className="text-xs font-bold text-slate-400">
-                Captura solo 10 digitos. Guardaremos el numero con el codigo de pais seleccionado.
+                Captura solo 10 dígitos. Guardaremos el número con el código de país seleccionado.
               </p>
             </label>
 
             <label className="space-y-1.5">
-              <span className="text-[10px] font-black uppercase text-slate-500">Cedula profesional</span>
+              <span className="text-[10px] font-black uppercase text-slate-500">Cédula profesional</span>
               <div className="relative">
                 <FileCheck2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
@@ -174,7 +174,7 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
           </label>
 
           <label className="space-y-1.5">
-            <span className="text-[10px] font-black uppercase text-slate-500">Contrasena</span>
+            <span className="text-[10px] font-black uppercase text-slate-500">Contraseña</span>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
@@ -187,13 +187,13 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
           </label>
 
           <label className="space-y-1.5">
-            <span className="text-[10px] font-black uppercase text-slate-500">Notas para verificacion</span>
+            <span className="text-[10px] font-black uppercase text-slate-500">Notas para verificación</span>
             <textarea
               value={form.notas_onboarding}
               onChange={(e) => setForm((prev) => ({ ...prev, notas_onboarding: e.target.value }))}
               rows={3}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="Puedes dejarnos contexto adicional sobre tu consultorio o tu practica."
+              placeholder="Puedes dejarnos contexto adicional sobre tu consultorio o tu práctica."
             />
           </label>
 
@@ -210,7 +210,7 @@ export default function RegisterDoctorPage({ onSubmit, isSubmitting, error, succ
           ) : null}
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-600">
-            Tu cuenta quedara en revision manual. Cuando aprobemos tus datos medicos, podras entrar al portal normalmente.
+            Tu cuenta quedará en revisión manual. Cuando aprobemos tus datos médicos, podrás entrar al portal normalmente.
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

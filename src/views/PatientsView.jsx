@@ -87,7 +87,7 @@ function PrivacyNoticeModal({ open, onClose, currentUser, clinicConfig }) {
         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
             <p className="text-lg font-black text-slate-800">Aviso de privacidad integral</p>
-            <p className="text-xs text-slate-500 font-bold">Version {PRIVACY_NOTICE_VERSION}</p>
+            <p className="text-xs text-slate-500 font-bold">Versión {PRIVACY_NOTICE_VERSION}</p>
           </div>
 
           <button onClick={onClose} className="p-2 rounded-2xl hover:bg-slate-100 text-slate-400">
@@ -110,34 +110,34 @@ function PrivacyNoticeModal({ open, onClose, currentUser, clinicConfig }) {
           <section>
             <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Finalidades del tratamiento</p>
             <p>
-              Sus datos personales y datos personales sensibles se recaban para integrar expediente clinico,
-              brindar atencion medica, dar seguimiento a consultas, emitir recetas, organizar citas, generar
-              reportes clinicos y cumplir obligaciones sanitarias y legales aplicables.
+              Sus datos personales y datos personales sensibles se recaban para integrar expediente clínico,
+              brindar atención médica, dar seguimiento a consultas, emitir recetas, organizar citas, generar
+              reportes clínicos y cumplir obligaciones sanitarias y legales aplicables.
             </p>
           </section>
 
           <section>
             <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Datos que se recaban</p>
             <p>
-              Datos de identificacion, contacto, antecedentes medicos, alergias, signos vitales, diagnosticos,
-              tratamientos, estudios, recetas y cualquier informacion necesaria para su atencion medica.
+              Datos de identificación, contacto, antecedentes médicos, alergias, signos vitales, diagnósticos,
+              tratamientos, estudios, recetas y cualquier información necesaria para su atención médica.
             </p>
           </section>
 
           <section>
             <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Derechos ARCO</p>
             <p>
-              Usted puede ejercer sus derechos de Acceso, Rectificacion, Cancelacion y Oposicion respecto de sus
+              Usted puede ejercer sus derechos de Acceso, Rectificación, Cancelación y Oposición respecto de sus
               datos personales. Para ello puede solicitarlo directamente en consultorio o mediante escrito libre
-              dirigido a la responsable. Su solicitud sera registrada y atendida conforme a la normativa aplicable.
+              dirigido a la responsable. Su solicitud será registrada y atendida conforme a la normativa aplicable.
             </p>
           </section>
 
           <section>
             <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Confidencialidad</p>
             <p>
-              La informacion de salud se considera sensible y sera tratada con medidas administrativas, tecnicas y
-              fisicas razonables para proteger su confidencialidad, integridad y disponibilidad.
+              La información de salud se considera sensible y será tratada con medidas administrativas, técnicas y
+              físicas razonables para proteger su confidencialidad, integridad y disponibilidad.
             </p>
           </section>
         </div>

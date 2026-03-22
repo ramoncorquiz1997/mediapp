@@ -217,14 +217,14 @@ export default function PatientPortalView({ token }) {
               </p>
             </div>
             <div className="rounded-3xl bg-teal-50 px-4 py-3 text-right">
-              <p className="text-[10px] font-black uppercase text-teal-500">Ultima visita</p>
+              <p className="text-[10px] font-black uppercase text-teal-500">Última visita</p>
               <p className="text-sm font-black text-teal-700">{formatDate(patient?.ultima_visita)}</p>
             </div>
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-[10px] font-black uppercase text-slate-400">Telefono</p>
+              <p className="text-[10px] font-black uppercase text-slate-400">Teléfono</p>
               <p className="mt-1 text-sm font-bold text-slate-700">{patient?.telefono || "Sin registro"}</p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-4">
@@ -257,7 +257,7 @@ export default function PatientPortalView({ token }) {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-800">Mis citas</h2>
-              <p className="text-sm font-bold text-slate-500">Tus proximas visitas y su estado</p>
+              <p className="text-sm font-bold text-slate-500">Tus próximas visitas y su estado</p>
             </div>
           </div>
 
@@ -302,7 +302,7 @@ export default function PatientPortalView({ token }) {
               ))
             ) : (
               <div className="rounded-2xl bg-slate-50 px-4 py-5">
-                <p className="text-sm font-bold text-slate-500">No tienes citas proximas registradas.</p>
+                <p className="text-sm font-bold text-slate-500">No tienes citas próximas registradas.</p>
               </div>
             )}
           </div>
@@ -317,7 +317,7 @@ export default function PatientPortalView({ token }) {
               <div>
                 <h2 className="text-xl font-black text-slate-800">Cuestionario previo</h2>
                 <p className="text-sm font-bold text-slate-500">
-                  Ayudanos a preparar tu cita del {formatDateTime(portalData.cuestionario_previo.fecha_cita)}
+                  Ayúdanos a preparar tu cita del {formatDateTime(portalData.cuestionario_previo.fecha_cita)}
                 </p>
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function PatientPortalView({ token }) {
                   setQuestionnaireForm((prev) => ({ ...prev, sintomas_actuales: e.target.value }))
                 }
                 className="min-h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="Sintomas actuales"
+                placeholder="Síntomas actuales"
               />
               <textarea
                 value={questionnaireForm.medicamentos_actuales}
@@ -364,7 +364,7 @@ export default function PatientPortalView({ token }) {
                   }))
                 }
                 className="min-h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                placeholder="Cambios desde tu ultima visita"
+                placeholder="Cambios desde tu última visita"
               />
             </div>
 
@@ -387,7 +387,7 @@ export default function PatientPortalView({ token }) {
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-800">Mis consultas</h2>
-              <p className="text-sm font-bold text-slate-500">Historial clinico y recetas disponibles</p>
+              <p className="text-sm font-bold text-slate-500">Historial clínico y recetas disponibles</p>
             </div>
           </div>
 
@@ -397,9 +397,9 @@ export default function PatientPortalView({ token }) {
                 const expanded = expandedConsultationId === consultation.id;
                 const diagnosis = consultation.cie10_codigo
                   ? `${consultation.cie10_codigo} - ${
-                      consultation.cie10_descripcion || consultation.diagnostico || "Sin diagnostico"
+                      consultation.cie10_descripcion || consultation.diagnostico || "Sin diagnóstico"
                     }`
-                  : consultation.diagnostico || "Sin diagnostico";
+                  : consultation.diagnostico || "Sin diagnóstico";
 
                 return (
                   <div key={consultation.id} className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/70">
@@ -414,7 +414,7 @@ export default function PatientPortalView({ token }) {
                         <p className="text-sm font-black text-slate-800">{formatDateTime(consultation.fecha)}</p>
                         <p className="text-sm font-bold text-teal-700">{diagnosis}</p>
                         <p className="text-xs font-bold text-slate-500">
-                          Medico: {consultation.medico_nombre || "Sin medico"}
+                          Médico: {consultation.medico_nombre || "Sin médico"}
                         </p>
                       </div>
                       <div className="shrink-0 rounded-2xl bg-white p-2 text-slate-500 shadow-sm">
@@ -428,7 +428,7 @@ export default function PatientPortalView({ token }) {
                           <div className="rounded-2xl bg-slate-50 p-4">
                             <div className="mb-2 flex items-center gap-2 text-slate-700">
                               <Stethoscope size={16} className="text-teal-600" />
-                              <p className="text-sm font-black">Diagnostico CIE-10</p>
+                              <p className="text-sm font-black">Diagnóstico CIE-10</p>
                             </div>
                             <p className="text-sm font-bold text-slate-600">{diagnosis}</p>
                           </div>
@@ -439,7 +439,7 @@ export default function PatientPortalView({ token }) {
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-600">
                               <span>Peso: {consultation.signos?.peso || "N/D"}</span>
-                              <span>Tension arterial (TA): {consultation.signos?.ta || "N/D"}</span>
+                              <span>Tensión arterial (TA): {consultation.signos?.ta || "N/D"}</span>
                               <span>Temperatura (Temp): {consultation.signos?.temp || "N/D"}</span>
                               <span>Glucosa: {consultation.signos?.glucosa || "N/D"}</span>
                             </div>
@@ -471,7 +471,7 @@ export default function PatientPortalView({ token }) {
                                   </p>
                                   <div className="mt-2 grid grid-cols-1 gap-2 text-xs font-bold text-slate-500 sm:grid-cols-2">
                                     <span>Dosis: {item.dosis || "Sin dosis"}</span>
-                                    <span>Via: {item.via_administracion || "Sin via especificada"}</span>
+                                    <span>Vía: {item.via_administracion || "Sin vía especificada"}</span>
                                     <span>
                                       Frecuencia:{" "}
                                       {item.frecuencia_cantidad
@@ -479,10 +479,10 @@ export default function PatientPortalView({ token }) {
                                         : "Sin frecuencia"}
                                     </span>
                                     <span>
-                                      Duracion:{" "}
+                                      Duración:{" "}
                                       {item.duracion_cantidad
                                         ? `${item.duracion_cantidad} ${item.duracion_unidad || ""}`
-                                        : "Sin duracion"}
+                                        : "Sin duración"}
                                     </span>
                                     <span>
                                       Indicaciones: {item.indicaciones || "Sin indicaciones"}
