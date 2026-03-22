@@ -175,15 +175,21 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-white/95 shadow-lg shadow-slate-200/60 backdrop-blur border-b border-slate-200" : "bg-transparent"
+          isScrolled
+            ? "bg-white/78 shadow-lg shadow-slate-200/60 backdrop-blur-2xl border-b border-white/70"
+            : "bg-white/10 backdrop-blur-md"
         }`}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => onNavigate("/")} className="flex items-center gap-4 text-left">
-            <img src={soloLogoMycliniq} alt="MyCliniq" className="h-14 w-14 object-contain drop-shadow-[0_10px_18px_rgba(45,212,191,0.28)]" />
+            <img
+              src={soloLogoMycliniq}
+              alt="MyCliniq"
+              className="h-[68px] w-[68px] object-contain drop-shadow-[0_12px_24px_rgba(45,212,191,0.28)] sm:h-[74px] sm:w-[74px]"
+            />
             <div>
-              <p className="text-[1.9rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</p>
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Hecho para consultorios</p>
+              <p className="text-[2.2rem] font-black leading-none tracking-[-0.05em] text-slate-900 sm:text-[2.45rem]">MyCliniq</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500 sm:text-xs">Hecho para consultorios</p>
             </div>
           </button>
 
