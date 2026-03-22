@@ -3,6 +3,7 @@ import cors from "cors";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
+import Stripe from "stripe";
 import { existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -20,6 +21,12 @@ const host = process.env.HOST || "0.0.0.0";
 const port = process.env.PORT || 4000;
 const jwtSecret = process.env.JWT_SECRET || "Paupediente-dev-secret";
 const privacyNoticeVersion = process.env.PRIVACY_NOTICE_VERSION || "2026.03-v1";
+const appUrl = String(process.env.APP_URL || "http://localhost:5173").trim().replace(/\/+$/, "");
+const stripeSecretKey = String(process.env.STRIPE_SECRET_KEY || "").trim();
+const stripePublishableKey = String(process.env.STRIPE_PUBLISHABLE_KEY || "").trim();
+const stripeWebhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+const stripePriceId = String(process.env.STRIPE_PRICE_ID || "").trim();
+const stripeTrialDays = Math.max(0, Number(process.env.TRIAL_DAYS || 0) || 0);
 const curpRegex =
   /^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$/;
 const antecedentTypes = [
@@ -89,9 +96,21 @@ const accessStatuses = [
 ];
 const billingCycles = ["monthly", "quarterly", "semiannual", "annual", "custom"];
 const paymentStatuses = ["paid", "pending", "failed", "refunded", "waived", "offline"];
+const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: "2025-02-24.acacia",
+    })
+  : null;
 
 app.use(cors());
-app.use(express.json({ limit: "6mb" }));
+app.use(express.json({
+  limit: "6mb",
+  verify: (req, _res, buf) => {
+    if (req.originalUrl === "/api/stripe/webhook") {
+      req.rawBody = Buffer.from(buf);
+    }
+  },
+}));
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -178,6 +197,140 @@ const parseOptionalDateTime = (value) => {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const getStripeBaseUrl = (req) => {
+  const origin = String(req.headers.origin || "").trim().replace(/\/+$/, "");
+  return origin || appUrl;
+};
+
+const assertStripeReady = () => {
+  if (!stripe || !stripePriceId) {
+    const error = new Error("Stripe no esta configurado. Define STRIPE_SECRET_KEY y STRIPE_PRICE_ID");
+    error.statusCode = 503;
+    throw error;
+  }
+};
+
+const mapStripeSubscriptionStatus = (status) => {
+  const normalized = String(status || "").trim();
+
+  if (normalized === "incomplete_expired") return "incomplete";
+  if (normalized === "paused") return "past_due";
+  return subscriptionStatuses.includes(normalized) ? normalized : "not_started";
+};
+
+const mapStripeIntervalToBillingCycle = (interval, intervalCount = 1) => {
+  if (String(interval) === "month" && Number(intervalCount) === 1) return "monthly";
+  if (String(interval) === "month" && Number(intervalCount) === 3) return "quarterly";
+  if (String(interval) === "month" && Number(intervalCount) === 6) return "semiannual";
+  if (String(interval) === "year" && Number(intervalCount) === 1) return "annual";
+  return "custom";
+};
+
+const syncDoctorStripeSubscription = async (db, userId, subscription, extraUpdates = {}) => {
+  if (!subscription?.id || !userId) return null;
+
+  const primaryItem = Array.isArray(subscription.items?.data) ? subscription.items.data[0] : null;
+  const recurring = primaryItem?.price?.recurring || null;
+  const unitAmount = primaryItem?.price?.unit_amount;
+
+  const result = await db.query(
+    `UPDATE usuarios
+     SET stripe_customer_id = $1,
+         stripe_subscription_id = $2,
+         subscription_status = $3,
+         billing_plan_code = $4,
+         billing_cycle = $5,
+         billing_amount = $6,
+         billing_currency = $7,
+         billing_current_period_start = $8,
+         billing_current_period_end = $9,
+         billing_trial_ends_at = $10,
+         billing_cancel_at_period_end = $11,
+         billing_last_payment_status = COALESCE($12, billing_last_payment_status),
+         billing_last_payment_at = COALESCE($13, billing_last_payment_at),
+         updated_at = NOW()
+     WHERE id = $14
+     RETURNING
+       id,
+       nombre,
+       email,
+       slug,
+       rol,
+       cedula_profesional,
+       activo,
+       created_at,
+       updated_at,
+       verification_status,
+       verification_notes,
+       verification_checked_at,
+       verification_checked_by_name,
+       subscription_status,
+       billing_plan_code,
+       billing_cycle,
+       billing_amount,
+       billing_currency,
+       stripe_customer_id,
+       stripe_subscription_id,
+       billing_current_period_start,
+       billing_current_period_end,
+       billing_trial_ends_at,
+       billing_last_payment_at,
+       billing_last_payment_status,
+       billing_cancel_at_period_end,
+       manual_access_until,
+       manual_billing_override,
+       manual_override_reason,
+       access_status,
+       saas_notes`,
+    [
+      String(subscription.customer || "").trim() || null,
+      String(subscription.id || "").trim() || null,
+      mapStripeSubscriptionStatus(subscription.status),
+      primaryItem?.price?.nickname || primaryItem?.price?.id || extraUpdates.billing_plan_code || null,
+      mapStripeIntervalToBillingCycle(recurring?.interval, recurring?.interval_count),
+      typeof unitAmount === "number" ? Number((unitAmount / 100).toFixed(2)) : null,
+      String(primaryItem?.price?.currency || extraUpdates.billing_currency || "mxn").toUpperCase(),
+      subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
+      subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+      subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+      Boolean(subscription.cancel_at_period_end),
+      extraUpdates.billing_last_payment_status || null,
+      extraUpdates.billing_last_payment_at || null,
+      userId,
+    ]
+  );
+
+  return result.rowCount ? result.rows[0] : null;
+};
+
+const findDoctorByStripeRefs = async (db, { customerId, subscriptionId, userId }) => {
+  if (userId) {
+    const result = await db.query(
+      `SELECT id FROM usuarios WHERE id = $1`,
+      [userId]
+    );
+    if (result.rowCount) return result.rows[0];
+  }
+
+  if (subscriptionId) {
+    const result = await db.query(
+      `SELECT id FROM usuarios WHERE stripe_subscription_id = $1`,
+      [subscriptionId]
+    );
+    if (result.rowCount) return result.rows[0];
+  }
+
+  if (customerId) {
+    const result = await db.query(
+      `SELECT id FROM usuarios WHERE stripe_customer_id = $1`,
+      [customerId]
+    );
+    if (result.rowCount) return result.rows[0];
+  }
+
+  return null;
 };
 
 const normalizeDoctorPlatformProfile = (doctor) => ({
@@ -960,6 +1113,117 @@ app.get("/api/billing/me", requireAuth, requireDoctorAccess, asyncHandler(async 
   res.json({
     ...normalizeDoctorPlatformProfile(doctor),
     access_summary: buildDoctorAccessSummary(doctor),
+    stripe_publishable_key_configured: Boolean(stripePublishableKey),
+  });
+}));
+
+app.post("/api/billing/create-checkout-session", requireAuth, requireDoctorAccess, asyncHandler(async (req, res) => {
+  assertStripeReady();
+
+  const result = await pool.query(
+    `SELECT
+       id,
+       nombre,
+       email,
+       stripe_customer_id,
+       stripe_subscription_id,
+       subscription_status
+     FROM usuarios
+     WHERE id = $1`,
+    [req.user.id]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Medico no encontrado",
+    });
+  }
+
+  const doctor = result.rows[0];
+  const baseUrl = getStripeBaseUrl(req);
+
+  let customerId = doctor.stripe_customer_id || "";
+
+  if (["active", "trialing"].includes(String(doctor.subscription_status || "")) && doctor.stripe_subscription_id) {
+    return res.status(409).json({
+      error: "subscription_exists",
+      message: "Esta cuenta ya tiene una suscripcion activa. Usa el portal de facturacion para administrarla.",
+    });
+  }
+
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: doctor.email,
+      name: doctor.nombre,
+      metadata: {
+        doctor_id: String(doctor.id),
+      },
+    });
+
+    customerId = customer.id;
+
+    await pool.query(
+      `UPDATE usuarios
+       SET stripe_customer_id = $1
+       WHERE id = $2`,
+      [customerId, doctor.id]
+    );
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customerId,
+    success_url: `${baseUrl}/dashboard#billing-success`,
+    cancel_url: `${baseUrl}/dashboard#billing-canceled`,
+    line_items: [
+      {
+        price: stripePriceId,
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      doctor_id: String(doctor.id),
+    },
+    subscription_data: {
+      metadata: {
+        doctor_id: String(doctor.id),
+      },
+      ...(stripeTrialDays > 0 ? { trial_period_days: stripeTrialDays } : {}),
+    },
+    allow_promotion_codes: false,
+  });
+
+  res.json({
+    url: session.url,
+    session_id: session.id,
+  });
+}));
+
+app.post("/api/billing/create-portal-session", requireAuth, requireDoctorAccess, asyncHandler(async (req, res) => {
+  assertStripeReady();
+
+  const result = await pool.query(
+    `SELECT id, stripe_customer_id
+     FROM usuarios
+     WHERE id = $1`,
+    [req.user.id]
+  );
+
+  if (result.rowCount === 0 || !result.rows[0].stripe_customer_id) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Aun no existe un cliente Stripe asociado a esta cuenta",
+    });
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: result.rows[0].stripe_customer_id,
+    return_url: `${getStripeBaseUrl(req)}/dashboard#billing-portal`,
+  });
+
+  res.json({
+    url: session.url,
   });
 }));
 
@@ -1267,6 +1531,101 @@ app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =
     ...normalizeDoctorPlatformProfile(createdDoctor),
     access_summary: buildDoctorAccessSummary(createdDoctor),
   });
+}));
+
+app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
+  if (!stripe || !stripeWebhookSecret) {
+    return res.status(503).json({
+      error: "stripe_not_configured",
+      message: "Stripe webhook no configurado",
+    });
+  }
+
+  const signature = req.headers["stripe-signature"];
+
+  if (!signature || !req.rawBody) {
+    return res.status(400).json({
+      error: "invalid_request",
+      message: "Firma Stripe invalida",
+    });
+  }
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, signature, stripeWebhookSecret);
+  } catch (error) {
+    return res.status(400).json({
+      error: "invalid_signature",
+      message: error.message || "No se pudo validar el webhook Stripe",
+    });
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const doctor = await findDoctorByStripeRefs(pool, {
+      customerId: session.customer,
+      subscriptionId: session.subscription,
+      userId: Number(session.metadata?.doctor_id) || null,
+    });
+
+    if (doctor) {
+      const subscription = await stripe.subscriptions.retrieve(String(session.subscription));
+      await syncDoctorStripeSubscription(pool, doctor.id, subscription, {
+        billing_last_payment_status: "paid",
+        billing_last_payment_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  if (event.type === "invoice.paid") {
+    const invoice = event.data.object;
+    const doctor = await findDoctorByStripeRefs(pool, {
+      customerId: invoice.customer,
+      subscriptionId: invoice.subscription,
+    });
+
+    if (doctor && invoice.subscription) {
+      const subscription = await stripe.subscriptions.retrieve(String(invoice.subscription));
+      await syncDoctorStripeSubscription(pool, doctor.id, subscription, {
+        billing_last_payment_status: "paid",
+        billing_last_payment_at: invoice.status_transitions?.paid_at
+          ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+          : new Date().toISOString(),
+      });
+    }
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object;
+    const doctor = await findDoctorByStripeRefs(pool, {
+      customerId: invoice.customer,
+      subscriptionId: invoice.subscription,
+    });
+
+    if (doctor && invoice.subscription) {
+      const subscription = await stripe.subscriptions.retrieve(String(invoice.subscription));
+      await syncDoctorStripeSubscription(pool, doctor.id, subscription, {
+        billing_last_payment_status: "failed",
+        billing_last_payment_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    const doctor = await findDoctorByStripeRefs(pool, {
+      customerId: subscription.customer,
+      subscriptionId: subscription.id,
+      userId: Number(subscription.metadata?.doctor_id) || null,
+    });
+
+    if (doctor) {
+      await syncDoctorStripeSubscription(pool, doctor.id, subscription);
+    }
+  }
+
+  res.json({ received: true });
 }));
 
 app.put("/api/owner/doctors/:id", requireOwnerAuth, asyncHandler(async (req, res) => {

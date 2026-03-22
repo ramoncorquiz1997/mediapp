@@ -261,6 +261,7 @@ export default function App() {
   const [billingProfile, setBillingProfile] = useState(null);
   const [billingProfileLoading, setBillingProfileLoading] = useState(false);
   const [billingProfileError, setBillingProfileError] = useState("");
+  const [billingActionLoading, setBillingActionLoading] = useState(false);
   const [updatingOwnerDoctorId, setUpdatingOwnerDoctorId] = useState(null);
   const nextExternalId = getNextExternalId(patients);
 
@@ -576,6 +577,66 @@ export default function App() {
       setBillingProfileError(error.message || "No se pudo cargar la facturacion");
     } finally {
       setBillingProfileLoading(false);
+    }
+  };
+
+  const startBillingCheckout = async () => {
+    try {
+      setBillingActionLoading(true);
+      setBillingProfileError("");
+
+      const response = await apiFetch("/api/billing/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo iniciar Stripe Checkout (${response.status})`);
+      }
+
+      if (!data?.url) {
+        throw new Error("Stripe no devolvio una URL valida");
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setBillingProfileError(error.message || "No se pudo iniciar el cobro");
+    } finally {
+      setBillingActionLoading(false);
+    }
+  };
+
+  const openBillingPortal = async () => {
+    try {
+      setBillingActionLoading(true);
+      setBillingProfileError("");
+
+      const response = await apiFetch("/api/billing/create-portal-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo abrir el portal Stripe (${response.status})`);
+      }
+
+      if (!data?.url) {
+        throw new Error("Stripe no devolvio una URL valida");
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setBillingProfileError(error.message || "No se pudo abrir el portal de facturacion");
+    } finally {
+      setBillingActionLoading(false);
     }
   };
 
@@ -1279,6 +1340,9 @@ export default function App() {
             billingProfile={billingProfile}
             billingProfileLoading={billingProfileLoading}
             billingProfileError={billingProfileError}
+            billingActionLoading={billingActionLoading}
+            onStartBillingCheckout={startBillingCheckout}
+            onOpenBillingPortal={openBillingPortal}
           />
         ) : null}
       </main>

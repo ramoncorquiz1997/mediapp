@@ -74,6 +74,9 @@ export default function SettingsView({
   billingProfile,
   billingProfileLoading,
   billingProfileError,
+  billingActionLoading,
+  onStartBillingCheckout,
+  onOpenBillingPortal,
 }) {
   const fileInputRef = useRef(null);
   const [showBillingSection, setShowBillingSection] = useState(false);
@@ -156,6 +159,8 @@ export default function SettingsView({
   const getAccessStatusLabel = (value) => accessStatusLabels[value] || value || "Pendiente";
   const getPaymentStatusLabel = (value) => paymentStatusLabels[value] || value || "Sin registro";
   const getBillingCycleLabel = (value) => billingCycleLabels[value] || value || "mensual";
+  const hasStripeCustomer = Boolean(billingProfile?.stripe_customer_id);
+  const hasActiveSubscription = ["active", "trialing"].includes(String(billingProfile?.subscription_status || ""));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -269,8 +274,32 @@ export default function SettingsView({
                 </div>
 
                 <div className="rounded-3xl border border-cyan-100 bg-cyan-50 px-5 py-4 text-sm font-bold text-cyan-900">
-                  La activacion en Stripe se conectara sobre este modulo. Por ahora aqui ya puedes ver el estado de cuenta,
-                  la proxima fecha de pago y cualquier extension manual aplicada por administracion.
+                  Desde aqui puedes activar tu suscripcion en Stripe, revisar tu proxima fecha de pago y administrar tu
+                  metodo de cobro cuando ya exista un cliente Stripe asociado a tu cuenta.
+                </div>
+
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <button
+                    type="button"
+                    onClick={onStartBillingCheckout}
+                    disabled={billingActionLoading || billingProfileLoading}
+                    className="rounded-2xl bg-cyan-600 px-5 py-3 text-sm font-black text-white transition-colors hover:bg-cyan-700 disabled:opacity-60"
+                  >
+                    {billingActionLoading
+                      ? "Abriendo Stripe..."
+                      : hasActiveSubscription
+                        ? "Cambiar o renovar en Stripe"
+                        : "Activar suscripcion con Stripe"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onOpenBillingPortal}
+                    disabled={billingActionLoading || billingProfileLoading || !hasStripeCustomer}
+                    className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Administrar facturacion
+                  </button>
                 </div>
               </>
             ) : null}

@@ -22,12 +22,20 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    env_file:
+      - .env.prod
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-mediapp}:${POSTGRES_PASSWORD:-changeme}@db:5432/${POSTGRES_DB:-mediapp}
       HOST: 0.0.0.0
       PORT: 4000
       NODE_ENV: production
       CIE10_CSV_PATH: /usr/src/app/data/cie-10.csv
+      APP_URL: ${APP_URL:-https://cliniq.lat}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_ID: ${STRIPE_PRICE_ID:-}
+      TRIAL_DAYS: ${TRIAL_DAYS:-7}
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
