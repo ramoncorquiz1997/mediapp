@@ -3231,14 +3231,29 @@ app.get("/api/dashboard/summary", asyncHandler(async (req, res) => {
     appointmentsTodayResult,
     upcomingAppointmentsResult,
   ] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS total FROM pacientes WHERE activo = TRUE"),
     pool.query(
-      "SELECT COUNT(*)::int AS total FROM consultas WHERE fecha >= $1 AND fecha < $2",
-      [todayStart.toISOString(), tomorrowStart.toISOString()]
+      `SELECT COUNT(*)::int AS total
+       FROM pacientes
+       WHERE activo = TRUE
+         AND medico_user_id = $1`,
+      [req.user.id]
     ),
     pool.query(
-      "SELECT COUNT(*)::int AS total FROM citas WHERE start >= $1 AND start < $2 AND estado <> 'Cancelado'",
-      [todayStart.toISOString(), tomorrowStart.toISOString()]
+      `SELECT COUNT(*)::int AS total
+       FROM consultas
+       WHERE fecha >= $1
+         AND fecha < $2
+         AND medico_user_id = $3`,
+      [todayStart.toISOString(), tomorrowStart.toISOString(), req.user.id]
+    ),
+    pool.query(
+      `SELECT COUNT(*)::int AS total
+       FROM citas
+       WHERE start >= $1
+         AND start < $2
+         AND estado <> 'Cancelado'
+         AND medico_user_id = $3`,
+      [todayStart.toISOString(), tomorrowStart.toISOString(), req.user.id]
     ),
     pool.query(
       `SELECT
@@ -3252,9 +3267,10 @@ app.get("/api/dashboard/summary", asyncHandler(async (req, res) => {
          duracion
        FROM citas
        WHERE start >= $1
+         AND medico_user_id = $2
        ORDER BY start ASC
        LIMIT 5`,
-      [now.toISOString()]
+      [now.toISOString(), req.user.id]
     ),
   ]);
 
