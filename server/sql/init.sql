@@ -407,6 +407,71 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS subscription_billing_events (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  source TEXT NOT NULL DEFAULT 'system',
+  event_type TEXT NOT NULL,
+  event_status TEXT,
+  stripe_event_id TEXT,
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  stripe_invoice_id TEXT,
+  stripe_checkout_session_id TEXT,
+  amount NUMERIC(10, 2),
+  currency TEXT,
+  period_start TIMESTAMPTZ,
+  period_end TIMESTAMPTZ,
+  occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'system';
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS event_type TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS event_status TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS stripe_event_id TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS stripe_invoice_id TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS stripe_checkout_session_id TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS amount NUMERIC(10, 2);
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS currency TEXT;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS period_start TIMESTAMPTZ;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS period_end TIMESTAMPTZ;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+ALTER TABLE subscription_billing_events
+ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
 ALTER TABLE leads
 ADD COLUMN IF NOT EXISTS estado TEXT NOT NULL DEFAULT 'nuevo';
 
@@ -715,6 +780,8 @@ CREATE INDEX IF NOT EXISTS idx_estudios_consulta_id ON estudios(consulta_id);
 CREATE INDEX IF NOT EXISTS idx_consentimientos_consulta_id ON consentimientos_clinicos(consulta_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entidad ON audit_log(entidad, entidad_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_usuario_id ON audit_log(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_billing_events_usuario_id ON subscription_billing_events(usuario_id, occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_subscription_billing_events_stripe_event_id ON subscription_billing_events(stripe_event_id);
 CREATE INDEX IF NOT EXISTS idx_solicitudes_arco_paciente_id ON solicitudes_arco(paciente_id);
 CREATE INDEX IF NOT EXISTS idx_solicitudes_arco_tipo ON solicitudes_arco(tipo);
 CREATE INDEX IF NOT EXISTS idx_cie10_descripcion ON cie10(descripcion);

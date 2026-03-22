@@ -90,6 +90,16 @@ const paymentStatusOptions = [
   { value: "offline", label: "Offline" },
 ];
 
+const billingEventLabels = {
+  checkout_session_created: "Checkout iniciado",
+  checkout_completed: "Checkout completado",
+  billing_portal_created: "Portal de facturacion abierto",
+  invoice_paid: "Factura pagada",
+  invoice_payment_failed: "Pago fallido",
+  subscription_updated: "Suscripcion actualizada",
+  subscription_deleted: "Suscripcion cancelada",
+};
+
 const toDateTimeLocal = (value) => {
   if (!value) return "";
 
@@ -180,6 +190,9 @@ export default function OwnerConsolePage({
   configSuccessMessage,
   onUpdateLead,
   onUpdateDoctor,
+  doctorBillingHistory,
+  billingHistoryLoadingId,
+  onLoadDoctorBillingHistory,
 }) {
   const [loginForm, setLoginForm] = useState(defaultOwnerLogin);
   const [doctorForm, setDoctorForm] = useState(defaultDoctorForm);
@@ -282,11 +295,24 @@ export default function OwnerConsolePage({
   };
 
   const toggleDoctorExpanded = (doctorId) => {
+    const nextExpanded = !expandedDoctorIds[doctorId];
     setExpandedDoctorIds((prev) => ({
       ...prev,
-      [doctorId]: !prev[doctorId],
+      [doctorId]: nextExpanded,
     }));
+
+    if (nextExpanded && !doctorBillingHistory?.[doctorId]) {
+      onLoadDoctorBillingHistory(doctorId);
+    }
   };
+
+  const formatBillingAmount = (item) => {
+    if (item?.amount === null || item?.amount === undefined) return "Sin monto";
+    const currency = item?.currency || "MXN";
+    return `${currency} ${Number(item.amount).toFixed(2)}`;
+  };
+
+  const getBillingEventLabel = (value) => billingEventLabels[value] || value || "Evento";
 
   if (!isReady) {
     return (
@@ -766,6 +792,8 @@ export default function OwnerConsolePage({
                 const draft = doctorDrafts[doctor.id] || createDoctorDraft(doctor);
                 const isSavingDoctor = updatingDoctorId === doctor.id;
                 const isExpanded = Boolean(expandedDoctorIds[doctor.id]);
+                const billingHistory = doctorBillingHistory?.[doctor.id] || [];
+                const loadingBillingHistory = billingHistoryLoadingId === doctor.id;
 
                 return (
                   <div key={doctor.id} className="rounded-[2rem] border border-slate-200 bg-slate-50 p-5">
@@ -1194,6 +1222,54 @@ export default function OwnerConsolePage({
 
                     {isExpanded ? (
                       <>
+                        <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-slate-900">Historial de facturacion</p>
+                            <button
+                              type="button"
+                              onClick={() => onLoadDoctorBillingHistory(doctor.id)}
+                              disabled={loadingBillingHistory}
+                              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-60"
+                            >
+                              {loadingBillingHistory ? "Actualizando..." : "Actualizar historial"}
+                            </button>
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            {loadingBillingHistory && billingHistory.length === 0 ? (
+                              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+                                Cargando historial...
+                              </div>
+                            ) : billingHistory.length === 0 ? (
+                              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+                                Aun no hay eventos de facturacion registrados.
+                              </div>
+                            ) : (
+                              billingHistory.map((item) => (
+                                <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                  <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
+                                      <p className="text-sm font-black text-slate-800">
+                                        {getBillingEventLabel(item.event_type)} {item.event_status ? `• ${item.event_status}` : ""}
+                                      </p>
+                                      <p className="mt-1 text-xs font-bold text-slate-500">
+                                        {formatDateTime(item.occurred_at)} • {item.source}
+                                      </p>
+                                    </div>
+
+                                    <div className="text-sm font-black text-slate-700">{formatBillingAmount(item)}</div>
+                                  </div>
+
+                                  <div className="mt-2 text-xs font-bold text-slate-500">
+                                    {item.stripe_invoice_id ? `Invoice: ${item.stripe_invoice_id} • ` : ""}
+                                    {item.stripe_subscription_id ? `Sub: ${item.stripe_subscription_id}` : "Sin suscripcion Stripe"}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
                         <label className="mt-4 block space-y-1.5">
                           <span className="text-[10px] font-black uppercase text-slate-500">Notas internas SaaS</span>
                           <textarea

@@ -65,6 +65,16 @@ const billingCycleLabels = {
   custom: "personalizado",
 };
 
+const billingEventLabels = {
+  checkout_session_created: "Checkout iniciado",
+  checkout_completed: "Checkout completado",
+  billing_portal_created: "Portal de facturacion abierto",
+  invoice_paid: "Factura pagada",
+  invoice_payment_failed: "Pago fallido",
+  subscription_updated: "Suscripcion actualizada",
+  subscription_deleted: "Suscripcion cancelada",
+};
+
 export default function SettingsView({
   clinicConfig,
   setClinicConfig,
@@ -159,8 +169,10 @@ export default function SettingsView({
   const getAccessStatusLabel = (value) => accessStatusLabels[value] || value || "Pendiente";
   const getPaymentStatusLabel = (value) => paymentStatusLabels[value] || value || "Sin registro";
   const getBillingCycleLabel = (value) => billingCycleLabels[value] || value || "mensual";
+  const getBillingEventLabel = (value) => billingEventLabels[value] || value || "Evento";
   const hasStripeCustomer = Boolean(billingProfile?.stripe_customer_id);
   const hasActiveSubscription = ["active", "trialing"].includes(String(billingProfile?.subscription_status || ""));
+  const billingHistory = billingProfile?.billing_history || [];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -300,6 +312,26 @@ export default function SettingsView({
                   >
                     Administrar facturacion
                   </button>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-white p-5">
+                  <p className="text-sm font-black text-slate-900">Historial reciente</p>
+                  <div className="mt-4 space-y-3">
+                    {billingHistory.length === 0 ? (
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+                        Aun no hay movimientos de facturacion registrados.
+                      </div>
+                    ) : (
+                      billingHistory.slice(0, 6).map((item) => (
+                        <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                          <p className="text-sm font-black text-slate-800">
+                            {getBillingEventLabel(item.event_type)} {item.event_status ? `• ${item.event_status}` : ""}
+                          </p>
+                          <p className="mt-1 text-xs font-bold text-slate-500">{formatDateTime(item.occurred_at)}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </>
             ) : null}

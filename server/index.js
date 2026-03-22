@@ -333,6 +333,126 @@ const findDoctorByStripeRefs = async (db, { customerId, subscriptionId, userId }
   return null;
 };
 
+const serializeStripeObject = (value) => {
+  try {
+    return JSON.parse(JSON.stringify(value ?? {}));
+  } catch {
+    return {};
+  }
+};
+
+const createBillingHistoryEntry = async (db, {
+  userId,
+  source = "system",
+  eventType,
+  eventStatus = null,
+  stripeEventId = null,
+  stripeCustomerId = null,
+  stripeSubscriptionId = null,
+  stripeInvoiceId = null,
+  stripeCheckoutSessionId = null,
+  amount = null,
+  currency = null,
+  periodStart = null,
+  periodEnd = null,
+  occurredAt = null,
+  payload = {},
+}) => {
+  if (!userId || !eventType) return null;
+
+  const result = await db.query(
+    `INSERT INTO subscription_billing_events (
+      usuario_id,
+      source,
+      event_type,
+      event_status,
+      stripe_event_id,
+      stripe_customer_id,
+      stripe_subscription_id,
+      stripe_invoice_id,
+      stripe_checkout_session_id,
+      amount,
+      currency,
+      period_start,
+      period_end,
+      occurred_at,
+      payload
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, COALESCE($14, NOW()), $15::jsonb)
+    RETURNING
+      id,
+      usuario_id,
+      source,
+      event_type,
+      event_status,
+      stripe_event_id,
+      stripe_customer_id,
+      stripe_subscription_id,
+      stripe_invoice_id,
+      stripe_checkout_session_id,
+      amount,
+      currency,
+      period_start,
+      period_end,
+      occurred_at,
+      payload,
+      created_at`,
+    [
+      userId,
+      source,
+      eventType,
+      eventStatus,
+      stripeEventId,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      stripeInvoiceId,
+      stripeCheckoutSessionId,
+      amount,
+      currency ? String(currency).toUpperCase() : null,
+      periodStart,
+      periodEnd,
+      occurredAt,
+      JSON.stringify(payload || {}),
+    ]
+  );
+
+  return result.rows[0];
+};
+
+const getBillingHistoryForUser = async (db, userId, limit = 25) => {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 25, 200));
+  const result = await db.query(
+    `SELECT
+       id,
+       usuario_id,
+       source,
+       event_type,
+       event_status,
+       stripe_event_id,
+       stripe_customer_id,
+       stripe_subscription_id,
+       stripe_invoice_id,
+       stripe_checkout_session_id,
+       amount,
+       currency,
+       period_start,
+       period_end,
+       occurred_at,
+       payload,
+       created_at
+     FROM subscription_billing_events
+     WHERE usuario_id = $1
+     ORDER BY occurred_at DESC, id DESC
+     LIMIT $2`,
+    [userId, safeLimit]
+  );
+
+  return result.rows.map((row) => ({
+    ...row,
+    amount: row.amount === null || row.amount === undefined ? null : Number(row.amount),
+  }));
+};
+
 const normalizeDoctorPlatformProfile = (doctor) => ({
   id: doctor.id,
   nombre: doctor.nombre,
@@ -1109,12 +1229,19 @@ app.get("/api/billing/me", requireAuth, requireDoctorAccess, asyncHandler(async 
   }
 
   const doctor = result.rows[0];
+  const billingHistory = await getBillingHistoryForUser(pool, req.user.id, 20);
 
   res.json({
     ...normalizeDoctorPlatformProfile(doctor),
     access_summary: buildDoctorAccessSummary(doctor),
     stripe_publishable_key_configured: Boolean(stripePublishableKey),
+    billing_history: billingHistory,
   });
+}));
+
+app.get("/api/billing/me/history", requireAuth, requireDoctorAccess, asyncHandler(async (req, res) => {
+  const history = await getBillingHistoryForUser(pool, req.user.id, req.query?.limit || 50);
+  res.json(history);
 }));
 
 app.post("/api/billing/create-checkout-session", requireAuth, requireDoctorAccess, asyncHandler(async (req, res) => {
@@ -1127,7 +1254,9 @@ app.post("/api/billing/create-checkout-session", requireAuth, requireDoctorAcces
        email,
        stripe_customer_id,
        stripe_subscription_id,
-       subscription_status
+       subscription_status,
+       billing_amount,
+       billing_currency
      FROM usuarios
      WHERE id = $1`,
     [req.user.id]
@@ -1194,6 +1323,23 @@ app.post("/api/billing/create-checkout-session", requireAuth, requireDoctorAcces
     allow_promotion_codes: false,
   });
 
+  await createBillingHistoryEntry(pool, {
+    userId: doctor.id,
+    source: "app",
+    eventType: "checkout_session_created",
+    eventStatus: "pending",
+    stripeCustomerId: customerId,
+    stripeCheckoutSessionId: session.id,
+    amount: doctor.billing_amount,
+    currency: doctor.billing_currency || "MXN",
+    occurredAt: new Date().toISOString(),
+    payload: {
+      session_id: session.id,
+      checkout_url: session.url,
+      trial_days: stripeTrialDays,
+    },
+  });
+
   res.json({
     url: session.url,
     session_id: session.id,
@@ -1220,6 +1366,18 @@ app.post("/api/billing/create-portal-session", requireAuth, requireDoctorAccess,
   const session = await stripe.billingPortal.sessions.create({
     customer: result.rows[0].stripe_customer_id,
     return_url: `${getStripeBaseUrl(req)}/dashboard#billing-portal`,
+  });
+
+  await createBillingHistoryEntry(pool, {
+    userId: req.user.id,
+    source: "app",
+    eventType: "billing_portal_created",
+    eventStatus: "ready",
+    stripeCustomerId: result.rows[0].stripe_customer_id,
+    occurredAt: new Date().toISOString(),
+    payload: {
+      portal_url: session.url,
+    },
   });
 
   res.json({
@@ -1533,6 +1691,35 @@ app.post("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =
   });
 }));
 
+app.get("/api/owner/doctors/:id/billing-history", requireOwnerAuth, asyncHandler(async (req, res) => {
+  const doctorId = Number(req.params.id);
+
+  if (!Number.isInteger(doctorId) || doctorId <= 0) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Doctor invalido",
+    });
+  }
+
+  const doctorResult = await pool.query(
+    `SELECT id
+     FROM usuarios
+     WHERE id = $1
+       AND rol IN ('admin', 'medico')`,
+    [doctorId]
+  );
+
+  if (doctorResult.rowCount === 0) {
+    return res.status(404).json({
+      error: "not_found",
+      message: "Medico no encontrado",
+    });
+  }
+
+  const history = await getBillingHistoryForUser(pool, doctorId, req.query?.limit || 50);
+  res.json(history);
+}));
+
 app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
   if (!stripe || !stripeWebhookSecret) {
     return res.status(503).json({
@@ -1575,6 +1762,26 @@ app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
         billing_last_payment_status: "paid",
         billing_last_payment_at: new Date().toISOString(),
       });
+      await createBillingHistoryEntry(pool, {
+        userId: doctor.id,
+        source: "stripe",
+        eventType: "checkout_completed",
+        eventStatus: session.payment_status || subscription.status,
+        stripeEventId: event.id,
+        stripeCustomerId: session.customer,
+        stripeSubscriptionId: session.subscription,
+        stripeCheckoutSessionId: session.id,
+        amount: typeof session.amount_total === "number" ? Number((session.amount_total / 100).toFixed(2)) : null,
+        currency: session.currency || null,
+        periodStart: subscription.current_period_start
+          ? new Date(subscription.current_period_start * 1000).toISOString()
+          : null,
+        periodEnd: subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : null,
+        occurredAt: new Date((event.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+        payload: serializeStripeObject(session),
+      });
     }
   }
 
@@ -1593,6 +1800,28 @@ app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
           ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
           : new Date().toISOString(),
       });
+      await createBillingHistoryEntry(pool, {
+        userId: doctor.id,
+        source: "stripe",
+        eventType: "invoice_paid",
+        eventStatus: invoice.status || "paid",
+        stripeEventId: event.id,
+        stripeCustomerId: invoice.customer,
+        stripeSubscriptionId: invoice.subscription,
+        stripeInvoiceId: invoice.id,
+        amount: typeof invoice.amount_paid === "number" ? Number((invoice.amount_paid / 100).toFixed(2)) : null,
+        currency: invoice.currency || null,
+        periodStart: invoice.lines?.data?.[0]?.period?.start
+          ? new Date(invoice.lines.data[0].period.start * 1000).toISOString()
+          : null,
+        periodEnd: invoice.lines?.data?.[0]?.period?.end
+          ? new Date(invoice.lines.data[0].period.end * 1000).toISOString()
+          : null,
+        occurredAt: invoice.status_transitions?.paid_at
+          ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+          : new Date((event.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+        payload: serializeStripeObject(invoice),
+      });
     }
   }
 
@@ -1609,6 +1838,26 @@ app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
         billing_last_payment_status: "failed",
         billing_last_payment_at: new Date().toISOString(),
       });
+      await createBillingHistoryEntry(pool, {
+        userId: doctor.id,
+        source: "stripe",
+        eventType: "invoice_payment_failed",
+        eventStatus: invoice.status || "failed",
+        stripeEventId: event.id,
+        stripeCustomerId: invoice.customer,
+        stripeSubscriptionId: invoice.subscription,
+        stripeInvoiceId: invoice.id,
+        amount: typeof invoice.amount_due === "number" ? Number((invoice.amount_due / 100).toFixed(2)) : null,
+        currency: invoice.currency || null,
+        periodStart: invoice.lines?.data?.[0]?.period?.start
+          ? new Date(invoice.lines.data[0].period.start * 1000).toISOString()
+          : null,
+        periodEnd: invoice.lines?.data?.[0]?.period?.end
+          ? new Date(invoice.lines.data[0].period.end * 1000).toISOString()
+          : null,
+        occurredAt: new Date((event.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+        payload: serializeStripeObject(invoice),
+      });
     }
   }
 
@@ -1622,6 +1871,27 @@ app.post("/api/stripe/webhook", asyncHandler(async (req, res) => {
 
     if (doctor) {
       await syncDoctorStripeSubscription(pool, doctor.id, subscription);
+      await createBillingHistoryEntry(pool, {
+        userId: doctor.id,
+        source: "stripe",
+        eventType: event.type === "customer.subscription.deleted" ? "subscription_deleted" : "subscription_updated",
+        eventStatus: subscription.status || null,
+        stripeEventId: event.id,
+        stripeCustomerId: subscription.customer,
+        stripeSubscriptionId: subscription.id,
+        amount: typeof subscription.items?.data?.[0]?.price?.unit_amount === "number"
+          ? Number((subscription.items.data[0].price.unit_amount / 100).toFixed(2))
+          : null,
+        currency: subscription.items?.data?.[0]?.price?.currency || null,
+        periodStart: subscription.current_period_start
+          ? new Date(subscription.current_period_start * 1000).toISOString()
+          : null,
+        periodEnd: subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : null,
+        occurredAt: new Date((event.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+        payload: serializeStripeObject(subscription),
+      });
     }
   }
 

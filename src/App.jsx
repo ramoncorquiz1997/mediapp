@@ -263,6 +263,8 @@ export default function App() {
   const [billingProfileError, setBillingProfileError] = useState("");
   const [billingActionLoading, setBillingActionLoading] = useState(false);
   const [updatingOwnerDoctorId, setUpdatingOwnerDoctorId] = useState(null);
+  const [ownerDoctorBillingHistory, setOwnerDoctorBillingHistory] = useState({});
+  const [ownerDoctorBillingHistoryLoadingId, setOwnerDoctorBillingHistoryLoadingId] = useState(null);
   const nextExternalId = getNextExternalId(patients);
 
   const navigate = (target, options = {}) => {
@@ -693,6 +695,29 @@ export default function App() {
       return null;
     } finally {
       setUpdatingOwnerDoctorId(null);
+    }
+  };
+
+  const loadOwnerDoctorBillingHistory = async (doctorId) => {
+    try {
+      setOwnerDoctorBillingHistoryLoadingId(doctorId);
+      const response = await ownerApiFetch(`/api/owner/doctors/${doctorId}/billing-history?limit=20`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo cargar historial de facturacion (${response.status})`);
+      }
+
+      setOwnerDoctorBillingHistory((prev) => ({
+        ...prev,
+        [doctorId]: data,
+      }));
+      return data;
+    } catch (error) {
+      setCreateOwnerDoctorError(error.message || "No se pudo cargar el historial de facturacion");
+      return null;
+    } finally {
+      setOwnerDoctorBillingHistoryLoadingId(null);
     }
   };
 
@@ -1197,6 +1222,9 @@ export default function App() {
           configSuccessMessage={ownerConfigSuccessMessage}
           onUpdateLead={updateOwnerLead}
           onUpdateDoctor={updateOwnerDoctor}
+          doctorBillingHistory={ownerDoctorBillingHistory}
+          billingHistoryLoadingId={ownerDoctorBillingHistoryLoadingId}
+          onLoadDoctorBillingHistory={loadOwnerDoctorBillingHistory}
         />
       );
     }
@@ -1253,6 +1281,9 @@ export default function App() {
         onUpdateLead={updateOwnerLead}
         updatingDoctorId={updatingOwnerDoctorId}
         onUpdateDoctor={updateOwnerDoctor}
+        doctorBillingHistory={ownerDoctorBillingHistory}
+        billingHistoryLoadingId={ownerDoctorBillingHistoryLoadingId}
+        onLoadDoctorBillingHistory={loadOwnerDoctorBillingHistory}
       />
     );
   }
