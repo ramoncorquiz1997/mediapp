@@ -16,6 +16,7 @@ import NewConsultationModal from "./modals/NewConsultationModal";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import OwnerConsolePage from "./pages/OwnerConsolePage";
+import RegisterDoctorPage from "./pages/RegisterDoctorPage";
 
 import { defaultNewConsultation } from "./data/defaults";
 import { apiFetch, ownerApiFetch } from "./lib/api";
@@ -188,10 +189,14 @@ export default function App() {
   const publicAgendaMatch = pathname.match(/^\/agenda\/([^/]+)\/?$/);
   const publicAgendaSlug = publicAgendaMatch?.[1] ? decodeURIComponent(publicAgendaMatch[1]) : null;
   const isOwnerConsoleRoute = pathname === OWNER_CONSOLE_PATH;
+  const isDoctorRegisterRoute = pathname === "/registro-medico";
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(null);
   const [authError, setAuthError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isRegisteringDoctor, setIsRegisteringDoctor] = useState(false);
+  const [doctorRegistrationError, setDoctorRegistrationError] = useState("");
+  const [doctorRegistrationSuccessMessage, setDoctorRegistrationSuccessMessage] = useState("");
   const [ownerReady, setOwnerReady] = useState(false);
   const [ownerUser, setOwnerUser] = useState(null);
   const [ownerAuthError, setOwnerAuthError] = useState("");
@@ -439,6 +444,38 @@ export default function App() {
       setAuthError(error.message || "No se pudo iniciar sesion");
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  const registerDoctor = async (payload) => {
+    try {
+      setIsRegisteringDoctor(true);
+      setDoctorRegistrationError("");
+      setDoctorRegistrationSuccessMessage("");
+
+      const response = await fetch("/api/auth/register-doctor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `No se pudo enviar la solicitud (${response.status})`);
+      }
+
+      setDoctorRegistrationSuccessMessage(
+        data.message || "Recibimos tu solicitud. Te avisaremos en cuanto tu cuenta este verificada."
+      );
+      return true;
+    } catch (error) {
+      setDoctorRegistrationError(error.message || "No se pudo enviar la solicitud");
+      return false;
+    } finally {
+      setIsRegisteringDoctor(false);
     }
   };
 
@@ -776,7 +813,7 @@ export default function App() {
   }, [selectedPatient, authUser]);
 
   useEffect(() => {
-    if (!authReady || patientPortalToken || publicAgendaSlug || isOwnerConsoleRoute) return;
+    if (!authReady || patientPortalToken || publicAgendaSlug || isOwnerConsoleRoute || isDoctorRegisterRoute) return;
 
     if (authUser && (pathname === "/" || pathname === "/login")) {
       navigate("/dashboard", { replace: true });
@@ -786,7 +823,7 @@ export default function App() {
     if (!authUser && pathname !== "/" && pathname !== "/login") {
       navigate("/login", { replace: true });
     }
-  }, [authReady, authUser, pathname, patientPortalToken, publicAgendaSlug, isOwnerConsoleRoute]);
+  }, [authReady, authUser, pathname, patientPortalToken, publicAgendaSlug, isOwnerConsoleRoute, isDoctorRegisterRoute]);
 
   const openPatientRecord = (patient, options = {}) => {
     apiFetch(`/api/pacientes/${patient.id}/open-record`, {
@@ -1250,6 +1287,18 @@ export default function App() {
 
   if (publicAgendaSlug) {
     return <PublicBookingView slug={publicAgendaSlug} />;
+  }
+
+  if (isDoctorRegisterRoute) {
+    return (
+      <RegisterDoctorPage
+        isSubmitting={isRegisteringDoctor}
+        error={doctorRegistrationError}
+        successMessage={doctorRegistrationSuccessMessage}
+        onSubmit={registerDoctor}
+        onNavigate={navigate}
+      />
+    );
   }
 
   if (isOwnerConsoleRoute) {

@@ -256,6 +256,11 @@ const syncDoctorStripeSubscription = async (db, userId, subscription, extraUpdat
        id,
        nombre,
        email,
+       telefono,
+       ciudad_estado,
+       onboarding_clinic_name,
+       onboarding_notes,
+       verification_requested_at,
        slug,
        rol,
        cedula_profesional,
@@ -547,6 +552,11 @@ const normalizeDoctorPlatformProfile = (doctor) => ({
   id: doctor.id,
   nombre: doctor.nombre,
   email: doctor.email,
+  telefono: doctor.telefono || "",
+  ciudad_estado: doctor.ciudad_estado || "",
+  onboarding_clinic_name: doctor.onboarding_clinic_name || "",
+  onboarding_notes: doctor.onboarding_notes || "",
+  verification_requested_at: doctor.verification_requested_at,
   slug: doctor.slug,
   rol: doctor.rol,
   cedula_profesional: doctor.cedula_profesional,
@@ -1121,6 +1131,7 @@ const requireAuth = asyncHandler(async (req, res, next) => {
 
   const userResult = await pool.query(
     `SELECT id, nombre, email, rol, cedula_profesional, activo,
+            telefono, ciudad_estado, onboarding_clinic_name, onboarding_notes, verification_requested_at,
             verification_status, subscription_status, access_status,
             billing_current_period_end, billing_trial_ends_at, manual_access_until
      FROM usuarios
@@ -1196,6 +1207,7 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
 
   const result = await pool.query(
     `SELECT id, nombre, email, password_hash, rol, cedula_profesional, activo,
+            telefono, ciudad_estado, onboarding_clinic_name, onboarding_notes, verification_requested_at,
             verification_status, subscription_status, access_status,
             billing_current_period_end, billing_trial_ends_at, manual_access_until
      FROM usuarios
@@ -1235,6 +1247,20 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
     });
   }
 
+  if (user.verification_status === "pending") {
+    return res.status(403).json({
+      error: "account_pending_verification",
+      message: "Tu cuenta esta en revision. En cuanto verifiquemos tus datos medicos, te avisaremos para que puedas entrar.",
+    });
+  }
+
+  if (user.verification_status === "rejected") {
+    return res.status(403).json({
+      error: "account_rejected",
+      message: "Tu solicitud sigue necesitando revision. Si crees que fue un error, contáctanos y con gusto lo revisamos contigo.",
+    });
+  }
+
   const token = signJwt({
     sub: user.id,
     email: user.email,
@@ -1258,6 +1284,8 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
       email: user.email,
       rol: user.rol,
       cedula_profesional: user.cedula_profesional,
+      telefono: user.telefono,
+      ciudad_estado: user.ciudad_estado,
       verification_status: user.verification_status,
       subscription_status: user.subscription_status,
       access_status: user.access_status,
@@ -1265,6 +1293,116 @@ app.post("/api/auth/login", asyncHandler(async (req, res) => {
       billing_trial_ends_at: user.billing_trial_ends_at,
       manual_access_until: user.manual_access_until,
     },
+  });
+}));
+
+app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
+  const nombre = String(req.body?.nombre || "").trim();
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "").trim();
+  const telefono = normalizePhone(req.body?.telefono || "");
+  const cedula = String(req.body?.cedula_profesional || "").trim();
+  const especialidad = String(req.body?.especialidad || "").trim();
+  const ciudadEstado = String(req.body?.ciudad_estado || "").trim();
+  const clinicName = String(req.body?.nombre_consultorio || "").trim();
+  const onboardingNotes = String(req.body?.notas_onboarding || "").trim();
+  const slugBase = email.split("@")[0] || `medico-${Date.now()}`;
+  const slug = slugBase
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || `medico-${Date.now()}`;
+
+  if (!nombre || !email || !password || !cedula || !telefono || !especialidad || !ciudadEstado) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "Nombre, correo, telefono, cedula, especialidad, ciudad y password son obligatorios",
+    });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({
+      error: "validation_error",
+      message: "La contrasena debe tener al menos 8 caracteres",
+    });
+  }
+
+  const licenseValidation = await fetchSepLicenseData(cedula);
+
+  if (!licenseValidation.valid) {
+    return res.status(400).json({
+      error: "license_validation_failed",
+      message: licenseValidation.message || "No se pudo validar la cedula en SEP",
+    });
+  }
+
+  if (!licenseValidation.isMedicalDoctor) {
+    return res.status(400).json({
+      error: "license_not_medical",
+      message: "La cedula existe, pero no corresponde a una profesion medica permitida",
+    });
+  }
+
+  const result = await pool.query(
+    `INSERT INTO usuarios (
+       nombre,
+       email,
+       telefono,
+       ciudad_estado,
+       onboarding_clinic_name,
+       onboarding_notes,
+       verification_requested_at,
+       slug,
+       password_hash,
+       rol,
+       cedula_profesional,
+       telefono,
+       ciudad_estado,
+       onboarding_clinic_name,
+       onboarding_notes,
+       verification_requested_at,
+       verification_status,
+       verification_notes,
+       subscription_status,
+       access_status,
+       saas_notes
+     )
+     VALUES ($1, $2, $3, $4, 'medico', $5, $6, $7, $8, $9, NOW(), 'pending', $10, 'not_started', 'pending_verification', $11)
+     RETURNING id, nombre, email, telefono, ciudad_estado, onboarding_clinic_name, verification_status, verification_requested_at`,
+    [
+      nombre,
+      email,
+      slug,
+      hashPassword(password),
+      cedula,
+      telefono,
+      ciudadEstado,
+      clinicName || null,
+      onboardingNotes || null,
+      `Solicitud recibida. Profesion SEP: ${licenseValidation.profession || especialidad}`,
+      especialidad || null,
+    ]
+  );
+
+  const createdDoctor = result.rows[0];
+
+  await createBillingHistoryEntry(pool, {
+    userId: createdDoctor.id,
+    source: "app",
+    eventType: "verification_requested",
+    eventStatus: "pending",
+    occurredAt: new Date().toISOString(),
+    payload: {
+      especialidad,
+      ciudad_estado: ciudadEstado,
+      clinic_name: clinicName,
+    },
+  });
+
+  res.status(201).json({
+    ok: true,
+    doctor: createdDoctor,
+    message: "Recibimos tu solicitud. Vamos a revisar tus datos medicos y te avisaremos en cuanto tu cuenta este lista.",
   });
 }));
 
@@ -1278,6 +1416,11 @@ app.get("/api/billing/me", requireAuth, requireDoctorAccess, asyncHandler(async 
        id,
        nombre,
        email,
+       telefono,
+       ciudad_estado,
+       onboarding_clinic_name,
+       onboarding_notes,
+       verification_requested_at,
        slug,
        rol,
        cedula_profesional,
@@ -1588,6 +1731,11 @@ app.get("/api/owner/doctors", requireOwnerAuth, asyncHandler(async (req, res) =>
        id,
        nombre,
        email,
+       telefono,
+       ciudad_estado,
+       onboarding_clinic_name,
+       onboarding_notes,
+       verification_requested_at,
        slug,
        rol,
        cedula_profesional,
@@ -2054,12 +2202,17 @@ app.put("/api/owner/doctors/:id", requireOwnerAuth, asyncHandler(async (req, res
   const verificationStatus = verificationStatuses.includes(String(req.body?.verification_status || ""))
     ? String(req.body.verification_status)
     : currentDoctor.verification_status;
+  const requestedAccessStatus = req.body?.access_status
+    ? accessStatuses.includes(String(req.body.access_status)) ? String(req.body.access_status) : currentDoctor.access_status
+    : null;
+  const resolvedAccessStatus = verificationStatus === "approved" && currentDoctor.access_status === "pending_verification"
+    ? (!requestedAccessStatus || requestedAccessStatus === currentDoctor.access_status ? "active" : requestedAccessStatus)
+    : verificationStatus === "rejected"
+      ? (!requestedAccessStatus || requestedAccessStatus === currentDoctor.access_status ? "blocked" : requestedAccessStatus)
+      : requestedAccessStatus || currentDoctor.access_status;
   const subscriptionStatus = subscriptionStatuses.includes(String(req.body?.subscription_status || ""))
     ? String(req.body.subscription_status)
     : currentDoctor.subscription_status;
-  const accessStatus = accessStatuses.includes(String(req.body?.access_status || ""))
-    ? String(req.body.access_status)
-    : currentDoctor.access_status;
   const billingCycle = billingCycles.includes(String(req.body?.billing_cycle || ""))
     ? String(req.body.billing_cycle)
     : currentDoctor.billing_cycle;
@@ -2075,37 +2228,46 @@ app.put("/api/owner/doctors/:id", requireOwnerAuth, asyncHandler(async (req, res
     `UPDATE usuarios
      SET nombre = $1,
          email = $2,
-         slug = $3,
-         rol = $4,
-         cedula_profesional = $5,
-         activo = $6,
-         verification_status = $7,
-         verification_notes = $8,
-         verification_checked_at = CASE WHEN $9 THEN NOW() ELSE verification_checked_at END,
-         verification_checked_by_name = CASE WHEN $9 THEN $10 ELSE verification_checked_by_name END,
-         subscription_status = $11,
-         billing_plan_code = $12,
-         billing_cycle = $13,
-         billing_amount = $14,
-         billing_currency = $15,
-         stripe_customer_id = $16,
-         stripe_subscription_id = $17,
-         billing_current_period_start = $18,
-         billing_current_period_end = $19,
-         billing_trial_ends_at = $20,
-         billing_last_payment_at = $21,
-         billing_last_payment_status = $22,
-         billing_cancel_at_period_end = $23,
-         manual_access_until = $24,
-         manual_billing_override = $25,
-         manual_override_reason = $26,
-         access_status = $27,
-         saas_notes = $28
-     WHERE id = $29
+         telefono = $3,
+         ciudad_estado = $4,
+         onboarding_clinic_name = $5,
+         onboarding_notes = $6,
+         slug = $7,
+         rol = $8,
+         cedula_profesional = $9,
+         activo = $10,
+         verification_status = $11,
+         verification_notes = $12,
+         verification_checked_at = CASE WHEN $13 THEN NOW() ELSE verification_checked_at END,
+         verification_checked_by_name = CASE WHEN $13 THEN $14 ELSE verification_checked_by_name END,
+         subscription_status = $15,
+         billing_plan_code = $16,
+         billing_cycle = $17,
+         billing_amount = $18,
+         billing_currency = $19,
+         stripe_customer_id = $20,
+         stripe_subscription_id = $21,
+         billing_current_period_start = $22,
+         billing_current_period_end = $23,
+         billing_trial_ends_at = $24,
+         billing_last_payment_at = $25,
+         billing_last_payment_status = $26,
+         billing_cancel_at_period_end = $27,
+         manual_access_until = $28,
+         manual_billing_override = $29,
+         manual_override_reason = $30,
+         access_status = $31,
+         saas_notes = $32
+     WHERE id = $33
      RETURNING
        id,
        nombre,
        email,
+       telefono,
+       ciudad_estado,
+       onboarding_clinic_name,
+       onboarding_notes,
+       verification_requested_at,
        slug,
        rol,
        cedula_profesional,
@@ -2137,6 +2299,10 @@ app.put("/api/owner/doctors/:id", requireOwnerAuth, asyncHandler(async (req, res
     [
       String(req.body?.nombre ?? currentDoctor.nombre).trim() || currentDoctor.nombre,
       String(req.body?.email ?? currentDoctor.email).trim().toLowerCase() || currentDoctor.email,
+      String(req.body?.telefono ?? currentDoctor.telefono ?? "").trim() || null,
+      String(req.body?.ciudad_estado ?? currentDoctor.ciudad_estado ?? "").trim() || null,
+      String(req.body?.onboarding_clinic_name ?? currentDoctor.onboarding_clinic_name ?? "").trim() || null,
+      String(req.body?.onboarding_notes ?? currentDoctor.onboarding_notes ?? "").trim() || null,
       String(req.body?.slug ?? currentDoctor.slug ?? "").trim().toLowerCase() || currentDoctor.slug,
       ["admin", "medico"].includes(String(req.body?.rol || "")) ? String(req.body.rol) : currentDoctor.rol,
       String(req.body?.cedula_profesional ?? currentDoctor.cedula_profesional ?? "").trim() || null,
@@ -2171,7 +2337,7 @@ app.put("/api/owner/doctors/:id", requireOwnerAuth, asyncHandler(async (req, res
         : parseOptionalDateTime(req.body?.manual_access_until) ?? currentDoctor.manual_access_until,
       Boolean(req.body?.manual_billing_override ?? currentDoctor.manual_billing_override),
       String(req.body?.manual_override_reason ?? currentDoctor.manual_override_reason ?? "").trim() || null,
-      accessStatus,
+      resolvedAccessStatus,
       String(req.body?.saas_notes ?? currentDoctor.saas_notes ?? "").trim() || null,
       doctorId,
     ]

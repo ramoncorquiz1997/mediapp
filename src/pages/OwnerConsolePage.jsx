@@ -91,6 +91,7 @@ const paymentStatusOptions = [
 ];
 
 const billingEventLabels = {
+  verification_requested: "Solicitud de verificacion",
   checkout_session_created: "Checkout iniciado",
   checkout_completed: "Checkout completado",
   billing_portal_created: "Portal de facturacion abierto",
@@ -153,6 +154,10 @@ const formatDateTime = (value) => {
 const createDoctorDraft = (doctor) => ({
   nombre: doctor.nombre || "",
   email: doctor.email || "",
+  telefono: doctor.telefono || "",
+  ciudad_estado: doctor.ciudad_estado || "",
+  onboarding_clinic_name: doctor.onboarding_clinic_name || "",
+  onboarding_notes: doctor.onboarding_notes || "",
   slug: doctor.slug || "",
   rol: doctor.rol || "medico",
   cedula_profesional: doctor.cedula_profesional || "",
@@ -878,6 +883,36 @@ export default function OwnerConsolePage({
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Telefono</span>
+                            <input
+                              value={draft.telefono}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, telefono: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+
+                          <label className="space-y-1.5">
+                            <span className="text-[10px] font-black uppercase text-slate-500">Ciudad y estado</span>
+                            <input
+                              value={draft.ciudad_estado}
+                              onChange={(e) =>
+                                setDoctorDrafts((prev) => ({
+                                  ...prev,
+                                  [doctor.id]: { ...draft, ciudad_estado: e.target.value },
+                                }))
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                            />
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <label className="space-y-1.5">
                             <span className="text-[10px] font-black uppercase text-slate-500">Slug</span>
                             <input
                               value={draft.slug}
@@ -919,6 +954,24 @@ export default function OwnerConsolePage({
                           />
                           Cuenta habilitada
                         </label>
+
+                        <label className="space-y-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-500">Consultorio solicitado</span>
+                          <input
+                            value={draft.onboarding_clinic_name}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, onboarding_clinic_name: e.target.value },
+                              }))
+                            }
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                          />
+                        </label>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
+                          Solicitud enviada: {formatDateTime(doctor.verification_requested_at)}
+                        </div>
                         </div>
 
                         <div className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4">
@@ -974,6 +1027,21 @@ export default function OwnerConsolePage({
                               setDoctorDrafts((prev) => ({
                                 ...prev,
                                 [doctor.id]: { ...draft, verification_notes: e.target.value },
+                              }))
+                            }
+                            rows={3}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-cyan-500"
+                          />
+                        </label>
+
+                        <label className="space-y-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-500">Notas del solicitante</span>
+                          <textarea
+                            value={draft.onboarding_notes}
+                            onChange={(e) =>
+                              setDoctorDrafts((prev) => ({
+                                ...prev,
+                                [doctor.id]: { ...draft, onboarding_notes: e.target.value },
                               }))
                             }
                             rows={3}

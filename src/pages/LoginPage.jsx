@@ -83,6 +83,18 @@ export default function LoginPage({ onLogin, isLoading, error, onNavigate }) {
           >
             {isLoading ? "Entrando..." : "Entrar al portal medico"}
           </button>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-600">
+            Si aun no tienes cuenta, puedes enviar tu solicitud y revisaremos tus datos medicos antes de activar el acceso.
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate("/registro-medico")}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 font-black text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            Solicitar acceso
+          </button>
         </form>
       </div>
     </div>

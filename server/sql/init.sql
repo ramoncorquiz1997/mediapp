@@ -87,6 +87,11 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash TEXT NOT NULL,
   rol TEXT NOT NULL DEFAULT 'medico',
   cedula_profesional TEXT,
+  telefono TEXT,
+  ciudad_estado TEXT,
+  onboarding_clinic_name TEXT,
+  onboarding_notes TEXT,
+  verification_requested_at TIMESTAMPTZ,
   foto_data_url TEXT,
   verification_status TEXT NOT NULL DEFAULT 'approved',
   verification_notes TEXT,
@@ -136,6 +141,21 @@ ADD COLUMN IF NOT EXISTS slug TEXT;
 
 ALTER TABLE usuarios
 ADD COLUMN IF NOT EXISTS foto_data_url TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS telefono TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS ciudad_estado TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS onboarding_clinic_name TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS onboarding_notes TEXT;
+
+ALTER TABLE usuarios
+ADD COLUMN IF NOT EXISTS verification_requested_at TIMESTAMPTZ;
 
 ALTER TABLE usuarios
 ADD COLUMN IF NOT EXISTS verification_status TEXT NOT NULL DEFAULT 'approved';

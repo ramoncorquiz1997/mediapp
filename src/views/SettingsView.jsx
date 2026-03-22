@@ -66,6 +66,7 @@ const billingCycleLabels = {
 };
 
 const billingEventLabels = {
+  verification_requested: "Solicitud de verificacion",
   checkout_session_created: "Checkout iniciado",
   checkout_completed: "Checkout completado",
   billing_portal_created: "Portal de facturacion abierto",
