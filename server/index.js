@@ -926,7 +926,7 @@ const normalizeWorkingSchedule = (value) => {
   return normalized;
 };
 
-const getClinicConfig = async (db = pool) => {
+const getClinicConfig = async (db = pool, doctorUserId = 1) => {
   const result = await db.query(
     `SELECT
        id,
@@ -940,7 +940,8 @@ const getClinicConfig = async (db = pool) => {
        horario_laboral,
        logo_data_url
      FROM configuracion_consultorio
-     WHERE id = 1`
+     WHERE id = $1`,
+    [doctorUserId]
   );
 
   return {
@@ -2775,7 +2776,6 @@ app.post("/api/portal/:token/cuestionarios", asyncHandler(async (req, res) => {
 
 app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, res) => {
   const { token, id } = req.params;
-  const clinicConfig = await getClinicConfig(pool);
 
   const consultationResult = await pool.query(
     `SELECT
@@ -2786,6 +2786,7 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
        p.fecha_nacimiento,
        p.external_id,
        p.portal_token,
+       p.medico_user_id,
        COALESCE(
          (
            SELECT json_agg(
@@ -2822,6 +2823,7 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
   }
 
   const consultation = consultationResult.rows[0];
+  const clinicConfig = await getClinicConfig(pool, consultation.medico_user_id || 1);
   const patientName = consultation.paciente_nombre_snapshot || consultation.paciente_nombre || "Sin paciente";
   const patientAge =
     consultation.paciente_edad_snapshot ??
@@ -2926,8 +2928,6 @@ app.get("/api/portal/:token/consultas/:id/receta-pdf", asyncHandler(async (req, 
 
 app.get("/api/agenda-publica/:slug", asyncHandler(async (req, res) => {
   const { slug } = req.params;
-  const clinicConfig = await getClinicConfig(pool);
-  applyClinicTimezone(clinicConfig.zona_horaria);
   const doctorResult = await pool.query(
     `SELECT id, nombre, slug, rol, activo, foto_data_url, cedula_profesional
      FROM usuarios
@@ -2946,6 +2946,8 @@ app.get("/api/agenda-publica/:slug", asyncHandler(async (req, res) => {
   }
 
   const doctor = doctorResult.rows[0];
+  const clinicConfig = await getClinicConfig(pool, doctor.id);
+  applyClinicTimezone(clinicConfig.zona_horaria);
   const appointmentsResult = await pool.query(
     `SELECT id, start, duracion, estado
      FROM citas
@@ -3286,14 +3288,14 @@ app.get("/api/dashboard/summary", asyncHandler(async (req, res) => {
 }));
 
 app.get("/api/configuracion-consultorio", asyncHandler(async (req, res) => {
-  const config = await getClinicConfig(pool);
+  const config = await getClinicConfig(pool, req.user.id);
 
   await writeAuditLog(
     pool,
     req.user,
     "read",
     "configuracion_consultorio",
-    1,
+    req.user.id,
     {}
   );
 
@@ -3318,7 +3320,7 @@ app.put("/api/configuracion-consultorio", requireDoctorAccess, asyncHandler(asyn
       id, nombre_consultorio, direccion, telefono, email_contacto,
       cedula_profesional, especialidad, zona_horaria, horario_laboral, logo_data_url
     )
-    VALUES (1, $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10)
     ON CONFLICT (id) DO UPDATE SET
       nombre_consultorio = EXCLUDED.nombre_consultorio,
       direccion = EXCLUDED.direccion,
@@ -3331,6 +3333,7 @@ app.put("/api/configuracion-consultorio", requireDoctorAccess, asyncHandler(asyn
       logo_data_url = EXCLUDED.logo_data_url
     RETURNING id, nombre_consultorio, direccion, telefono, email_contacto, cedula_profesional, especialidad, zona_horaria, horario_laboral, logo_data_url`,
     [
+      req.user.id,
       String(nombre_consultorio || defaultClinicInfo.nombre_consultorio).trim(),
       String(direccion || defaultClinicInfo.direccion).trim(),
       String(telefono || defaultClinicInfo.telefono).trim(),
@@ -3348,7 +3351,7 @@ app.put("/api/configuracion-consultorio", requireDoctorAccess, asyncHandler(asyn
     req.user,
     "update",
     "configuracion_consultorio",
-    1,
+    req.user.id,
     {}
   );
 
@@ -4219,7 +4222,7 @@ app.get("/api/consultas", asyncHandler(async (req, res) => {
 
 app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const clinicConfig = await getClinicConfig(pool);
+  const clinicConfig = await getClinicConfig(pool, req.user.id);
 
   const patientResult = await pool.query(
     `SELECT *
@@ -4447,7 +4450,7 @@ app.get("/api/pacientes/:id/expediente-pdf", asyncHandler(async (req, res) => {
 
 app.get("/api/consultas/:id/receta-pdf", asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const clinicConfig = await getClinicConfig(pool);
+  const clinicConfig = await getClinicConfig(pool, req.user.id);
 
   const consultationResult = await pool.query(
     `SELECT
@@ -5369,8 +5372,8 @@ app.post("/api/citas/:id/review-questionnaire", asyncHandler(async (req, res) =>
 
 app.get("/api/audit-log", requireDoctorAccess, asyncHandler(async (req, res) => {
   const { from, to, accion, entidad, limit } = req.query;
-  const conditions = [];
-  const params = [];
+  const conditions = ["usuario_id = $1"];
+  const params = [req.user.id];
 
   if (from) {
     params.push(from);

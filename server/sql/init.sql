@@ -298,9 +298,11 @@ CREATE TABLE IF NOT EXISTS configuracion_consultorio (
   }'::jsonb,
   logo_data_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT configuracion_consultorio_singleton CHECK (id = 1)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE configuracion_consultorio
+DROP CONSTRAINT IF EXISTS configuracion_consultorio_singleton;
 
 ALTER TABLE configuracion_consultorio
 ADD COLUMN IF NOT EXISTS zona_horaria TEXT NOT NULL DEFAULT 'America/Tijuana';
