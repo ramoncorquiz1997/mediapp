@@ -434,7 +434,7 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-teal-300">Plan unico</p>
                 <h3 className="mt-3 text-3xl font-black">Todo incluido</h3>
                 <div className="mt-5 flex items-end justify-center gap-2 text-center">
-                  <span className="text-5xl font-black text-white">$399</span>
+                  <span className="text-5xl font-black text-white">$499</span>
                   <span className="pb-1 text-base font-black text-slate-300">/ mes</span>
                 </div>
                 <p className="mt-2 text-sm font-bold text-slate-300">IVA incluido</p>
