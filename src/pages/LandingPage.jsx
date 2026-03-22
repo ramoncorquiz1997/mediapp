@@ -1,4 +1,5 @@
 import React from "react";
+import soloLogoMycliniq from "../assets/imagenes/solo_logo_mycliniq.png";
 import {
   Activity,
   ArrowRight,
@@ -179,8 +180,8 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <button type="button" onClick={() => onNavigate("/")} className="flex items-center gap-3 text-left">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-200">
-              <Activity size={22} />
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-teal-200 ring-1 ring-slate-200">
+              <img src={soloLogoMycliniq} alt="MyCliniq" className="h-full w-full object-contain" />
             </div>
             <div>
               <p className="text-xl font-black tracking-tight text-slate-900">MyCliniq</p>
@@ -615,8 +616,8 @@ export default function LandingPage({ onNavigate, initialHash = "" }) {
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-100">
-              <Activity size={22} />
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-teal-100 ring-1 ring-slate-200">
+              <img src={soloLogoMycliniq} alt="MyCliniq" className="h-full w-full object-contain" />
             </div>
             <div>
               <p className="text-xl font-black tracking-tight text-slate-900">MyCliniq</p>

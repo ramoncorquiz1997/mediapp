@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Activity, ArrowLeft, Lock, Mail, ShieldCheck } from "lucide-react";
+import soloLogoMycliniq from "../assets/imagenes/solo_logo_mycliniq.png";
+import { ArrowLeft, Lock, Mail, ShieldCheck } from "lucide-react";
 
 export default function LoginPage({ onLogin, isLoading, error, notice, onNavigate }) {
   const [email, setEmail] = useState("");
@@ -29,8 +30,8 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
           </div>
 
           <div className="mt-5 flex items-center gap-3">
-            <div className="rounded-2xl bg-teal-600 p-3 text-white shadow-lg shadow-teal-100">
-              <Activity size={28} />
+            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-teal-100 ring-1 ring-slate-200">
+              <img src={soloLogoMycliniq} alt="MyCliniq" className="h-full w-full object-contain" />
             </div>
             <div>
               <h1 className="text-3xl font-black tracking-tight text-slate-900">MyCliniq</h1>
