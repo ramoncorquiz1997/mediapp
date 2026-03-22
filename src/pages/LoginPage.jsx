@@ -29,12 +29,14 @@ export default function LoginPage({ onLogin, isLoading, error, notice, onNavigat
             <span>Portal medico</span>
           </div>
 
-          <div className="mt-5 flex items-center gap-3">
-            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-white p-2 shadow-lg shadow-teal-100 ring-1 ring-slate-200">
-              <img src={soloLogoMycliniq} alt="MyCliniq" className="h-full w-full object-contain" />
-            </div>
+          <div className="mt-5 flex items-center gap-4">
+            <img
+              src={soloLogoMycliniq}
+              alt="MyCliniq"
+              className="h-[60px] w-[60px] object-contain drop-shadow-[0_10px_18px_rgba(45,212,191,0.24)]"
+            />
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">MyCliniq</h1>
+              <h1 className="text-[2.05rem] font-black leading-none tracking-[-0.04em] text-slate-900">MyCliniq</h1>
               <p className="text-sm font-bold text-slate-500">Acceso exclusivo para medicos</p>
             </div>
           </div>
