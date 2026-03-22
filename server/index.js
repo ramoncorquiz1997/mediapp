@@ -909,7 +909,7 @@ app.get("/api/auth/me", requireAuth, asyncHandler(async (req, res) => {
   res.json({ user: req.user });
 }));
 
-app.get("/api/billing/me", requireDoctorAccess, asyncHandler(async (req, res) => {
+app.get("/api/billing/me", requireAuth, requireDoctorAccess, asyncHandler(async (req, res) => {
   const result = await pool.query(
     `SELECT
        id,
