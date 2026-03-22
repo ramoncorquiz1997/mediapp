@@ -601,7 +601,7 @@ export default function NewConsultationModal({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-emerald-300/80 uppercase flex items-center">
-                        <Wind size={10} className="mr-1" /> Frecuencia respiratoria (FR) (rpm)
+                        <Wind size={10} className="mr-1" /> Frecuencia respiratoria (FR)
                       </label>
                       <input
                         name="frecuenciaRespiratoria"
