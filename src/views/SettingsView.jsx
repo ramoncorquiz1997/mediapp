@@ -57,6 +57,14 @@ const paymentStatusLabels = {
   offline: "Offline",
 };
 
+const billingCycleLabels = {
+  monthly: "mensual",
+  quarterly: "trimestral",
+  semiannual: "semestral",
+  annual: "anual",
+  custom: "personalizado",
+};
+
 export default function SettingsView({
   clinicConfig,
   setClinicConfig,
@@ -147,6 +155,7 @@ export default function SettingsView({
   const getSubscriptionStatusLabel = (value) => subscriptionStatusLabels[value] || value || "Sin iniciar";
   const getAccessStatusLabel = (value) => accessStatusLabels[value] || value || "Pendiente";
   const getPaymentStatusLabel = (value) => paymentStatusLabels[value] || value || "Sin registro";
+  const getBillingCycleLabel = (value) => billingCycleLabels[value] || value || "mensual";
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -222,7 +231,7 @@ export default function SettingsView({
                     </p>
                     <p className="mt-1 text-xs font-bold text-slate-500">
                       {billingProfile?.billing_amount
-                        ? `${billingProfile.billing_currency || "MXN"} ${Number(billingProfile.billing_amount).toFixed(2)} / ${billingProfile?.billing_cycle || "monthly"}`
+                        ? `${billingProfile.billing_currency || "MXN"} ${Number(billingProfile.billing_amount).toFixed(2)} / ${getBillingCycleLabel(billingProfile?.billing_cycle)}`
                         : "Todavia no hay una suscripcion activa"}
                     </p>
                   </div>
