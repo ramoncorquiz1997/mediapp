@@ -1010,41 +1010,19 @@ const maskSaasConfig = (config) => ({
 });
 
 const sendLeadNotificationEmail = async (lead, saasConfig) => {
-  const config = normalizeSaasConfig(saasConfig);
-
-  if (!config.smtp_host || !config.smtp_user || !config.smtp_password || !config.leads_notify_email) {
-    return { sent: false, skipped: true, reason: "smtp_not_configured" };
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: config.smtp_host,
-    port: config.smtp_port,
-    secure: config.smtp_secure,
-    auth: {
-      user: config.smtp_user,
-      pass: config.smtp_password,
-    },
-  });
-
-  const fromAddress = config.smtp_from_email || config.smtp_user;
-
-  await transporter.sendMail({
-    from: fromAddress,
-    to: config.leads_notify_email,
-    replyTo: lead.email,
+  return sendInternalNotificationEmail({
+    saasConfig,
     subject: `Nuevo lead demo: ${lead.nombre}`,
-    text: [
-      "Se recibio una nueva solicitud de demo.",
-      "",
-      `Nombre: ${lead.nombre}`,
-      `Email: ${lead.email}`,
-      `Telefono: ${lead.telefono || "Sin telefono"}`,
-      `Especialidad: ${lead.especialidad || "Sin especialidad"}`,
-      `Fecha: ${new Date(lead.fecha || new Date()).toLocaleString("es-MX")}`,
-    ].join("\n"),
+    replyTo: lead.email,
+    intro: "Se recibió una nueva solicitud de demo.",
+    sections: [
+      { label: "Nombre", value: lead.nombre },
+      { label: "Correo", value: lead.email },
+      { label: "Teléfono", value: lead.telefono || "Sin teléfono" },
+      { label: "Especialidad", value: lead.especialidad || "Sin especialidad" },
+      { label: "Fecha", value: new Date(lead.fecha || new Date()).toLocaleString("es-MX") },
+    ],
   });
-
-  return { sent: true, skipped: false };
 };
 
 const createSmtpTransport = (config) => {
