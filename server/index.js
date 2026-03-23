@@ -27,6 +27,8 @@ const stripePublishableKey = String(process.env.STRIPE_PUBLISHABLE_KEY || "").tr
 const stripeWebhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || "").trim();
 const stripePriceId = String(process.env.STRIPE_PRICE_ID || "").trim();
 const stripeTrialDays = Math.max(0, Number(process.env.TRIAL_DAYS || 0) || 0);
+const resendApiKey = String(process.env.RESEND_API_KEY || "").trim();
+const resendFromEmail = String(process.env.RESEND_FROM_EMAIL || "").trim();
 const curpRegex =
   /^[A-Z][AEIOUX][A-Z]{2}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[HM](AS|BC|BS|CC|CL|CM|CS|CH|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d$/;
 const antecedentTypes = [
@@ -885,6 +887,25 @@ const sanitizePdfText = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const formatDateTimeForEmail = (value, timeZone = defaultClinicInfo.zona_horaria) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Fecha no disponible";
+
+  return date.toLocaleString("es-MX", {
+    timeZone: timeZone || defaultClinicInfo.zona_horaria,
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+};
+
 const buildExplorationText = (consultation) => {
   if (consultation.descripcion_fisica) {
     return String(consultation.descripcion_fisica).trim();
@@ -1024,6 +1045,360 @@ const sendLeadNotificationEmail = async (lead, saasConfig) => {
   });
 
   return { sent: true, skipped: false };
+};
+
+const createSmtpTransport = (config) => {
+  const normalized = normalizeSaasConfig(config);
+  if (!normalized.smtp_host || !normalized.smtp_user || !normalized.smtp_password) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host: normalized.smtp_host,
+    port: normalized.smtp_port,
+    secure: normalized.smtp_secure,
+    auth: {
+      user: normalized.smtp_user,
+      pass: normalized.smtp_password,
+    },
+  });
+};
+
+const sendConfiguredEmail = async (saasConfig, message) => {
+  const config = normalizeSaasConfig(saasConfig);
+
+  if (resendApiKey) {
+    const resendFrom = config.smtp_from_email || resendFromEmail || "onboarding@resend.dev";
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: resendFrom,
+        to: Array.isArray(message.to) ? message.to : [message.to],
+        reply_to: message.replyTo || undefined,
+        subject: message.subject,
+        html: message.html || undefined,
+        text: message.text || undefined,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Resend send failed (${response.status}): ${errorBody}`);
+    }
+
+    return { sent: true, skipped: false, provider: "resend" };
+  }
+
+  const transporter = createSmtpTransport(config);
+
+  if (!transporter) {
+    return { sent: false, skipped: true, reason: "smtp_not_configured" };
+  }
+
+  await transporter.sendMail({
+    from: config.smtp_from_email || config.smtp_user,
+    ...message,
+  });
+
+  return { sent: true, skipped: false, provider: "smtp" };
+};
+
+const buildEmailShell = ({ preview, title, intro, sections = [], ctaLabel = "", ctaUrl = "" }) => `
+  <div style="background:#f8fafc;padding:32px 16px;font-family:Arial,sans-serif;color:#0f172a;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:24px;overflow:hidden;">
+      <div style="background:linear-gradient(135deg,#0f766e 0%,#14b8a6 100%);padding:24px 28px;color:#ffffff;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.9;">MyCliniq</div>
+        <div style="margin-top:10px;font-size:28px;font-weight:800;line-height:1.15;">${escapeHtml(title)}</div>
+        ${preview ? `<div style="margin-top:10px;font-size:14px;opacity:.92;">${escapeHtml(preview)}</div>` : ""}
+      </div>
+      <div style="padding:28px;">
+        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;">${escapeHtml(intro)}</p>
+        ${sections.map((section) => `
+          <div style="margin:0 0 14px;padding:16px 18px;border:1px solid #e2e8f0;border-radius:18px;background:#f8fafc;">
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#0f766e;margin-bottom:8px;">${escapeHtml(section.label)}</div>
+            <div style="font-size:14px;line-height:1.6;color:#334155;">${escapeHtml(section.value)}</div>
+          </div>
+        `).join("")}
+        ${ctaLabel && ctaUrl ? `
+          <div style="margin-top:24px;">
+            <a href="${escapeHtml(ctaUrl)}" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:12px 18px;border-radius:14px;font-weight:700;">
+              ${escapeHtml(ctaLabel)}
+            </a>
+          </div>
+        ` : ""}
+      </div>
+    </div>
+  </div>
+`;
+
+const sendInternalNotificationEmail = async ({
+  saasConfig,
+  subject,
+  replyTo,
+  intro,
+  sections,
+}) => {
+  const config = normalizeSaasConfig(saasConfig);
+  if (!config.leads_notify_email) {
+    return { sent: false, skipped: true, reason: "notify_not_configured" };
+  }
+
+  return sendConfiguredEmail(config, {
+    to: config.leads_notify_email,
+    replyTo: replyTo || undefined,
+    subject,
+    text: [
+      intro,
+      "",
+      ...sections.map((section) => `${section.label}: ${section.value}`),
+    ].join("\n"),
+    html: buildEmailShell({
+      preview: subject,
+      title: subject,
+      intro,
+      sections,
+    }),
+  });
+};
+
+const sendDoctorRegistrationNotificationEmail = async (doctor, saasConfig) =>
+  sendInternalNotificationEmail({
+    saasConfig,
+    subject: `Nuevo registro médico: ${doctor.nombre}`,
+    replyTo: doctor.email,
+    intro: "Se recibió una nueva solicitud de registro de médico en MyCliniq.",
+    sections: [
+      { label: "Nombre", value: doctor.nombre },
+      { label: "Correo", value: doctor.email },
+      { label: "Teléfono", value: doctor.telefono || "Sin teléfono" },
+      { label: "Ciudad / Estado", value: doctor.ciudad_estado || "Sin registro" },
+      { label: "Consultorio", value: doctor.onboarding_clinic_name || "Sin registro" },
+      { label: "Estado", value: doctor.verification_status || "Pendiente" },
+    ],
+  });
+
+const sendLeadConfirmationEmail = async (lead, saasConfig) =>
+  sendConfiguredEmail(saasConfig, {
+    to: lead.email,
+    subject: "Recibimos tu solicitud de demo en MyCliniq",
+    text: [
+      `Hola ${lead.nombre},`,
+      "",
+      "Recibimos tu solicitud de demo en MyCliniq.",
+      "En breve te contactaremos para coordinar la demostracion.",
+      "",
+      `Especialidad: ${lead.especialidad || "No especificada"}`,
+      `Telefono: ${lead.telefono || "No especificado"}`,
+    ].join("\n"),
+    html: buildEmailShell({
+      preview: "Recibimos tu solicitud de demo",
+      title: "Solicitud de demo recibida",
+      intro: `Hola ${lead.nombre}, recibimos tu solicitud de demo en MyCliniq y en breve te contactaremos para coordinarla.`,
+      sections: [
+        { label: "Especialidad", value: lead.especialidad || "No especificada" },
+        { label: "Teléfono", value: lead.telefono || "No especificado" },
+      ],
+    }),
+  });
+
+const sendDoctorRegistrationConfirmationEmail = async (doctor, saasConfig) =>
+  sendConfiguredEmail(saasConfig, {
+    to: doctor.email,
+    subject: "Recibimos tu registro en MyCliniq",
+    text: [
+      `Hola ${doctor.nombre},`,
+      "",
+      "Recibimos tu registro en MyCliniq.",
+      "Vamos a revisar tus datos y te avisaremos en cuanto tu cuenta este lista.",
+      "",
+      `Correo: ${doctor.email}`,
+      `Telefono: ${doctor.telefono || "No especificado"}`,
+      `Consultorio: ${doctor.onboarding_clinic_name || "No especificado"}`,
+    ].join("\n"),
+    html: buildEmailShell({
+      preview: "Recibimos tu registro",
+      title: "Registro recibido",
+      intro: `Hola ${doctor.nombre}, recibimos tu registro en MyCliniq. Vamos a revisar tus datos y te avisaremos en cuanto tu cuenta esté lista.`,
+      sections: [
+        { label: "Correo", value: doctor.email },
+        { label: "Teléfono", value: doctor.telefono || "No especificado" },
+        { label: "Consultorio", value: doctor.onboarding_clinic_name || "No especificado" },
+      ],
+    }),
+  });
+
+const buildPatientPortalUrl = (portalToken) => {
+  const normalized = String(portalToken || "").trim();
+  if (!normalized) return "";
+  return `${appUrl}/p/${encodeURIComponent(normalized)}`;
+};
+
+const getAppointmentEmailContext = async (db, appointmentId) => {
+  const appointmentResult = await db.query(
+    `SELECT
+       c.*,
+       p.nombre AS patient_nombre_real,
+       p.email AS patient_email,
+       p.telefono AS patient_telefono,
+       p.portal_token,
+       u.nombre AS doctor_nombre
+     FROM citas c
+     LEFT JOIN pacientes p ON p.id = c.paciente_id
+     LEFT JOIN usuarios u ON u.id = c.medico_user_id
+     WHERE c.id = $1
+     LIMIT 1`,
+    [appointmentId]
+  );
+
+  if (appointmentResult.rowCount === 0) return null;
+  const appointment = appointmentResult.rows[0];
+  const clinicConfig = await getClinicConfig(db, appointment.medico_user_id);
+  return { appointment, clinicConfig };
+};
+
+const sendPatientAppointmentEmail = async ({
+  db = pool,
+  appointmentId,
+  kind,
+  saasConfig,
+}) => {
+  const context = await getAppointmentEmailContext(db, appointmentId);
+  if (!context) {
+    return { sent: false, skipped: true, reason: "appointment_not_found" };
+  }
+
+  const { appointment, clinicConfig } = context;
+  if (!String(appointment.patient_email || "").trim()) {
+    return { sent: false, skipped: true, reason: "patient_email_missing" };
+  }
+
+  const clinicName = clinicConfig?.nombre_consultorio || defaultClinicInfo.nombre_consultorio;
+  const doctorName = appointment.doctor_nombre || "tu médico";
+  const dateLabel = formatDateTimeForEmail(appointment.start, clinicConfig?.zona_horaria);
+  const portalUrl = buildPatientPortalUrl(appointment.portal_token);
+
+  const variants = {
+    booking_request: {
+      subject: `Recibimos tu solicitud de cita en ${clinicName}`,
+      intro: `Hola ${appointment.patient_nombre_real || appointment.paciente_nombre || "paciente"}, recibimos tu solicitud de cita y quedó en espera de confirmación.`,
+      sections: [
+        { label: "Consultorio", value: clinicName },
+        { label: "Médico", value: doctorName },
+        { label: "Fecha y hora", value: dateLabel },
+        { label: "Motivo", value: appointment.motivo || "Consulta general" },
+        { label: "Estado", value: appointment.estado || "En espera" },
+      ],
+    },
+    confirmed: {
+      subject: `Tu cita está confirmada en ${clinicName}`,
+      intro: `Hola ${appointment.patient_nombre_real || appointment.paciente_nombre || "paciente"}, tu cita fue registrada correctamente.`,
+      sections: [
+        { label: "Consultorio", value: clinicName },
+        { label: "Médico", value: doctorName },
+        { label: "Fecha y hora", value: dateLabel },
+        { label: "Tipo", value: appointment.tipo || "Consulta" },
+        { label: "Motivo", value: appointment.motivo || "Consulta general" },
+        { label: "Estado", value: appointment.estado || "Confirmado" },
+      ],
+      ctaLabel: portalUrl ? "Abrir portal del paciente" : "",
+      ctaUrl: portalUrl,
+    },
+    updated: {
+      subject: `Tu cita fue actualizada en ${clinicName}`,
+      intro: `Hola ${appointment.patient_nombre_real || appointment.paciente_nombre || "paciente"}, hubo una actualización en tu cita.`,
+      sections: [
+        { label: "Consultorio", value: clinicName },
+        { label: "Médico", value: doctorName },
+        { label: "Fecha y hora", value: dateLabel },
+        { label: "Motivo", value: appointment.motivo || "Consulta general" },
+        { label: "Estado", value: appointment.estado || "Actualizada" },
+      ],
+      ctaLabel: portalUrl ? "Revisar mi portal" : "",
+      ctaUrl: portalUrl,
+    },
+    cancelled: {
+      subject: `Tu cita fue cancelada en ${clinicName}`,
+      intro: `Hola ${appointment.patient_nombre_real || appointment.paciente_nombre || "paciente"}, tu cita fue cancelada.`,
+      sections: [
+        { label: "Consultorio", value: clinicName },
+        { label: "Médico", value: doctorName },
+        { label: "Fecha y hora", value: dateLabel },
+        { label: "Motivo", value: appointment.motivo || "Consulta general" },
+        { label: "Estado", value: "Cancelado" },
+      ],
+    },
+    reminder: {
+      subject: `Recordatorio de cita en ${clinicName}`,
+      intro: `Hola ${appointment.patient_nombre_real || appointment.paciente_nombre || "paciente"}, este es un recordatorio de tu próxima cita.`,
+      sections: [
+        { label: "Consultorio", value: clinicName },
+        { label: "Médico", value: doctorName },
+        { label: "Fecha y hora", value: dateLabel },
+        { label: "Motivo", value: appointment.motivo || "Consulta general" },
+      ],
+      ctaLabel: portalUrl ? "Ver mi portal" : "",
+      ctaUrl: portalUrl,
+    },
+  };
+
+  const variant = variants[kind];
+  if (!variant) {
+    return { sent: false, skipped: true, reason: "unsupported_email_kind" };
+  }
+
+  return sendConfiguredEmail(saasConfig, {
+    to: appointment.patient_email,
+    replyTo: clinicConfig?.email_contacto || undefined,
+    subject: variant.subject,
+    text: [
+      variant.intro,
+      "",
+      ...variant.sections.map((section) => `${section.label}: ${section.value}`),
+      portalUrl ? `Portal del paciente: ${portalUrl}` : null,
+    ].filter(Boolean).join("\n"),
+    html: buildEmailShell({
+      preview: variant.subject,
+      title: variant.subject,
+      intro: variant.intro,
+      sections: variant.sections,
+      ctaLabel: variant.ctaLabel,
+      ctaUrl: variant.ctaUrl,
+    }),
+  });
+};
+
+const notifyPatientAppointment = async ({
+  db = pool,
+  appointmentId,
+  kind,
+}) => {
+  try {
+    const saasConfig = await getSaasConfig(db);
+    const outcome = await sendPatientAppointmentEmail({
+      db,
+      appointmentId,
+      kind,
+      saasConfig,
+    });
+
+    if (outcome.sent && ["booking_request", "confirmed", "updated", "cancelled"].includes(kind)) {
+      await db.query(
+        `UPDATE citas
+         SET confirmacion_email_enviada_at = NOW()
+         WHERE id = $1`,
+        [appointmentId]
+      );
+    }
+
+    return outcome;
+  } catch (error) {
+    console.error(`Appointment email "${kind}" failed`, error);
+    return { sent: false, skipped: false, reason: "smtp_send_failed" };
+  }
 };
 
 const parseLogoBuffer = (logoDataUrl) => {
@@ -1424,6 +1799,26 @@ app.post("/api/auth/register-doctor", asyncHandler(async (req, res) => {
       cedula_profesional: cedula,
     },
   });
+
+  try {
+    const saasConfig = await getSaasConfig(pool);
+    await sendDoctorRegistrationNotificationEmail(
+      {
+        ...createdDoctor,
+        onboarding_clinic_name: clinicName || null,
+      },
+      saasConfig
+    );
+    await sendDoctorRegistrationConfirmationEmail(
+      {
+        ...createdDoctor,
+        onboarding_clinic_name: clinicName || null,
+      },
+      saasConfig
+    );
+  } catch (notifyError) {
+    console.error("Doctor registration email notification failed", notifyError);
+  }
 
   res.status(201).json({
     ok: true,
@@ -2646,6 +3041,9 @@ app.post("/api/leads", asyncHandler(async (req, res) => {
   try {
     const saasConfig = await getSaasConfig(pool);
     emailStatus = await sendLeadNotificationEmail(lead, saasConfig);
+    if (lead.email) {
+      await sendLeadConfirmationEmail(lead, saasConfig);
+    }
   } catch (notifyError) {
     console.error("Lead email notification failed", notifyError);
     emailStatus = {
@@ -2697,6 +3095,12 @@ app.post("/api/portal/:token/citas/:id/cancelar", asyncHandler(async (req, res) 
       message: "Cita no encontrada o ya no se puede cancelar",
     });
   }
+
+  void notifyPatientAppointment({
+    db: pool,
+    appointmentId: result.rows[0].id,
+    kind: "cancelled",
+  });
 
   res.json(result.rows[0]);
 }));
@@ -3196,6 +3600,12 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
       estado: "En espera",
     }
   );
+
+  void notifyPatientAppointment({
+    db: pool,
+    appointmentId: appointmentResult.rows[0].id,
+    kind: "booking_request",
+  });
 
   res.status(201).json({
     cita: appointmentResult.rows[0],
@@ -5448,6 +5858,12 @@ app.post("/api/citas", asyncHandler(async (req, res) => {
     }
   );
 
+  void notifyPatientAppointment({
+    db: pool,
+    appointmentId: result.rows[0].id,
+    kind: result.rows[0].estado === "Cancelado" ? "cancelled" : "confirmed",
+  });
+
   res.status(201).json(result.rows[0]);
 }));
 
@@ -5502,7 +5918,71 @@ app.put("/api/citas/:id", asyncHandler(async (req, res) => {
     }
   );
 
+  void notifyPatientAppointment({
+    db: pool,
+    appointmentId: result.rows[0].id,
+    kind: result.rows[0].estado === "Cancelado" ? "cancelled" : "updated",
+  });
+
   res.json(result.rows[0]);
+}));
+
+app.post("/api/citas/send-reminders", requireAuth, requireDoctorAccess, asyncHandler(async (req, res) => {
+  const hoursAhead = Math.max(1, Math.min(72, Number(req.body?.hours_ahead || 24) || 24));
+  const now = new Date();
+  const reminderWindowEnd = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
+
+  const appointmentsResult = await pool.query(
+    `SELECT c.id
+     FROM citas c
+     INNER JOIN pacientes p ON p.id = c.paciente_id
+     WHERE c.medico_user_id = $1
+       AND c.estado = 'Confirmado'
+       AND c.start >= $2
+       AND c.start <= $3
+       AND COALESCE(TRIM(p.email), '') <> ''
+       AND (
+         c.recordatorio_email_enviado_at IS NULL
+         OR c.recordatorio_email_enviado_at < (NOW() - INTERVAL '12 hours')
+       )
+     ORDER BY c.start ASC`,
+    [req.user.id, now.toISOString(), reminderWindowEnd.toISOString()]
+  );
+
+  const summary = {
+    scanned: appointmentsResult.rowCount,
+    sent: 0,
+    skipped: 0,
+    failed: 0,
+  };
+
+  for (const row of appointmentsResult.rows) {
+    const outcome = await notifyPatientAppointment({
+      db: pool,
+      appointmentId: row.id,
+      kind: "reminder",
+    });
+
+    if (outcome.sent) {
+      summary.sent += 1;
+      await pool.query(
+        `UPDATE citas
+         SET recordatorio_email_enviado_at = NOW()
+         WHERE id = $1`,
+        [row.id]
+      );
+    } else if (outcome.skipped) {
+      summary.skipped += 1;
+    } else {
+      summary.failed += 1;
+    }
+  }
+
+  res.json({
+    ok: true,
+    hours_ahead: hoursAhead,
+    ...summary,
+  });
 }));
 
 if (existsSync(frontendDistPath)) {

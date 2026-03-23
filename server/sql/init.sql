@@ -545,6 +545,12 @@ CREATE TABLE IF NOT EXISTS consultas (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE citas
+ADD COLUMN IF NOT EXISTS confirmacion_email_enviada_at TIMESTAMPTZ;
+
+ALTER TABLE citas
+ADD COLUMN IF NOT EXISTS recordatorio_email_enviado_at TIMESTAMPTZ;
+
 ALTER TABLE consultas
 ADD COLUMN IF NOT EXISTS medico_user_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL;
 
