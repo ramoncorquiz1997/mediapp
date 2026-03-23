@@ -1228,7 +1228,8 @@ const getAppointmentEmailContext = async (db, appointmentId) => {
        p.email AS patient_email,
        p.telefono AS patient_telefono,
        p.portal_token,
-       u.nombre AS doctor_nombre
+       u.nombre AS doctor_nombre,
+       u.email AS doctor_email
      FROM citas c
      LEFT JOIN pacientes p ON p.id = c.paciente_id
      LEFT JOIN usuarios u ON u.id = c.medico_user_id
@@ -1354,6 +1355,65 @@ const sendPatientAppointmentEmail = async ({
   });
 };
 
+const sendDoctorAppointmentRequestEmail = async ({
+  db = pool,
+  appointmentId,
+  saasConfig,
+}) => {
+  const context = await getAppointmentEmailContext(db, appointmentId);
+  if (!context) {
+    return { sent: false, skipped: true, reason: "appointment_not_found" };
+  }
+
+  const { appointment, clinicConfig } = context;
+  const doctorInbox = String(clinicConfig?.email_contacto || appointment.doctor_email || "").trim();
+  if (!doctorInbox) {
+    return { sent: false, skipped: true, reason: "doctor_email_missing" };
+  }
+
+  const clinicName = clinicConfig?.nombre_consultorio || defaultClinicInfo.nombre_consultorio;
+  const doctorName = appointment.doctor_nombre || "Doctor";
+  const patientName = appointment.patient_nombre_real || appointment.paciente_nombre || "Paciente";
+  const dateLabel = formatDateTimeForEmail(appointment.start, clinicConfig?.zona_horaria);
+  const agendaUrl = `${appUrl}/app/agenda`;
+
+  return sendConfiguredEmail(saasConfig, {
+    to: doctorInbox,
+    replyTo: appointment.patient_email || undefined,
+    subject: `Nueva cita por confirmar en ${clinicName}`,
+    text: [
+      `Hola ${doctorName},`,
+      "",
+      "Se recibió una nueva solicitud de cita desde tu agenda pública y está pendiente de confirmación.",
+      "",
+      `Paciente: ${patientName}`,
+      `Correo: ${appointment.patient_email || "Sin correo"}`,
+      `Teléfono: ${appointment.patient_telefono || "Sin teléfono"}`,
+      `Fecha y hora: ${dateLabel}`,
+      `Motivo: ${appointment.motivo || "Consulta general"}`,
+      `Estado: ${appointment.estado || "En espera"}`,
+      "",
+      `Agenda: ${agendaUrl}`,
+    ].join("\n"),
+    html: buildEmailShell({
+      preview: "Nueva solicitud de cita pendiente",
+      title: "Nueva cita por confirmar",
+      intro: `Hola ${doctorName}, se recibió una nueva solicitud de cita desde tu agenda pública. Revísala y confirma el horario cuando estés listo.`,
+      sections: [
+        { label: "Consultorio", value: clinicName },
+        { label: "Paciente", value: patientName },
+        { label: "Correo", value: appointment.patient_email || "Sin correo" },
+        { label: "Teléfono", value: appointment.patient_telefono || "Sin teléfono" },
+        { label: "Fecha y hora", value: dateLabel },
+        { label: "Motivo", value: appointment.motivo || "Consulta general" },
+        { label: "Estado", value: appointment.estado || "En espera" },
+      ],
+      ctaLabel: "Abrir agenda",
+      ctaUrl: agendaUrl,
+    }),
+  });
+};
+
 const notifyPatientAppointment = async ({
   db = pool,
   appointmentId,
@@ -1380,6 +1440,23 @@ const notifyPatientAppointment = async ({
     return outcome;
   } catch (error) {
     console.error(`Appointment email "${kind}" failed`, error);
+    return { sent: false, skipped: false, reason: "smtp_send_failed" };
+  }
+};
+
+const notifyDoctorAppointmentRequest = async ({
+  db = pool,
+  appointmentId,
+}) => {
+  try {
+    const saasConfig = await getSaasConfig(db);
+    return await sendDoctorAppointmentRequestEmail({
+      db,
+      appointmentId,
+      saasConfig,
+    });
+  } catch (error) {
+    console.error('Appointment email "doctor_request" failed', error);
     return { sent: false, skipped: false, reason: "smtp_send_failed" };
   }
 };
@@ -3587,6 +3664,10 @@ app.post("/api/agenda-publica/:slug/solicitar", asyncHandler(async (req, res) =>
     db: pool,
     appointmentId: appointmentResult.rows[0].id,
     kind: "booking_request",
+  });
+  void notifyDoctorAppointmentRequest({
+    db: pool,
+    appointmentId: appointmentResult.rows[0].id,
   });
 
   res.status(201).json({
