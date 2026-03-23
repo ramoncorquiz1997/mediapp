@@ -1069,12 +1069,16 @@ const sendConfiguredEmail = async (saasConfig, message) => {
 
   if (resendApiKey) {
     const resendFrom = config.smtp_from_email || resendFromEmail || "onboarding@resend.dev";
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
+      signal: controller.signal,
       body: JSON.stringify({
         from: resendFrom,
         to: Array.isArray(message.to) ? message.to : [message.to],
@@ -1084,6 +1088,7 @@ const sendConfiguredEmail = async (saasConfig, message) => {
         text: message.text || undefined,
       }),
     });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const errorBody = await response.text();
@@ -3036,26 +3041,25 @@ app.post("/api/leads", asyncHandler(async (req, res) => {
   );
 
   const lead = result.rows[0];
-  let emailStatus = { sent: false, skipped: true, reason: "smtp_not_configured" };
-
-  try {
-    const saasConfig = await getSaasConfig(pool);
-    emailStatus = await sendLeadNotificationEmail(lead, saasConfig);
-    if (lead.email) {
-      await sendLeadConfirmationEmail(lead, saasConfig);
+  void (async () => {
+    try {
+      const saasConfig = await getSaasConfig(pool);
+      await Promise.allSettled([
+        sendLeadNotificationEmail(lead, saasConfig),
+        lead.email ? sendLeadConfirmationEmail(lead, saasConfig) : Promise.resolve(),
+      ]);
+    } catch (notifyError) {
+      console.error("Lead email notification failed", notifyError);
     }
-  } catch (notifyError) {
-    console.error("Lead email notification failed", notifyError);
-    emailStatus = {
-      sent: false,
-      skipped: false,
-      reason: "smtp_send_failed",
-    };
-  }
+  })();
 
   res.status(201).json({
     lead,
-    email_notification: emailStatus,
+    email_notification: {
+      sent: false,
+      skipped: false,
+      reason: "queued_background_delivery",
+    },
     message: "Lead registrada correctamente",
   });
 }));
